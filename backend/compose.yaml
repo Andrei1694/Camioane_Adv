@@ -1,0 +1,19 @@
+name: camioane
+
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-camioane}
+      POSTGRES_USER: ${POSTGRES_USER:-camioane}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-camioane_dev_password}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+volumes:
+  postgres_data:

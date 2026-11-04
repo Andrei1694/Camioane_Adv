@@ -17,7 +17,8 @@
     "prisma:validate": "prisma validate",
     "db:check": "node --env-file-if-exists=.env src/scripts/check-db.ts",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "admin:bootstrap": "node --env-file-if-exists=.env src/scripts/bootstrap-admin.ts"
   },
   "engines": {
     "node": ">=24"

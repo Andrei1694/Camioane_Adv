@@ -1,46 +1,38 @@
 import type { Request, Response } from 'express';
 import { AppError } from '../lib/app-error.ts';
-import { loginUser, registerUser } from '../services/user.service.ts';
-import type { AuthenticationData, PublicUser, UserCredentials, UserLocals } from '../types/user.ts';
+import { parseCreateUser, parseCredentials, parseUpdateUser, parseUserId } from '../lib/user-validation.ts';
+import { createUser, deleteUser, listUsers, loginUser, updateUser } from '../services/user.service.ts';
+import type { UserLocals } from '../types/user.ts';
 
-function parseCredentials(body: unknown): UserCredentials {
-  if (typeof body !== 'object' || body === null || Array.isArray(body)
-    || !('email' in body) || !('password' in body)
-    || typeof body.email !== 'string' || typeof body.password !== 'string') {
-    throw new AppError(400, 'Email and password must be strings');
-  }
+type UserResponse = Response<unknown, UserLocals>;
 
-  const email = body.email.trim().toLowerCase();
-
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new AppError(400, 'A valid email address is required');
-  }
-
-  const passwordLength = Array.from(body.password).length;
-
-  if (passwordLength < 12 || passwordLength > 128) {
-    throw new AppError(400, 'Password must contain between 12 and 128 characters');
-  }
-
-  return { email, password: body.password };
+function actor(res: UserResponse) {
+  if (!res.locals.session) throw new AppError(401, 'Unauthorized');
+  return res.locals.session;
 }
 
-export async function register(req: Request, res: Response<AuthenticationData>) {
-  const credentials = parseCredentials(req.body);
-  const result = await registerUser(credentials);
-  res.status(201).json(result);
+export async function login(req: Request, res: Response) {
+  res.json(await loginUser(parseCredentials(req.body)));
 }
 
-export async function login(req: Request, res: Response<AuthenticationData>) {
-  const credentials = parseCredentials(req.body);
-  const result = await loginUser(credentials);
-  res.json(result);
-}
-
-export function me(req: Request, res: Response<{ user: PublicUser }, UserLocals>) {
-  if (!res.locals.user) {
-    throw new AppError(401, 'Unauthorized');
-  }
-
+export function me(req: Request, res: UserResponse) {
+  if (!res.locals.user) throw new AppError(401, 'Unauthorized');
   res.json({ user: res.locals.user });
+}
+
+export async function list(req: Request, res: UserResponse) {
+  res.json({ users: await listUsers(actor(res)) });
+}
+
+export async function create(req: Request, res: UserResponse) {
+  res.status(201).json({ user: await createUser(actor(res), parseCreateUser(req.body)) });
+}
+
+export async function update(req: Request, res: UserResponse) {
+  res.json({ user: await updateUser(actor(res), parseUserId(req.params.id), parseUpdateUser(req.body)) });
+}
+
+export async function remove(req: Request, res: UserResponse) {
+  await deleteUser(actor(res), parseUserId(req.params.id));
+  res.status(204).end();
 }

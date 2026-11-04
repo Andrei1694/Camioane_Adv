@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { AppError } from '../lib/app-error.ts';
 import { verifyAccessToken } from '../lib/jwt.ts';
-import { findUserByEmail } from '../services/user.service.ts';
+import { findSessionUser, publicUser } from '../services/user.service.ts';
 import type { UserLocals } from '../types/user.ts';
 
 export async function authenticate(req: Request, res: Response<unknown, UserLocals>, next: NextFunction) {
@@ -11,13 +11,19 @@ export async function authenticate(req: Request, res: Response<unknown, UserLoca
     throw new AppError(401, 'Unauthorized');
   }
 
-  const email = await verifyAccessToken(match[1]);
-  const user = await findUserByEmail(email);
+  const session = await verifyAccessToken(match[1]);
+  const user = await findSessionUser(session.id);
 
-  if (!user) {
+  if (!user || user.sessionVersion !== session.sessionVersion) {
     throw new AppError(401, 'Unauthorized');
   }
 
-  res.locals.user = user;
+  res.locals.user = publicUser(user);
+  res.locals.session = session;
+  next();
+}
+
+export function requireAdmin(req: Request, res: Response<unknown, UserLocals>, next: NextFunction) {
+  if (res.locals.user?.role !== 'ADMIN') throw new AppError(403, 'Administrator access is required');
   next();
 }

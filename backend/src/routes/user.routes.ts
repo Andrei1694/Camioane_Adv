@@ -1,7 +1,7 @@
 import { json, Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { login, me, register } from '../controllers/user.controller.ts';
-import { authenticate } from '../middleware/authenticate.ts';
+import { create, list, login, me, remove, update } from '../controllers/user.controller.ts';
+import { authenticate, requireAdmin } from '../middleware/authenticate.ts';
 
 export function createUserRouter() {
   const router = Router();
@@ -19,9 +19,12 @@ export function createUserRouter() {
     next();
   });
 
-  router.post('/register', authLimiter, parseJson, register);
   router.post('/login', authLimiter, parseJson, login);
   router.get('/me', authenticate, me);
+  router.get('/', authenticate, requireAdmin, list);
+  router.post('/', authenticate, requireAdmin, parseJson, create);
+  router.patch('/:id', authenticate, requireAdmin, parseJson, update);
+  router.delete('/:id', authenticate, requireAdmin, remove);
 
   return router;
 }

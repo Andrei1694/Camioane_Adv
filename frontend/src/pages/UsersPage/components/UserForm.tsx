@@ -1,12 +1,15 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { getEmailError, normalizeEmail } from '../user'
-import type { User } from '../user'
+import { getEmailError, getPasswordError, normalizeEmail } from '../../../lib/user'
+import type { Role, User, UserInput } from '../../../lib/user'
 
 interface UserFormProps {
   user?: User
   users: readonly User[]
-  onSave: (user: User) => void
+  isSelf: boolean
+  pending: boolean
+  error: string
+  onSave: (user: UserInput) => Promise<void>
   onCancel: () => void
 }
 
@@ -15,9 +18,10 @@ interface FormErrors {
   password?: string
 }
 
-export default function UserForm({ user, users, onSave, onCancel }: UserFormProps) {
+export default function UserForm({ user, users, isSelf, pending, error, onSave, onCancel }: UserFormProps) {
   const [email, setEmail] = useState(user?.email ?? '')
   const [password, setPassword] = useState('')
+  const [role, setRole] = useState<Role>(user?.role ?? 'USER')
   const [errors, setErrors] = useState<FormErrors>({})
   const emailInput = useRef<HTMLInputElement>(null)
   const passwordInput = useRef<HTMLInputElement>(null)
@@ -29,21 +33,18 @@ export default function UserForm({ user, users, onSave, onCancel }: UserFormProp
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (pending) return
 
     const normalizedEmail = normalizeEmail(email)
     const nextErrors: FormErrors = { email: getEmailError(normalizedEmail) }
 
     if (!nextErrors.email && users.some((existing) => (
-      existing.email === normalizedEmail && existing.email !== user?.email
+      existing.email === normalizedEmail && existing.id !== user?.id
     ))) {
       nextErrors.email = 'A user with this email already exists.'
     }
 
-    const passwordLength = Array.from(password).length
-
-    if ((!user || passwordLength > 0) && (passwordLength < 12 || passwordLength > 128)) {
-      nextErrors.password = 'Use a password with 12–128 characters.'
-    }
+    if (!user || password.length > 0) nextErrors.password = getPasswordError(password)
 
     setErrors(nextErrors)
 
@@ -57,8 +58,7 @@ export default function UserForm({ user, users, onSave, onCancel }: UserFormProp
       return
     }
 
-    setPassword('')
-    onSave({ email: normalizedEmail })
+    void onSave({ email: normalizedEmail, role, ...(!user || password ? { password } : {}) })
   }
 
   return (
@@ -76,6 +76,7 @@ export default function UserForm({ user, users, onSave, onCancel }: UserFormProp
             autoCapitalize="none"
             spellCheck={false}
             required
+            disabled={pending}
             value={email}
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? `${id}-email-error` : undefined}
@@ -97,6 +98,7 @@ export default function UserForm({ user, users, onSave, onCancel }: UserFormProp
             type="password"
             autoComplete="new-password"
             required={!user}
+            disabled={pending}
             value={password}
             aria-invalid={Boolean(errors.password)}
             aria-describedby={`${id}-password-hint${errors.password ? ` ${id}-password-error` : ''}`}
@@ -105,13 +107,25 @@ export default function UserForm({ user, users, onSave, onCancel }: UserFormProp
               setErrors((current) => ({ ...current, password: undefined }))
             }}
           />
-          <p className="field-hint" id={`${id}-password-hint`}>12–128 characters. Demo only; never saved.</p>
+          <p className="field-hint" id={`${id}-password-hint`}>12–128 characters.{user && ' Leave blank to keep the current password.'}</p>
           {errors.password && <p className="field-error" id={`${id}-password-error`} role="alert">{errors.password}</p>}
         </div>
+        <div className="form-field">
+          <label htmlFor={`${id}-role`}>Role</label>
+          <select id={`${id}-role`} name="role" value={role} disabled={pending || isSelf}
+            aria-describedby={isSelf ? `${id}-role-hint` : undefined}
+            onChange={(event) => setRole(event.target.value === 'ADMIN' ? 'ADMIN' : 'USER')}>
+            <option value="USER">User</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+          {isSelf && <p className="field-hint" id={`${id}-role-hint`}>Another administrator must change your role.</p>}
+        </div>
       </div>
+      {isSelf && <p className="field-hint">Changing your email or password will sign you out.</p>}
+      {error && <p className="request-error" role="alert">{error}</p>}
       <div className="form-actions">
-        <button className="primary-button" type="submit">Save</button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+        <button className="primary-button" type="submit" disabled={pending}>{pending ? 'Saving…' : 'Save'}</button>
+        <button type="button" disabled={pending} onClick={onCancel}>Cancel</button>
       </div>
     </form>
   )

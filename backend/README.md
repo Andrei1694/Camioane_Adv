@@ -1,157 +1,119 @@
 # Camioane Backend
 
-Node.js 24+ and Express API using TypeScript ES modules.
+Express 5, TypeScript, Prisma 7, PostgreSQL, and Node.js 24+. Node runs TypeScript directly; there is no backend build step.
 
-For a new checkout, copy `.env.example` to `.env`, configure `JWT_SECRET` as described below, and start Docker Desktop. Run these commands from `backend`:
+## Local setup
 
-```sh
-npm install
-docker compose up --build -d --wait
-npm run db:migrate
-npm run db:check
-npm run dev
-```
-
-`npm run dev` runs the server and TypeScript checker together. The server restarts when source files change, and type errors appear in the same terminal. Press Ctrl+C to stop both processes. Type errors are reported without blocking the server.
-
-Available scripts (run from `backend`):
-
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Server restart and continuous type checking |
-| `npm run dev:server` | Server restart only |
-| `npm run typecheck:watch` | Continuous type checking only |
-| `npm run typecheck` | Check types once |
-| `npm test` | Run authentication integration tests against the development database |
-| `npm start` | Run the server without watching |
-| `npm run prisma:generate` | Regenerate Prisma Client after schema changes |
-| `npm run prisma:validate` | Validate the Prisma schema |
-| `npm run db:check` | Verify the database connection with a read-only query |
-| `npm run db:migrate -- --name <name>` | Create and apply a development migration |
-| `npm run db:studio` | Open Prisma Studio |
-
-`.env` configures `PORT` (defaults to `3000`), the required `DATABASE_URL`, the required `JWT_SECRET`, and `FRONTEND_ORIGIN` (defaults to `http://localhost:5173`). Existing environment variables take precedence over `.env`. Local `.env` files are excluded from Git.
-
-Generate a random signing secret and put its output in `JWT_SECRET` in your local `.env`; never commit it:
+From `backend/`, install with `npm ci`. On a new checkout, copy `.env.example` to `.env` without overwriting existing settings. Set a random `JWT_SECRET` of at least 32 bytes:
 
 ```sh
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-Startup rejects missing, blank, or shorter-than-32-byte secrets. `FRONTEND_ORIGIN` must be an HTTP(S) origin without a trailing slash or path. CORS allows that origin to send JSON and Authorization headers; authentication does not use cookies.
+Keep the generated secret in the local environment only. Start Docker Desktop with Linux containers, then:
 
-Endpoints:
+```sh
+docker compose up --build -d --wait
+npx prisma migrate deploy
+npm run prisma:generate
+npm run db:check
+npm run admin:bootstrap
+npm run dev
+```
 
-- `GET /` returns the API name.
-- `GET /health` returns `{ "status": "ok" }`.
-- `POST /users/register` creates an account and signs the user in.
-- `POST /users/login` verifies credentials and signs the user in.
-- `GET /users/me` returns the signed-in user and requires a bearer token.
-- Unknown routes return a JSON `404` response.
+The bootstrap command requires an interactive terminal. It asks for an email and, for a new account, a hidden password and confirmation. For an existing ordinary account, it explicitly asks before granting administrator access and preserves the password. An existing administrator is left unchanged. Promotion invalidates existing sessions. There are no default accounts or passwords.
 
-The Express application is defined in `src/app.ts`; `src/server.ts` verifies the PostgreSQL connection before starting the HTTP server. If the database is unavailable, startup exits with an error. On SIGINT or SIGTERM, it stops accepting requests and disconnects Prisma.
+The API listens on port 3000 by default. Compose runs PostgreSQL only. `npm run dev` runs the API watcher and type checker together; type errors do not prevent the server from starting. `npm start` runs without watchers.
 
-## User authentication
+## Configuration
 
-Both registration and login accept JSON `{ "email": "driver@example.com", "password": "a long passphrase" }`. Email addresses are trimmed and lowercased. Passwords must contain 12–128 Unicode characters; spaces are preserved. The service stores salted Argon2id hashes with 19 MiB memory, two iterations, and parallelism of one. Passwords and hashes are never returned.
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | API port, default `3000` |
+| `DATABASE_URL` | Required PostgreSQL connection URL |
+| `JWT_SECRET` | Required random signing secret, at least 32 bytes |
+| `FRONTEND_ORIGIN` | Allowed HTTP(S) origin, default `http://localhost:5173`; no path or trailing slash |
 
-Registration returns `201` and login returns `200`, both with this shape:
+Existing environment variables take precedence over `.env`. CORS allows GET, POST, PATCH, DELETE, JSON, and Authorization headers from the configured origin. Authentication uses bearer tokens, not cookies. Keep private database credentials and signing keys out of frontend `VITE_*` configuration.
+
+Production must set its actual frontend origin, configure HTTPS, and supply the actual API URL when building the frontend. When serving the frontend separately, configure its host to serve `index.html` for application routes such as `/users`. Deploy committed migrations with `npx prisma migrate deploy` and generate Prisma Client during installation/build. Do not run `migrate dev` in production.
+
+## API
+
+Public users are `{ id, email, role }`, where `id` is an immutable UUID and `role` is `USER` or `ADMIN`. Responses never include password hashes or session versions. User responses have `Cache-Control: no-store`.
+
+| Method and route | Access | Result |
+| --- | --- | --- |
+| `GET /` | Public | `{ "message": "Camioane API" }` |
+| `GET /health` | Public | `{ "status": "ok" }`; does not query the database |
+| `POST /users/login` | Public | Authentication response below |
+| `GET /users/me` | Signed in | `{ user }` |
+| `GET /users` | Admin | `{ users }`, all accounts ordered by email |
+| `POST /users` | Admin | `201 { user }`; does not change the acting admin's session |
+| `PATCH /users/:id` | Admin | `{ user }` |
+| `DELETE /users/:id` | Admin | `204`, no response body |
+
+Public registration is removed: `POST /users/register` returns the standard JSON 404. Unknown routes also return JSON 404.
+
+Login accepts `{ email, password }` and returns:
 
 ```json
 {
-  "user": { "email": "driver@example.com" },
+  "user": { "id": "<uuid>", "email": "admin@example.com", "role": "ADMIN" },
   "accessToken": "<signed JWT>",
   "tokenType": "Bearer",
   "expiresIn": 3600
 }
 ```
 
-Send `Authorization: Bearer <accessToken>` to `GET /users/me`; it returns `{ "user": { "email": "driver@example.com" } }`. Tokens use HS256, email as `sub`, issuer `camioane-api`, and audience `camioane-frontend`. Authentication checks the signature, required claims, one-hour lifetime, and that the user still exists. User responses have `Cache-Control: no-store`.
+Send `Authorization: Bearer <accessToken>` for protected requests. Account creation accepts `{ email, password, role? }`, defaulting to `USER`. Updates accept one or more of `email`, `password`, and `role`; omit an unchanged password. An explicitly empty password is invalid. Unsupported fields are rejected.
 
-Errors are JSON `{ "error": "message" }`: `400` for invalid input or malformed JSON, `409` for an already registered email, `401` for incorrect credentials or invalid authentication, `413` for a body over 16 KiB, `415` for unsupported encodings, and a generic `500` for unexpected failures. Unknown emails and incorrect passwords return the same login error.
+Emails are trimmed, lowercased, unique, and at most 254 characters. Passwords contain 12–128 Unicode characters; spaces are preserved. Hashes use salted Argon2id with 19 MiB memory, two iterations, and parallelism one.
 
-Registration and login share a limit of 20 requests per IP per 15 minutes, including successful and invalid requests; exceeding it returns JSON `429` and a `Retry-After` header. The limiter uses an in-memory store for the current single-process server. A multi-instance deployment needs a shared store; configure proxy trust for the actual trusted proxy topology before deploying behind one.
+Errors are `{ "error": "message" }`:
 
-Routes delegate to the user controller for validation and responses, and to the user service for database/password operations. Authentication middleware attaches only the public user email to response locals. The shared Prisma client handles all database access.
+- `400`: invalid bodies, IDs, roles, credentials, or malformed JSON.
+- `401`: missing, invalid, expired, or revoked authentication; incorrect login credentials.
+- `403`: administrator access required.
+- `404`: missing account or route.
+- `409`: duplicate email, self-deletion/demotion, last-administrator protection, or repeated concurrent-write conflicts.
+- `413`: body over 16 KiB; `415`: unsupported encoding.
+- `429`: login rate limit; `500`: generic unexpected failure.
 
-Registration is open. This version has no email verification, roles, password reset, refresh tokens, or server-side logout. Clients sign out by discarding their token and sign in again after expiry. Other issued tokens remain usable until expiry while the user exists; changing the signing secret invalidates all existing tokens.
+Login is limited to 20 requests per IP per 15 minutes, including successful and invalid attempts. The limit is in memory and returns `Retry-After`. Multi-instance hosting requires a shared limiter store; configure proxy trust to match the actual trusted proxy topology before deployment.
 
-## Tests
+## Sessions and administrator safety
 
-Start the development database and apply migrations before running:
+JWTs use HS256, immutable user ID as `sub`, a private session-version claim, issuer `camioane-api`, audience `camioane-frontend`, and a one-hour lifetime. Middleware checks the account and session version against PostgreSQL on every request.
+
+Email, password, and role changes increment the session version, invalidating every existing token for that account. A no-op update does not. Deletion immediately invalidates access; recreating the same email receives a different ID. The user-management migration invalidates old email-based tokens, so existing clients must sign in again.
+
+Authorization is enforced server-side and rechecked within serializable CRUD transactions. An administrator cannot delete or demote their own account. Removing or demoting the last administrator is forbidden; serialization conflicts are retried up to three attempts. Password hashing occurs before the transaction.
+
+Logout discards the browser's token; a copied token remains valid until expiry or an account change. There are no refresh tokens, server-side logout, email verification, or password-recovery flows.
+
+## Database and migrations
+
+The local Compose defaults are database/user `camioane`, password `camioane_dev_password`, and port `5432` bound to localhost. The image extends PostgreSQL 18 Alpine with a readiness check. Keep `DATABASE_URL` aligned with `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_PORT`. Credentials apply only when initializing a new volume.
+
+`docker compose down` stops the database while preserving its named data volume. Do not use `down -v`, Prisma resets, or truncation for routine setup.
+
+`User` has UUID primary key, unique email, password hash, role defaulting to `USER`, and session version defaulting to zero. The management migration backfills IDs and defaults without replacing accounts or hashes. Reuse the client in `src/lib/prisma.ts`.
+
+For schema changes: check the intended development database, format/validate the schema, create a named migration with `npm run db:migrate -- --name <name> --create-only`, inspect its SQL, apply it, explicitly regenerate the client, and type-check. If the environment is non-interactive, generate SQL with `prisma migrate diff`, review and save it as a tracked migration, then apply with `prisma migrate deploy`. Never reset a database to resolve drift.
+
+## Checks
 
 ```sh
+npm run typecheck
+npm run prisma:validate
+npm run db:check
+npx prisma migrate status
 npm test
-npm run typecheck
 ```
 
-Tests use Node's built-in test runner, native `fetch`, and real PostgreSQL via the configured `DATABASE_URL`. They start servers on ephemeral loopback ports, generate an ephemeral signing secret, create uniquely named fixture users, and delete only those fixtures afterward. Run against a development database, not production. Tests do not modify `.env`, reset the database, or truncate tables. `npm run typecheck` also checks test code.
+Existing tests use Node's runner and the development PostgreSQL database, creating uniquely named fixtures with targeted cleanup. Run only against a development database. Test files were intentionally left unchanged for this integration: the legacy suite still expects open registration, email-only users, email-based JWTs, and a missing users-list route. Those expectations are obsolete; the suite is not a passing validation of the new management API. No new automated coverage was added.
 
-## PostgreSQL with Docker
+Verify the new API manually with disposable development accounts: bootstrap and idempotency, admin/non-admin access, CRUD and duplicate emails, validation and missing IDs, password/email/role session revocation, self-protection, concurrent administrator changes, and delete/recreate identity isolation. Clean up only the accounts created for verification. Never inspect logs unless explicitly requested.
 
-Install and start Docker Desktop with Linux containers enabled. From `backend`, build and start the database, waiting until it is healthy:
-
-```sh
-docker compose up --build -d --wait
-```
-
-`Dockerfile` extends the [official PostgreSQL 18 Alpine image](https://hub.docker.com/_/postgres) and adds a readiness check. Compose publishes it at `127.0.0.1:5432` and keeps its data in a named volume mounted at `/var/lib/postgresql`.
-
-The local defaults are database `camioane`, user `camioane`, and password `camioane_dev_password`. To customize them, update `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, or `POSTGRES_PORT` in `.env`. The example credentials are for local development. Keep `DATABASE_URL` in sync with those settings; URL-encode any special characters in its username or password.
-
-Inspect the container and logs:
-
-```sh
-docker compose ps
-docker compose logs -f postgres
-```
-
-Stop and remove the container while retaining database data:
-
-```sh
-docker compose down
-```
-
-Database credentials and the initial database name are applied only when the volume is first initialized. Changing `.env` afterward does not change existing database users or databases. `docker compose down -v` deletes the database volume and all its data; use it only when deliberately resetting the local database.
-
-## Prisma
-
-`prisma/schema.prisma` defines the PostgreSQL datasource and the `User` model. A user has two required fields: `email` (the primary key, so each address is unique) and `password` (for a password hash, never plaintext). Code that creates or updates users must hash passwords before saving them; Prisma does not hash them automatically. The initial migration creates the `User` table.
-
-`prisma.config.ts` loads `.env` with Node's built-in environment loader and supplies `DATABASE_URL` to the Prisma CLI. The shared client in `src/lib/prisma.ts` uses the [Prisma 7 PostgreSQL driver adapter](https://www.prisma.io/docs/orm/v7/core-concepts/supported-databases/database-drivers). Import that client in backend modules:
-
-```ts
-import { prisma } from './lib/prisma.ts';
-```
-
-`npm install` generates Prisma Client automatically in `src/generated/prisma`, which is excluded from Git. Generated imports use `.ts` extensions so Node.js can run them directly. After adding or changing models, run:
-
-```sh
-npm run db:migrate -- --name describe_your_change
-npm run prisma:generate
-```
-
-Commit the schema and generated migration files. Use `npm run db:check` to verify connectivity without modifying database data.
-
-## TypeScript
-
-Node.js runs the `.ts` source directly, with no build step. Run the type checker from `backend`:
-
-```sh
-npm run typecheck
-```
-
-Keep annotations minimal: type function inputs and data objects when needed, and let TypeScript infer local variables and return types.
-
-```ts
-function canCarry(weightKg: number) {
-  return weightKg <= 20000;
-}
-
-canCarry(15000); // OK
-// canCarry('15000'); // Type error if uncommented
-```
-
-Use `.ts` extensions in relative imports, such as `import app from './app.ts'`, and `import type` for type-only imports.
-
-The configuration enables strict checking and limits TypeScript syntax to what Node.js can strip, such as annotations, type aliases, and interfaces. `npm run dev` checks types continuously; `npm start` only runs the app. Types do not validate incoming API data at runtime.
+Other commands: `npm run dev:server`, `npm run typecheck:watch`, `npm run db:studio`, and `npm run prisma:generate`.

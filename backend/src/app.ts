@@ -10,7 +10,7 @@ export function createApp() {
   app.disable('x-powered-by');
   app.use(cors({
     origin: authConfig.frontendOrigin,
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   }));
 

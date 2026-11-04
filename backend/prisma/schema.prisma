@@ -10,8 +10,16 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
-  email    String @id
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String @unique
   /// Stores a password hash, never a plaintext password.
-  password String
+  password       String
+  role           Role   @default(USER)
+  sessionVersion Int    @default(0)
 }

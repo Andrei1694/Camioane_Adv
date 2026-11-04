@@ -19,12 +19,15 @@ scoped here unless the requested feature also requires changes elsewhere.
   administrators and their management workflows.
 - Use npm. Keep `package.json` and `package-lock.json` in sync when dependencies change.
 - `package.json` and the lockfile are authoritative for installed versions.
-- Zustand, TanStack Query, TanStack Router, and TanStack Table are installed but
-  not configured. The app renders a frontend-only Users prototype using React
-  state and a semantic table, with no routing, authentication, or API calls.
-- The Users page, create/edit form, validation, and storage helper live under
-  `src/pages/UsersPage/`. Demo email records persist under
-  `camioane.users-demo.v1`; password inputs are validated and discarded.
+- Zustand owns session state, TanStack Query owns API data and mutations, and
+  TanStack Router handles login, users, and access-denied navigation. The Users
+  page uses a semantic table; TanStack Table remains available but unconfigured.
+- The Users page and form live under `src/pages/UsersPage/`; shared types,
+  validation, API client and query client live under `src/lib/`.
+- Authentication lives under `src/auth/`. Only token/expiry persist under
+  `camioane.session.v1`. Always validate restored sessions with the API, cancel
+  requests and clear private cache on session changes, and preserve cross-tab logout.
+  Never read, migrate, or overwrite the old `camioane.users-demo.v1` data.
 - Styling currently uses plain CSS. No component library, form library, or test
   runner is configured.
 - The Express API lives in `../backend/`. Read its source and README when connecting
@@ -59,7 +62,7 @@ the build and lint checks were run.
   and unused-code checks. Do not weaken checks to make a change compile.
 - Use relative imports while no path alias is configured. Keep TypeScript and
   Vite resolution aligned if an alias is introduced.
-- `src/main.tsx` is the entry point, `src/App.tsx` is the current root component,
+- `src/main.tsx` is the entry point, `src/App.tsx` configures routes and providers,
   and `src/index.css` contains global styles. Add folders as features need them.
 - Keep effects for synchronization with external systems; derive values directly
   when they can be calculated from props or state.
@@ -89,9 +92,8 @@ the build and lint checks were run.
 - Use TanStack Query for API data, caching, and mutations. Avoid copying its
   cached server data into Zustand. Include request parameters in query keys and
   update or invalidate affected queries after successful mutations.
-- Use TanStack Router for application navigation. Configure its provider and
-  route tree when routing is introduced; file-route generation is not currently
-  configured.
+- Use the existing code-based TanStack Router tree for application navigation;
+  file-route generation is not configured.
 - Use TanStack Table for table behavior where needed. Verify APIs against the
   installed major version before using examples from another version.
 - Reuse existing integrations as they develop. Keep the router and query client
@@ -99,6 +101,9 @@ the build and lint checks were run.
 - Keep API calls in reusable typed modules or hooks. Check HTTP failures and
   propagate useful errors. Keep database access and private credentials in the
   backend; browser configuration, including `VITE_*` variables, is public.
+- `VITE_API_BASE_URL` defaults to localhost:3000 only in development; production
+  builds require an explicit value. Dev and preview use port 5173 with strict
+  port selection. Match the backend CORS origin when changing frontend hosting.
 
 ## UI and verification
 

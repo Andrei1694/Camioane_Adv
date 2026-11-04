@@ -18,12 +18,12 @@ scoped here unless the requested feature also requires changes elsewhere.
 - Use npm. Keep `package.json` and `package-lock.json` in sync when dependencies
   change; those files are authoritative for installed versions.
 - Node.js runs the `.ts` source directly. There is no compilation or build step.
-- CORS permits `FRONTEND_ORIGIN`; registration and login share an in-memory
+- CORS permits `FRONTEND_ORIGIN`; login has an in-memory
   limit of 20 requests per IP per 15 minutes. `pino` is not configured.
 - User authentication uses Argon2id password hashes and one-hour HS256 JWT
   bearer tokens. Require a random `JWT_SECRET` of at least 32 bytes at startup.
-- The Prisma schema defines `User` with `email` as the primary key and `password`
-  for a password hash. Its initial migration lives in `prisma/migrations/`.
+- The Prisma schema defines `User` with an immutable UUID primary key, unique
+  email, password hash, USER/ADMIN role, and private session version.
   Hash passwords before persisting them; Prisma does not hash automatically.
 - The browser frontend lives in `../frontend/`. Check its API consumers when
   changing response contracts, and document new endpoints in `README.md`.
@@ -49,6 +49,7 @@ Run these commands from `backend/`:
 | `npm run db:check` | Verify database connectivity with a read-only query |
 | `npm run db:migrate -- --name <name>` | Create and apply a migration to the development database |
 | `npm run db:studio` | Open Prisma Studio |
+| `npm run admin:bootstrap` | Interactively create or explicitly promote an administrator |
 | `docker compose down` | Stop and remove the local container while retaining its data volume |
 
 For a fresh checkout, copy `.env.example` to `.env` if it does not already exist.
@@ -80,7 +81,7 @@ database only; they insert and delete their own fixture users.
   in `src/controllers/user.controller.ts`, and Prisma/password operations in
   `src/services/user.service.ts`. Keep Express objects out of services.
 - Reuse `src/middleware/authenticate.ts` for protected routes. It verifies JWT
-  claims and checks that the user still exists. Public users contain only email;
+  claims and checks that the user and session version still match. Public users contain id, email, and role;
   never expose password hashes. Return errors as `{ "error": "message" }` through
   the centralized error handler.
 - `src/server.ts` validates the port, verifies database connectivity, starts the
@@ -88,8 +89,14 @@ database only; they insert and delete their own fixture users.
   disconnection on shutdown.
 - Register new routes before the final JSON 404 handler. Keep responses JSON and
   use appropriate HTTP status codes. Endpoints are `GET /` (API name),
-  `GET /health` (`{ "status": "ok" }`), `POST /users/register`, `POST /users/login`,
-  and protected `GET /users/me`. The health route does not query the database.
+  `GET /health` (`{ "status": "ok" }`), `POST /users/login`, protected
+  `GET /users/me`, and admin-only GET/POST `/users` and PATCH/DELETE `/users/:id`.
+  Public registration is removed. The health route does not query the database.
+- CRUD services recheck the actor and administrator invariants in serializable
+  transactions with bounded conflict retries. Keep password hashing outside those
+  transactions. Email/password/role changes increment the session version.
+- Bootstrap is a local interactive command, never an HTTP endpoint. Preserve hidden
+  password entry and explicit confirmation before promoting an existing account.
 - Validate incoming bodies, route parameters, and query parameters at runtime.
   TypeScript annotations do not validate external input. Keep internal errors and
   credentials out of API responses and logs.
@@ -183,6 +190,9 @@ migrations in this project.
 - For API changes, exercise the affected endpoints and relevant invalid-input
   and not-found cases. For server lifecycle changes, also check startup and clean
   shutdown. Report failed checks or checks that could not run.
+- The unchanged legacy integration tests expect public registration, email-only
+  users and old JWT claims. Report their known contract failures honestly;
+  do not rewrite tests without an explicit request.
 - For documentation-only changes, review accuracy and check whitespace;
   application startup and database changes are unnecessary.
 - If test tooling changes, document its commands here. Write or modify tests only

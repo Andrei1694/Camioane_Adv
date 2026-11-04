@@ -5,7 +5,7 @@
 }
 
 .product-name,
-.demo-note,
+.page-description,
 .field-hint,
 .users-table caption {
   color: var(--muted);
@@ -29,7 +29,7 @@ h1 {
   line-height: 1.25;
 }
 
-.demo-note {
+.page-description {
   margin-top: 8px;
 }
 
@@ -112,7 +112,8 @@ button:disabled {
   font-weight: 400;
 }
 
-.form-field input {
+.form-field input,
+.form-field select {
   display: block;
   width: 100%;
   min-height: 44px;
@@ -141,6 +142,57 @@ button:disabled {
   display: flex;
   gap: 8px;
   margin-top: 24px;
+}
+
+.session-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+  font-size: 14px;
+}
+
+.session-bar p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.session-bar button {
+  flex-shrink: 0;
+}
+
+.login-panel {
+  max-width: 460px;
+  margin-inline: auto;
+}
+
+.login-panel .form-field + .form-field {
+  margin-top: 20px;
+}
+
+.request-error {
+  margin-top: 20px;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.request-error button {
+  margin-top: 12px;
+}
+
+.loading-state {
+  padding-block: 32px;
+}
+
+.role-column {
+  width: 80px;
+}
+
+.form-field input:disabled,
+.form-field select:disabled {
+  color: var(--text);
+  background: var(--hover);
 }
 
 .users-table {

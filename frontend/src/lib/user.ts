@@ -1,5 +1,20 @@
+export type Role = 'USER' | 'ADMIN'
+
 export interface User {
+  id: string
   email: string
+  role: Role
+}
+
+export interface Credentials {
+  email: string
+  password: string
+}
+
+export interface UserInput {
+  email: string
+  role: Role
+  password?: string
 }
 
 export function normalizeEmail(email: string) {
@@ -10,4 +25,9 @@ export function getEmailError(email: string): string | undefined {
   if (!email) return 'Enter an email address.'
   if (email.length > 254) return 'Use an email address with 254 characters or fewer.'
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Enter a valid email address.'
+}
+
+export function getPasswordError(password: string): string | undefined {
+  const length = Array.from(password).length
+  if (length < 12 || length > 128) return 'Use a password with 12–128 characters.'
 }

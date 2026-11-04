@@ -96,7 +96,7 @@ database only; they insert and delete their own fixture users.
   `GET /health` (`{ "status": "ok" }`), `POST /users/login`, protected
   `GET /users/me`, admin-only GET/POST `/users` and PATCH/DELETE `/users/:id`,
   GET/PUT/DELETE `/users/:id/avatar` for the user or an active admin,
-  the `/files` routes, and the `/credits` routes listed in `README.md`.
+  the `/files` routes, the `/credits` routes, and the admin-only `/cars` routes listed in `README.md`.
   Public registration is removed. The health route does not query the database.
 - CRUD services recheck the actor and administrator invariants in serializable
   transactions with bounded conflict retries. Keep password hashing outside those
@@ -177,6 +177,21 @@ database only; they insert and delete their own fixture users.
   snapshotted on each purchase; never accept a price from the client.
 - The credits migration adds CHECK constraints that Prisma doesn't track; keep
   them in future migrations. Purchases and ledger rows use SET NULL on account deletion.
+
+### Cars
+
+- `/cars` routes live in `src/routes/car.routes.ts`, validation in
+  `src/lib/car-validation.ts`, and Prisma work in `src/services/car.service.ts`.
+  All routes are admin-only, and the service rechecks the actor in each `serializable` transaction.
+- `Car` holds identity (unique plate, `active`); `CarInfo` holds the details, one
+  row per car, `ON DELETE CASCADE`. Plates are stored normalized (spaces and
+  hyphens removed, uppercase ASCII letters and digits) so one truck can't be
+  entered twice with different spacing; keep that normalization in every write path.
+- Future records that refer to a car (bookings, controllers, availability) should
+  use `onDelete: Restrict`; cars in use are deactivated, not deleted.
+- The cars migration adds CHECK constraints that Prisma doesn't track; keep them in future migrations.
+- Shared validation helpers (`onlyKeys`, `parseInteger`, `parseText`,
+  `parseQueryInteger`, `uuidPattern`) live in `src/lib/validation.ts`.
 
 ## Database and configuration
 

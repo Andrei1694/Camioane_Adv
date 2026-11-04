@@ -119,6 +119,26 @@ model CreditPurchase {
   @@index([status, createdAt, id])
 }
 
+/// A truck in the fleet. Deactivate it instead of deleting it once other records reference it.
+model Car {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Uppercase letters and digits only; the API strips spaces and hyphens.
+  plate     String   @unique
+  active    Boolean  @default(true)
+  info      CarInfo?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+/// Descriptive details of a car; at most one row per car.
+model CarInfo {
+  carId String @id @db.Uuid
+  car   Car    @relation(fields: [carId], references: [id], onDelete: Cascade)
+  make  String
+  model String
+  year  Int
+}
+
 /// Append-only credit ledger. Corrections are new ADJUSTMENT rows, never edits.
 model CreditTransaction {
   id           String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid

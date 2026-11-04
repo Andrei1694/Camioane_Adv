@@ -79,6 +79,11 @@ Public users are `{ id, email, role, avatar }`, where `id` is an immutable UUID,
 | `POST /credits/purchases/:id/confirm` | Admin | Optional `{ reference }`; `{ purchase, transaction }`; pending → `PAID` and credits the owner |
 | `POST /credits/purchases/:id/fail` | Admin | `{ purchase }`; pending → `FAILED` |
 | `POST /credits/adjustments` | Admin | `{ userId, amount, note }`; `201 { transaction }` |
+| `GET /cars` | Admin | `{ cars, total }`, ordered by plate |
+| `GET /cars/:id` | Admin | `{ car }` |
+| `POST /cars` | Admin | `{ plate, active?, info? }`; `201 { car }` |
+| `PATCH /cars/:id` | Admin | One or more of `plate`, `active`, `info`; `{ car }` |
+| `DELETE /cars/:id` | Admin | `204`, no response body; also deletes the car's details |
 
 Public registration is removed: `POST /users/register` returns the standard JSON 404. Unknown routes also return JSON 404.
 
@@ -173,6 +178,18 @@ The ledger is append-only: corrections are new `ADJUSTMENT` rows. `User.creditBa
 
 Errors: `400` for invalid bodies, IDs, or query parameters; `403` for admin-only actions; `404` for missing or inaccessible purchases and users; `409` for insufficient credits, a balance over the INT4 maximum, invalid status changes, a deleted purchase owner, a reused payment reference, or repeated concurrent-write conflicts. Deleting a user sets `userId` to `null` on their purchases and ledger rows, so the financial history is kept. Their remaining balance is lost with the account.
 
+## Cars
+
+Cars are the fleet's trucks. An active administrator manages them; other roles have no access yet. A car is `{ id, plate, active, info, createdAt, updatedAt }`, where `info` is `null` or `{ make, model, year }`, and the timestamps are ISO strings. There is no driver, route, booking, controller, or availability link yet.
+
+- `plate` is required on creation and unique. The API removes spaces and hyphens and uppercases the rest, so `b-101 cmn` and `B 101 CMN` are both stored and returned as `B101CMN`. What remains must be 2–12 ASCII letters and digits.
+- `active` is a boolean that defaults to `true`. Deactivate a car rather than deleting it once other records refer to it.
+- `info` holds the descriptive details. When given, all three fields are required: `make` and `model` are trimmed and 1–64 characters, and `year` is a whole number from 1900 to next year. On `PATCH`, an `info` object replaces the details, or creates them, and `info: null` removes them (also when there are none).
+
+Every successful `PATCH` updates `updatedAt`. Deleting a car deletes its details too. `GET /cars` uses the same `limit`/`offset` rules as files. Responses have `Cache-Control: no-store`.
+
+Errors: `400` for invalid bodies, unsupported fields, malformed IDs, or query parameters; `403` for non-administrators; `404` for a missing car; `409` for a plate another car already has, or repeated concurrent-write conflicts. Every operation runs in a serializable transaction that rechecks the session and administrator validity.
+
 ## Sessions and administrator safety
 
 JWTs use HS256, immutable user ID as `sub`, a private session-version claim, issuer `camioane-api`, audience `camioane-frontend`, and a one-hour lifetime. Middleware checks the account and session version against PostgreSQL on every request.
@@ -200,6 +217,8 @@ The local Compose defaults are database/user `camioane`, password `camioane_dev_
 `UserAvatar` stores at most one profile picture per user: the user ID as primary key and foreign key (`ON DELETE CASCADE`), a unique provider/key pair, the MIME type, the byte count, and the time of the last upload. The user-avatars migration adds this table without changing existing data.
 
 `CreditPurchase` stores the owner (`ON DELETE SET NULL`), credits, unit price and total in minor units, currency, status (`PENDING`, `PAID`, `FAILED`, `CANCELED`), provider and provider payment ID (unique together), the settling admin, and timestamps. `CreditTransaction` is the append-only ledger: owner (`ON DELETE SET NULL`), signed amount, balance after the movement, type, an optional unique purchase link (one ledger row per purchase), the creating admin, a note, and a timestamp. `User.creditBalance` defaults to zero. The credits migration adds database CHECK constraints that Prisma schema syntax can't express: non-negative balances, positive purchase credits and prices, `amountMinor = credits × unitPriceMinor`, uppercase three-letter currencies, non-zero ledger amounts, and a purchase link on exactly the `PURCHASE` rows. Keep them in future migrations.
+
+`Car` stores a UUID ID, a unique plate, an `active` flag defaulting to `true`, and creation and update timestamps. `CarInfo` holds at most one row of details per car: the car ID as primary key and foreign key (`ON DELETE CASCADE`), make, model, and year. The cars migration adds CHECK constraints that Prisma schema syntax can't express: plates match `^[A-Z0-9]{2,12}$`, years are 1900–2100, and make and model aren't empty. Keep them in future migrations.
 
 `Role` has a UUID primary key, unique `name` constrained by the Prisma/PostgreSQL `RoleName` enum (`ADMIN`, `OPERATOR`, `DRIVER`, `USER`), `startDate` defaulting to creation time, nullable `endDate` for no expiry, and `activ` defaulting to `true`. Dates use PostgreSQL `TIMESTAMPTZ(3)` to represent instants with millisecond precision. The migration enforces `endDate > startDate` when an end date exists through the `Role_date_range_check` database constraint, which is not represented by Prisma schema syntax. Adding another role name requires a schema migration and corresponding API/frontend support.
 

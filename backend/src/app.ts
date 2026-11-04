@@ -4,6 +4,7 @@ import { authConfig } from './config/auth.ts';
 import { loadCreditConfig } from './config/credits.ts';
 import { createFileStorage, loadFileConfig } from './config/files.ts';
 import { errorHandler } from './middleware/error-handler.ts';
+import { createCarRouter } from './routes/car.routes.ts';
 import { createCreditRouter } from './routes/credit.routes.ts';
 import { createFileRouter } from './routes/file.routes.ts';
 import { createUserRouter } from './routes/user.routes.ts';
@@ -36,6 +37,7 @@ export function createApp(options: { fileStorage?: FileStorageRegistry; uploadMa
     fileConfig.ffprobePath,
   ));
   app.use('/credits', createCreditRouter(loadCreditConfig()));
+  app.use('/cars', createCarRouter());
 
   app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });

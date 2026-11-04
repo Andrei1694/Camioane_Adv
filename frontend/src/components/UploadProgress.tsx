@@ -1,4 +1,5 @@
-import { byteSize, byteSizeIn } from '../../../lib/format'
+import { byteSize, byteSizeIn } from '../lib/format'
+import './UploadProgress.css'
 
 export type Upload =
   | { file: File, phase: 'sending' | 'saving', sent: number }

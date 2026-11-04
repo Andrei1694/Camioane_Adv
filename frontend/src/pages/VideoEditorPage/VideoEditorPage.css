@@ -1,0 +1,391 @@
+/* The editor takes the full sheet, like the Files page. This chunk loads after App.css; selectors
+   still start at .video-editor so nothing here leaks into other pages. */
+.app-content:has(> .video-editor) {
+  max-width: none;
+}
+
+.video-editor {
+  font-size: 14px;
+}
+
+.video-editor .editor-back {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.video-editor .editor-back a {
+  color: var(--muted);
+}
+
+.video-editor .editor-file-name {
+  color: var(--text);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.video-editor .editor-note {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.video-editor .status-message {
+  color: var(--muted);
+}
+
+/* The outcome line's "Files" link reads as ink, not the browser's default blue. */
+.video-editor .status-message a {
+  color: var(--text);
+}
+
+.video-editor .editor-unsupported {
+  margin-top: 20px;
+}
+
+/* Preview: a fixed frame on --frame, so nothing shifts when the file lands --------------- */
+
+.video-editor .editor-preview {
+  display: grid;
+  place-items: center;
+  height: min(48dvh, 420px);
+  margin-top: 20px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--frame);
+}
+
+.video-editor .editor-preview video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.video-editor .preview-note,
+.video-editor .editor-preview .request-error {
+  margin: 0;
+  padding: 16px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.video-editor .editor-preview .request-error {
+  color: var(--danger);
+}
+
+/* The playhead slider spans the preview's width, a full-height row so it's easy to hit. */
+.video-editor .editor-scrubber {
+  display: block;
+  width: 100%;
+  height: 32px;
+  margin: 8px 0 0;
+  accent-color: var(--data);
+}
+
+/* Toolbar: play and the timecode, then cut, history and zoom groups ---------------------- */
+
+.video-editor .editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  margin-top: 16px;
+}
+
+.video-editor .toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.video-editor .zoom-group {
+  margin-left: auto;
+}
+
+/* "Pause" and "Play" share one width, so the timecode never jumps. */
+.video-editor .play-button {
+  min-width: 72px;
+}
+
+.video-editor .timecode {
+  min-width: 120px;
+}
+
+/* Timeline: the library's dark theme, redrawn with the app's tokens --------------------- */
+
+.video-editor .edit-timeline {
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.video-editor .timeline-editor {
+  width: 100%;
+  height: 100px;
+  color: var(--text);
+  background: var(--surface);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.video-editor .timeline-editor-time-unit {
+  border-right-color: var(--control-border);
+}
+
+.video-editor .timeline-editor-time-unit-scale {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.video-editor .timeline-editor-edit-row {
+  background-image: linear-gradient(var(--surface), var(--surface)), linear-gradient(90deg, var(--rule) 1px, transparent 0);
+}
+
+.video-editor .timeline-editor-action {
+  overflow: hidden;
+  border: 1px solid var(--data);
+  border-radius: 4px;
+  color: var(--data-ink);
+  background: var(--data-pale);
+  cursor: grab;
+}
+
+.video-editor .timeline-editor-action-selected {
+  color: var(--surface);
+  background: var(--data);
+}
+
+/* Each end carries a short grip instead of the library's faint triangle. */
+.video-editor .timeline-editor-action .timeline-editor-action-left-stretch,
+.video-editor .timeline-editor-action .timeline-editor-action-right-stretch {
+  cursor: ew-resize;
+}
+
+.video-editor .timeline-editor-action .timeline-editor-action-left-stretch::after,
+.video-editor .timeline-editor-action .timeline-editor-action-right-stretch::after {
+  width: 3px;
+  height: 20px;
+  border: 0;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+.video-editor .timeline-editor-action .timeline-editor-action-left-stretch::after {
+  left: 3px;
+}
+
+.video-editor .timeline-editor-action .timeline-editor-action-right-stretch::after {
+  right: 3px;
+}
+
+.video-editor .timeline-editor-cursor {
+  border-color: var(--primary);
+}
+
+.video-editor .timeline-editor-cursor-top path {
+  fill: var(--primary);
+}
+
+.video-editor .timeline-editor-drag-line {
+  border-left-color: var(--focus);
+}
+
+.video-editor .clip-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding-inline: 12px;
+  overflow: hidden;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.video-editor .clip-name {
+  font-weight: 600;
+}
+
+/* Segments table: the files table's rules ---------------------------------------------- */
+
+.video-editor .segments-frame {
+  margin-top: 32px;
+  container: segments / inline-size;
+}
+
+.video-editor .segments-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.video-editor .segments-table caption {
+  margin-bottom: 12px;
+  color: var(--text);
+  text-align: left;
+}
+
+.video-editor .segments-table th,
+.video-editor .segments-table td {
+  padding: 8px 12px;
+  border-top: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.video-editor .segments-table th:first-child,
+.video-editor .segments-table td:first-child {
+  padding-left: 0;
+}
+
+.video-editor .segments-table th:last-child,
+.video-editor .segments-table td:last-child {
+  padding-right: 0;
+}
+
+.video-editor .segments-table thead th {
+  padding-top: 0;
+  border-top: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.video-editor .segments-table .num {
+  text-align: right;
+}
+
+.video-editor .segments-table tr.is-selected > * {
+  background: var(--data-pale);
+}
+
+.video-editor .col-seconds {
+  width: 128px;
+}
+
+.video-editor .col-length {
+  width: 88px;
+}
+
+.video-editor .col-place {
+  width: 160px;
+}
+
+.video-editor .col-segment-actions {
+  width: 232px;
+}
+
+/* The row's name is its select button, its label lined up with the column edge. */
+.video-editor .segment-select {
+  margin-left: -12px;
+  color: var(--text);
+}
+
+.video-editor .segment-select[aria-pressed='true'] {
+  font-weight: 600;
+}
+
+.video-editor .seconds-input {
+  width: 96px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--surface);
+  text-align: right;
+}
+
+.video-editor .seconds-input:disabled {
+  border-color: var(--border);
+  color: var(--muted);
+  background: var(--hover);
+}
+
+.video-editor .segment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.video-editor .segments-note {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Below 720px of its own width, each segment becomes stacked lines: its name, the in and out
+   fields with their labels, the figures, then the actions. */
+@container segments (max-width: 720px) {
+  .video-editor .segments-table,
+  .video-editor .segments-table tbody,
+  .video-editor .segments-table caption {
+    display: block;
+  }
+
+  .video-editor .segments-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .video-editor .segments-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 12px 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .video-editor .segments-table th,
+  .video-editor .segments-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .video-editor .segments-table tbody th,
+  .video-editor .segments-table td:last-child {
+    flex: 1 1 100%;
+  }
+
+  .video-editor .segments-table .segment-select {
+    margin-left: 0;
+    padding-left: 0;
+  }
+
+  .video-editor .segments-table td[data-label]::before {
+    content: attr(data-label) ' ';
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .video-editor .segments-table .num {
+    text-align: left;
+  }
+
+  .video-editor .segment-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 767px) {
+  /* A phone-wide 16:9 video is about 200px tall; a shorter frame keeps the timeline near it. */
+  .video-editor .editor-preview {
+    height: min(40dvh, 280px);
+  }
+
+  .video-editor .seconds-input,
+  .video-editor .editor-scrubber {
+    min-height: 44px;
+  }
+
+  .video-editor .zoom-group {
+    margin-left: 0;
+  }
+}

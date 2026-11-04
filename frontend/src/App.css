@@ -212,6 +212,22 @@ button:disabled {
   background: transparent;
 }
 
+/* A row action that opens another page ("Edit") is a link in the ghost button's frame. */
+a.ghost-button {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--surface);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+a.ghost-button:hover {
+  background: var(--hover);
+}
+
 .danger {
   color: var(--danger);
 }

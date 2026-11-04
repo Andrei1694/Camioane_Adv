@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { fileKind, fileTypeLabel } from '../../../lib/file'
 import type { StoredFile } from '../../../lib/file'
 import { byteSize, formatCount, formatLocalDay, formatLocalTime, plural } from '../../../lib/format'
@@ -78,6 +79,11 @@ export default function FilesTable({ view, offset, pageSize, downloading, deleti
                       <button type="button" className="ghost-button" onClick={() => onPreview(file)}>
                         Preview<span className="sr-only"> {name}</span>
                       </button>
+                    )}
+                    {fileKind(file.mimeType) === 'video' && (
+                      <Link to="/files/$fileId/edit" params={{ fileId: file.id }} className="ghost-button">
+                        Edit<span className="sr-only"> {name}</span>
+                      </Link>
                     )}
                     <button type="button" className="text-button" disabled={downloading.has(file.id)} onClick={() => onDownload(file)}>
                       {downloading.has(file.id) ? 'Downloading…' : 'Download'}<span className="sr-only"> {name}</span>

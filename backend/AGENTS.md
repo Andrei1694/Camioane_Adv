@@ -23,7 +23,10 @@ scoped here unless the requested feature also requires changes elsewhere.
 - User authentication uses Argon2id password hashes and one-hour HS256 JWT
   bearer tokens. Require a random `JWT_SECRET` of at least 32 bytes at startup.
 - The Prisma schema defines `User` with an immutable UUID primary key, unique
-  email, password hash, USER/ADMIN role, and private session version.
+  email, password hash, required `roleId` relation, and private session version.
+  Shared `Role` records have UUID IDs, unique `RoleName` enum names, `startDate`,
+  nullable `endDate`, and `activ`. Names are ADMIN, OPERATOR, DRIVER, and USER.
+  Only ADMIN grants administrator access; other roles currently have profile access.
   Hash passwords before persisting them; Prisma does not hash automatically.
 - The browser frontend lives in `../frontend/`. Check its API consumers when
   changing response contracts, and document new endpoints in `README.md`.
@@ -70,7 +73,8 @@ database only; they insert and delete their own fixture users.
 - Use `.ts` extensions in relative imports and `import type` for type-only
   imports. No path aliases are configured.
 - Follow the strict TypeScript configuration and `erasableSyntaxOnly`. Avoid
-  syntax that requires transpilation, such as enums and parameter properties.
+  syntax that requires transpilation, such as TypeScript enums and parameter properties.
+  Prisma schema enums are supported; use their generated types and runtime constants.
   Do not weaken compiler checks to make a change compile.
 - Type function inputs and API boundaries; let TypeScript infer straightforward
   local values and return types. Avoid `any` and unnecessary type assertions.
@@ -88,20 +92,47 @@ database only; they insert and delete their own fixture users.
   HTTP server, and handles shutdown. Preserve startup failure handling and Prisma
   disconnection on shutdown.
 - Register new routes before the final JSON 404 handler. Keep responses JSON and
-  use appropriate HTTP status codes. Endpoints are `GET /` (API name),
+  use appropriate HTTP status codes, except for streamed file downloads. Endpoints are `GET /` (API name),
   `GET /health` (`{ "status": "ok" }`), `POST /users/login`, protected
   `GET /users/me`, and admin-only GET/POST `/users` and PATCH/DELETE `/users/:id`.
   Public registration is removed. The health route does not query the database.
 - CRUD services recheck the actor and administrator invariants in serializable
   transactions with bounded conflict retries. Keep password hashing outside those
   transactions. Email/password/role changes increment the session version.
+- Administrator access also requires the shared ADMIN role to satisfy
+  `activ && startDate <= now && (endDate === null || now < endDate)`.
+  Reuse `src/lib/role.ts` in middleware and transactional service checks.
+  Role validity never blocks login/profile access or role assignment; shared
+  lifecycle changes do not revoke sessions. Reactivation restores admin access
+  for otherwise valid sessions. Keep role IDs/dates out of public user responses.
+  Treat changes from ADMIN to any other role as demotions for administrator safety.
 - Bootstrap is a local interactive command, never an HTTP endpoint. Preserve hidden
   password entry and explicit confirmation before promoting an existing account.
+  Resolve the shared ADMIN record and reject a missing or unavailable role;
+  never silently create or reactivate it.
 - Validate incoming bodies, route parameters, and query parameters at runtime.
   TypeScript annotations do not validate external input. Keep internal errors and
   credentials out of API responses and logs.
 - Add folders and abstractions as features need them. Reuse installed libraries
   when suitable instead of introducing overlapping dependencies.
+
+### File uploads
+
+- `/files` provides authenticated upload/list, with download/delete by ID for the
+  owner or a currently valid ADMIN. Inaccessible IDs return 404. All roles retain
+  owner access even when their shared role is inactive or expired.
+- Keep `FileStorage` and its filesystem implementation independent of Express and
+  Prisma. Multer bridges streams to the configured provider; new providers must
+  preserve `put`, `open`, and idempotent `delete` behavior and partial-write cleanup.
+- Persist provider/key per file. Switching the upload provider must not reroute
+  existing files. Never expose storage paths/keys or serve the root statically.
+- Uploads accept one multipart `file`, no text fields, JPEG/PNG/WebP/MP4 signatures,
+  and a configurable 100 MiB default limit. Preserve streaming and bounded detection.
+- `UploadedFile.ownerId` uses SET NULL on account deletion: retain files for admins.
+  Storage I/O stays outside database transactions, with compensating cleanup after
+  failed metadata creation and object-first, retryable deletion.
+- Document configuration and consistency limitations in README.md. Keep uploaded
+  data ignored, preserve existing `.env`, and do not add tests unless requested.
 
 ## Database and configuration
 
@@ -109,6 +140,11 @@ database only; they insert and delete their own fixture users.
   client per request. It uses `@prisma/adapter-pg` and requires `DATABASE_URL`.
 - Define models in `prisma/schema.prisma`. CLI configuration and the datasource
   URL live in `prisma.config.ts`, which loads `.env` with Node's environment loader.
+- Role dates use `TIMESTAMPTZ(3)`; a migration-managed check constraint requires
+  `endDate > startDate` when non-null. Preserve this constraint in future migrations.
+  User creation defaults to USER in the API, then resolves its role ID in the
+  service; direct inserts must supply a role reference. Referenced roles cannot
+  be deleted. There are no role-management endpoints.
 - After model changes, create a named development migration and regenerate the
   client. Commit the schema and migration files under `prisma/migrations/`.
 - Do not edit or commit `src/generated/prisma/`. It is generated and ignored,
@@ -190,6 +226,9 @@ migrations in this project.
 - For API changes, exercise the affected endpoints and relevant invalid-input
   and not-found cases. For server lifecycle changes, also check startup and clean
   shutdown. Report failed checks or checks that could not run.
+- Verify changes to shared role validity only in an isolated development database
+  so existing accounts are not affected. Cover date boundaries, admin-only denial,
+  continued login/profile access, reactivation, and bootstrap rejection.
 - The unchanged legacy integration tests expect public registration, email-only
   users and old JWT claims. Report their known contract failures honestly;
   do not rewrite tests without an explicit request.

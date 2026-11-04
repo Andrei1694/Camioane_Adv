@@ -1,6 +1,6 @@
 import { errors, jwtVerify, SignJWT } from 'jose';
 import { authConfig } from '../config/auth.ts';
-import type { AuthenticationData, SessionIdentity, SessionUser } from '../types/user.ts';
+import type { AuthenticationData, PublicUser, SessionIdentity } from '../types/user.ts';
 import { AppError } from './app-error.ts';
 import { isUserId } from './user-validation.ts';
 
@@ -8,7 +8,7 @@ const issuer = 'camioane-api';
 const audience = 'camioane-frontend';
 const expiresIn = 3600;
 
-export async function createAuthenticationData(user: SessionUser): Promise<AuthenticationData> {
+export async function createAuthenticationData(user: PublicUser & SessionIdentity): Promise<AuthenticationData> {
   const accessToken = await new SignJWT({ sessionVersion: user.sessionVersion })
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
     .setSubject(user.id)

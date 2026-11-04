@@ -21,7 +21,7 @@ npm run admin:bootstrap
 npm run dev
 ```
 
-The bootstrap command requires an interactive terminal. It asks for an email and, for a new account, a hidden password and confirmation. For an existing ordinary account, it explicitly asks before granting administrator access and preserves the password. An existing administrator is left unchanged. Promotion invalidates existing sessions. There are no default accounts or passwords.
+The bootstrap command requires an interactive terminal. It asks for an email and, for a new account, a hidden password and confirmation. For an existing ordinary account, it explicitly asks before granting administrator access and preserves the password. An existing administrator is left unchanged. Promotion invalidates existing sessions. The shared `ADMIN` role must exist and be currently valid, including for an existing administrator; bootstrap reports an unavailable role without creating or reactivating it. There are no default accounts or passwords.
 
 The API listens on port 3000 by default. Compose runs PostgreSQL only. `npm run dev` runs the API watcher and type checker together; type errors do not prevent the server from starting. `npm start` runs without watchers.
 
@@ -33,6 +33,9 @@ The API listens on port 3000 by default. Compose runs PostgreSQL only. `npm run 
 | `DATABASE_URL` | Required PostgreSQL connection URL |
 | `JWT_SECRET` | Required random signing secret, at least 32 bytes |
 | `FRONTEND_ORIGIN` | Allowed HTTP(S) origin, default `http://localhost:5173`; no path or trailing slash |
+| `FILE_STORAGE_DRIVER` | Provider for new uploads, default `filesystem`; unknown providers fail startup |
+| `FILE_STORAGE_ROOT` | Private filesystem directory, default `./uploads`; relative to `backend/`, independent of the working directory |
+| `UPLOAD_MAX_FILE_SIZE_BYTES` | Maximum file bytes, default `104857600` (100 MiB); integer from 1 through 2147483647 |
 
 Existing environment variables take precedence over `.env`. CORS allows GET, POST, PATCH, DELETE, JSON, and Authorization headers from the configured origin. Authentication uses bearer tokens, not cookies. Keep private database credentials and signing keys out of frontend `VITE_*` configuration.
 
@@ -40,7 +43,7 @@ Production must set its actual frontend origin, configure HTTPS, and supply the 
 
 ## API
 
-Public users are `{ id, email, role }`, where `id` is an immutable UUID and `role` is `USER` or `ADMIN`. Responses never include password hashes or session versions. User responses have `Cache-Control: no-store`.
+Public users are `{ id, email, role }`, where `id` is an immutable UUID and `role` is `ADMIN`, `OPERATOR`, `DRIVER`, or `USER`. Roles are stored in a shared table, but API requests and responses use these enum names as strings. Only `ADMIN` grants account-management access; all roles can access their profile and manage their own uploaded files. Responses never include password hashes, session versions, role IDs, or role validity fields. User responses have `Cache-Control: no-store`. There are no role-management endpoints.
 
 | Method and route | Access | Result |
 | --- | --- | --- |
@@ -52,6 +55,10 @@ Public users are `{ id, email, role }`, where `id` is an immutable UUID and `rol
 | `POST /users` | Admin | `201 { user }`; does not change the acting admin's session |
 | `PATCH /users/:id` | Admin | `{ user }` |
 | `DELETE /users/:id` | Admin | `204`, no response body |
+| `POST /files` | Signed in | Multipart `file`; `201 { file }` |
+| `GET /files` | Signed in | `{ files, total }`; own files, or all files for an active admin |
+| `GET /files/:id/download` | Owner or active admin | Binary attachment with the detected MIME type |
+| `DELETE /files/:id` | Owner or active admin | `204`, no response body |
 
 Public registration is removed: `POST /users/register` returns the standard JSON 404. Unknown routes also return JSON 404.
 
@@ -74,13 +81,39 @@ Errors are `{ "error": "message" }`:
 
 - `400`: invalid bodies, IDs, roles, credentials, or malformed JSON.
 - `401`: missing, invalid, expired, or revoked authentication; incorrect login credentials.
-- `403`: administrator access required.
+- `403`: administrator access required, including when the shared `ADMIN` role is inactive, not yet started, or expired.
 - `404`: missing account or route.
-- `409`: duplicate email, self-deletion/demotion, last-administrator protection, or repeated concurrent-write conflicts.
+- `409`: duplicate email, self-deletion/demotion, last-administrator protection, missing role configuration, or repeated concurrent-write conflicts.
 - `413`: body over 16 KiB; `415`: unsupported encoding.
 - `429`: login rate limit; `500`: generic unexpected failure.
 
 Login is limited to 20 requests per IP per 15 minutes, including successful and invalid attempts. The limit is in memory and returns `Retry-After`. Multi-instance hosting requires a shared limiter store; configure proxy trust to match the actual trusted proxy topology before deployment.
+
+## Uploaded files
+
+Send exactly one nonempty file in the multipart field `file`, with no additional fields. The API accepts JPEG, PNG, WebP, and MP4, identified from a bounded 4100-byte content sample using `file-type`. The client-declared MIME type and filename extension do not determine acceptance. This detects format signatures; it does not validate entire media files, codecs, dimensions, duration, or suitability for a controller. There is no transcoding or campaign approval workflow in this API.
+
+```sh
+curl -H "Authorization: Bearer <accessToken>" -F "file=@advertisement.mp4" http://localhost:3000/files
+```
+
+Browser clients should send a `FormData` body and let the browser set the multipart `Content-Type` and boundary. Do not use the JSON request helper for file bodies. `downloadUrl` is relative to the API and also requires the bearer token; fetch it with authorization before creating a browser download.
+
+Public file metadata is `{ id, ownerId, originalName, mimeType, size, createdAt, downloadUrl }`. `size` is the actual byte count; `createdAt` is an ISO timestamp; `originalName` is a sanitized display/attachment filename. Storage paths, keys, and provider names are private. Deleting a user sets `ownerId` to `null` and retains their files for active administrators.
+
+`GET /files?limit=50&offset=0` paginates newest first, with descending IDs breaking timestamp ties. `limit` is 1–100 and `offset` is 0–2147483647; defaults are 50 and 0. Invalid, repeated, or unsupported query parameters return `400`. `total` counts only files visible to the current user. An inactive, future, or expired administrator retains ordinary owner access but cannot access other users' files. Missing and inaccessible file IDs both return `404`; malformed IDs return `400`.
+
+All file routes require a current session and return `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. Downloads are streamed as attachments with `Content-Length`; range playback is not implemented. Upload errors use the existing `{ error: message }` format: `400` for malformed multipart, missing/empty files, wrong fields, or additional parts; `413` for files over the configured limit; `415` for unsupported request/content types; and generic `500` for storage or database failures. Authentication runs before multipart parsing.
+
+### Storage providers
+
+`src/storage/file-storage.ts` defines the Express-independent `FileStorage` contract (`name`, `put`, `open`, `delete`) and `FileStorageRegistry`. `put` consumes a Node readable stream, honors cancellation, reports the actual byte count, and removes partial writes on failure. `open` opens a stream or throws `StorageNotFoundError`; `delete` succeeds when the object is already absent. The Multer adapter in `src/middleware/upload.ts` implements both storage-engine hooks and handles multipart cleanup. Files stream through bounded buffers rather than loading entire videos into memory.
+
+The filesystem provider writes exclusively to generated UUID keys beneath `FILE_STORAGE_ROOT`, creating the directory on first use. Client filenames cannot supply paths or overwrite objects. Keep the root private and writable by the API account; do not mount it with `express.static`. The default `uploads/` directory is ignored by Git. If a custom directory is inside a checkout, ignore it too. Use a persistent volume for deployment and back it up alongside file metadata; multiple API instances require a shared volume or a shared provider.
+
+To add S3, implement the same contract and register it in `createFileStorage` in `src/config/files.ts`, then select its name with `FILE_STORAGE_DRIVER`. Each metadata row retains its provider and key, so keep the filesystem provider registered and its root available while existing files remain there. Changing the selected provider affects new uploads only; it does not migrate old files. Controllers and HTTP response shapes stay unchanged. Factories accept injected storage, including `createApp({ fileStorage, uploadMaxFileSizeBytes })`, for isolated verification.
+
+Metadata is inserted only after successful storage. Failed metadata creation triggers object cleanup; malformed/interrupted uploads and storage failures clean up partial files. Deletion removes the object first, then metadata, so a database failure can be retried safely. Storage and PostgreSQL do not share a transaction: a process crash or failed compensating cleanup can leave orphaned objects, and a failed metadata deletion can leave a record whose content is missing. Automatic reconciliation and storage migration are not implemented. Retrying an upload after a lost success response may create another file.
 
 ## Sessions and administrator safety
 
@@ -88,7 +121,11 @@ JWTs use HS256, immutable user ID as `sub`, a private session-version claim, iss
 
 Email, password, and role changes increment the session version, invalidating every existing token for that account. A no-op update does not. Deletion immediately invalidates access; recreating the same email receives a different ID. The user-management migration invalidates old email-based tokens, so existing clients must sign in again.
 
-Authorization is enforced server-side and rechecked within serializable CRUD transactions. An administrator cannot delete or demote their own account. Removing or demoting the last administrator is forbidden; serialization conflicts are retried up to three attempts. Password hashing occurs before the transaction.
+Authorization is enforced server-side and rechecked within serializable CRUD transactions. An administrator cannot delete or demote their own account. Any change from `ADMIN` to another role is a demotion. Removing or demoting the last administrator is forbidden; serialization conflicts are retried up to three attempts. Password hashing occurs before the transaction.
+
+Administrator operations require a shared `ADMIN` role with `activ = true`, `startDate <= now`, and either no `endDate` or `now < endDate`. The start boundary is inclusive and the end boundary exclusive. Changing this shared role affects every administrator. Middleware reads the current role on each request, and services recheck validity inside their transactions; no scheduler or role claims in JWTs are involved.
+
+Role validity does not block login or `GET /users/me`, change the role name returned by the API, or prevent assignment of an existing role. For example, an expired administrator still receives `role: "ADMIN"` on login and profile responses, but administrator routes return `403`. Restoring role validity restores administrator access for otherwise valid sessions without signing in again. Role validity changes do not increment account session versions; changing a user's role assignment still does.
 
 Logout discards the browser's token; a copied token remains valid until expiry or an account change. There are no refresh tokens, server-side logout, email verification, or password-recovery flows.
 
@@ -98,7 +135,15 @@ The local Compose defaults are database/user `camioane`, password `camioane_dev_
 
 `docker compose down` stops the database while preserving its named data volume. Do not use `down -v`, Prisma resets, or truncation for routine setup.
 
-`User` has UUID primary key, unique email, password hash, role defaulting to `USER`, and session version defaulting to zero. The management migration backfills IDs and defaults without replacing accounts or hashes. Reuse the client in `src/lib/prisma.ts`.
+`User` has a UUID primary key, unique email, password hash, required indexed `roleId` foreign key, and session version defaulting to zero. User creation resolves the role name in the service and defaults to `USER` at the API boundary; direct database inserts must supply a role reference. Referenced roles cannot be deleted. Reuse the client in `src/lib/prisma.ts`.
+
+`UploadedFile` stores a UUID ID, optional owner relation (`ON DELETE SET NULL`), provider/key pair, sanitized original name, detected MIME type, integer byte count, and creation timestamp. Provider/key pairs are unique. Owner/time/ID and time/ID indexes support filtered and administrator listings. The uploaded-files migration adds this table and its indexes without changing existing user or role data.
+
+`Role` has a UUID primary key, unique `name` constrained by the Prisma/PostgreSQL `RoleName` enum (`ADMIN`, `OPERATOR`, `DRIVER`, `USER`), `startDate` defaulting to creation time, nullable `endDate` for no expiry, and `activ` defaulting to `true`. Dates use PostgreSQL `TIMESTAMPTZ(3)` to represent instants with millisecond precision. The migration enforces `endDate > startDate` when an end date exists through the `Role_date_range_check` database constraint, which is not represented by Prisma schema syntax. Adding another role name requires a schema migration and corresponding API/frontend support.
+
+The standalone-role migration seeds both built-in roles as active and open-ended, then maps existing enum assignments to their IDs before removing the old enum column and type. It preserves all account IDs, emails, password hashes, session versions, and assignments, so existing sessions remain valid. Lifecycle fields are shared role configuration rather than per-user assignment dates.
+
+The subsequent role-name migration converts existing names in place and adds active, open-ended `OPERATOR` and `DRIVER` records. It preserves existing role IDs, dates, active flags, and user assignments. Unsupported pre-existing names cause the transactional conversion to fail rather than discard data.
 
 For schema changes: check the intended development database, format/validate the schema, create a named migration with `npm run db:migrate -- --name <name> --create-only`, inspect its SQL, apply it, explicitly regenerate the client, and type-check. If the environment is non-interactive, generate SQL with `prisma migrate diff`, review and save it as a tracked migration, then apply with `prisma migrate deploy`. Never reset a database to resolve drift.
 
@@ -115,5 +160,7 @@ npm test
 Existing tests use Node's runner and the development PostgreSQL database, creating uniquely named fixtures with targeted cleanup. Run only against a development database. Test files were intentionally left unchanged for this integration: the legacy suite still expects open registration, email-only users, email-based JWTs, and a missing users-list route. Those expectations are obsolete; the suite is not a passing validation of the new management API. No new automated coverage was added.
 
 Verify the new API manually with disposable development accounts: bootstrap and idempotency, admin/non-admin access, CRUD and duplicate emails, validation and missing IDs, password/email/role session revocation, self-protection, concurrent administrator changes, and delete/recreate identity isolation. Clean up only the accounts created for verification. Never inspect logs unless explicitly requested.
+
+Verify role lifecycle changes in an isolated development database because modifying a shared role affects all its accounts. Check inactive, future, expired, bounded, and open-ended roles; exact start/end boundaries; login and profile availability; `403` responses for administrator operations; reactivation with an existing token; service-level enforcement; and bootstrap rejection without silently activating a role. Check migration preservation and the date-range and referenced-role deletion constraints as well.
 
 Other commands: `npm run dev:server`, `npm run typecheck:watch`, `npm run db:studio`, and `npm run prisma:generate`.

@@ -79,6 +79,10 @@ Public users are `{ id, email, role, avatar }`, where `id` is an immutable UUID,
 | `POST /credits/purchases/:id/confirm` | Admin | Optional `{ reference }`; `{ purchase, transaction }`; pending → `PAID` and credits the owner |
 | `POST /credits/purchases/:id/fail` | Admin | `{ purchase }`; pending → `FAILED` |
 | `POST /credits/adjustments` | Admin | `{ userId, amount, note }`; `201 { transaction }` |
+| `GET /config` | Admin | `{ entries }`, every setting ordered by key |
+| `GET /config/:key` | Admin | `{ entry }`; `404` when the key isn't set |
+| `PUT /config/:key` | Admin | `{ value }`; `201 { entry }` for a new key, `200 { entry }` when replacing one |
+| `DELETE /config/:key` | Admin | `204`, no response body; `404` when the key isn't set |
 
 Public registration is removed: `POST /users/register` returns the standard JSON 404. Unknown routes also return JSON 404.
 
@@ -173,6 +177,16 @@ The ledger is append-only: corrections are new `ADJUSTMENT` rows. `User.creditBa
 
 Errors: `400` for invalid bodies, IDs, or query parameters; `403` for admin-only actions; `404` for missing or inaccessible purchases and users; `409` for insufficient credits, a balance over the INT4 maximum, invalid status changes, a deleted purchase owner, a reused payment reference, or repeated concurrent-write conflicts. Deleting a user sets `userId` to `null` on their purchases and ledger rows, so the financial history is kept. Their remaining balance is lost with the account.
 
+## App config
+
+`AppConfig` is a key-value store for application settings that admins change at runtime. Environment variables still hold deployment configuration and secrets; don't store secrets here, since any admin can read every entry. Nothing reads these settings yet. Backend code can read one through `prisma.appConfig`.
+
+Entries are `{ key, value, updatedAt }`. Keys are 1–100 characters: lowercase letters, digits, dots, underscores, and hyphens, starting with a letter (for example `credits.min_purchase`). Values are any JSON except a top-level `null`: strings, numbers, booleans, arrays, or objects, nested at most 32 levels and sent in a body of at most 16 KiB. To clear a setting, delete its key. Values are stored as PostgreSQL `JSONB`, so object keys come back in JSONB's order rather than the order sent, and a repeated object key keeps its last value.
+
+`PUT` accepts only `{ value }`, creates or replaces the entry, and returns `201` the first time a key is set. Every operation runs in a serializable transaction that rechecks the session and administrator validity. Config responses have `Cache-Control: no-store`.
+
+Errors: `400` for an invalid key, a missing, `null`, or too deeply nested value, other body fields, or malformed JSON; `401` without a valid session; `403` for non-admins; `404` for keys that aren't set; `409` for repeated concurrent-write conflicts; `413` for bodies over 16 KiB.
+
 ## Sessions and administrator safety
 
 JWTs use HS256, immutable user ID as `sub`, a private session-version claim, issuer `camioane-api`, audience `camioane-frontend`, and a one-hour lifetime. Middleware checks the account and session version against PostgreSQL on every request.
@@ -201,6 +215,8 @@ The local Compose defaults are database/user `camioane`, password `camioane_dev_
 
 `CreditPurchase` stores the owner (`ON DELETE SET NULL`), credits, unit price and total in minor units, currency, status (`PENDING`, `PAID`, `FAILED`, `CANCELED`), provider and provider payment ID (unique together), the settling admin, and timestamps. `CreditTransaction` is the append-only ledger: owner (`ON DELETE SET NULL`), signed amount, balance after the movement, type, an optional unique purchase link (one ledger row per purchase), the creating admin, a note, and a timestamp. `User.creditBalance` defaults to zero. The credits migration adds database CHECK constraints that Prisma schema syntax can't express: non-negative balances, positive purchase credits and prices, `amountMinor = credits × unitPriceMinor`, uppercase three-letter currencies, non-zero ledger amounts, and a purchase link on exactly the `PURCHASE` rows. Keep them in future migrations.
 
+`AppConfig` stores one `JSONB` value per text `key` (the primary key), with creation and update timestamps. The app-config migration adds this table without changing existing data, plus two CHECK constraints that Prisma schema syntax can't express: `AppConfig_key_check` holds keys to the API's key format, and `AppConfig_value_check` rejects a top-level JSON `null`. Keep them in future migrations.
+
 `Role` has a UUID primary key, unique `name` constrained by the Prisma/PostgreSQL `RoleName` enum (`ADMIN`, `OPERATOR`, `DRIVER`, `USER`), `startDate` defaulting to creation time, nullable `endDate` for no expiry, and `activ` defaulting to `true`. Dates use PostgreSQL `TIMESTAMPTZ(3)` to represent instants with millisecond precision. The migration enforces `endDate > startDate` when an end date exists through the `Role_date_range_check` database constraint, which is not represented by Prisma schema syntax. Adding another role name requires a schema migration and corresponding API/frontend support.
 
 The standalone-role migration seeds both built-in roles as active and open-ended, then maps existing enum assignments to their IDs before removing the old enum column and type. It preserves all account IDs, emails, password hashes, session versions, and assignments, so existing sessions remain valid. Lifecycle fields are shared role configuration rather than per-user assignment dates.
@@ -221,7 +237,7 @@ npm test
 
 Tests use Node's runner and the migrated development PostgreSQL database, with the built-in roles present and the shared ADMIN role currently active. Each integration test seeds a uniquely named administrator and creates disposable accounts through the protected API. Cleanup removes only fixture accounts; tests do not modify shared roles or existing accounts. Run only against a development database.
 
-The suite covers administrator-created accounts, password hashing and validation, UUID/session-version JWTs, login-only rate limiting, profile and management permissions for all four roles, user listing and updates, duplicate emails, session revocation, delete/recreate identity isolation, administrator self-protection, removed public registration, CORS, and JSON errors. File and profile picture checks remain manual; no automated suite covers those APIs.
+The suite covers administrator-created accounts, password hashing and validation, UUID/session-version JWTs, login-only rate limiting, profile and management permissions for all four roles, user listing and updates, duplicate emails, session revocation, delete/recreate identity isolation, administrator self-protection, removed public registration, CORS, and JSON errors. File, profile picture, and app config checks remain manual; no automated suite covers those APIs.
 
 Verify the new API manually with disposable development accounts: bootstrap and idempotency, admin/non-admin access, CRUD and duplicate emails, validation and missing IDs, password/email/role session revocation, self-protection, concurrent administrator changes, and delete/recreate identity isolation. Clean up only the accounts created for verification. Never inspect logs unless explicitly requested.
 

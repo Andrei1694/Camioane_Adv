@@ -139,3 +139,12 @@ model CreditTransaction {
 
   @@index([userId, createdAt, id])
 }
+
+/// Admin-managed application settings, one JSON value per key. The migration
+/// adds CHECK constraints for the key format and against a top-level JSON null.
+model AppConfig {
+  key       String   @id
+  value     Json
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}

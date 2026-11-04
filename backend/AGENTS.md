@@ -96,7 +96,8 @@ database only; they insert and delete their own fixture users.
   `GET /health` (`{ "status": "ok" }`), `POST /users/login`, protected
   `GET /users/me`, admin-only GET/POST `/users` and PATCH/DELETE `/users/:id`,
   GET/PUT/DELETE `/users/:id/avatar` for the user or an active admin,
-  the `/files` routes, and the `/credits` routes listed in `README.md`.
+  the `/files` routes, the `/credits` routes, and the admin-only `/config` routes
+  listed in `README.md`.
   Public registration is removed. The health route does not query the database.
 - CRUD services recheck the actor and administrator invariants in serializable
   transactions with bounded conflict retries. Keep password hashing outside those
@@ -177,6 +178,17 @@ database only; they insert and delete their own fixture users.
   snapshotted on each purchase; never accept a price from the client.
 - The credits migration adds CHECK constraints that Prisma doesn't track; keep
   them in future migrations. Purchases and ledger rows use SET NULL on account deletion.
+
+### App config
+
+- `/config` routes live in `src/routes/config.routes.ts`, behind `authenticate` and
+  `requireAdmin`. Validation is in `src/lib/config-validation.ts` and Prisma work in
+  `src/services/config.service.ts`, which rechecks the admin in each `serializable` transaction.
+- `AppConfig` maps a text key to a `JSONB` value. Keep the key pattern in
+  `config-validation.ts` aligned with the `AppConfig_key_check` constraint, and keep
+  that constraint and `AppConfig_value_check` (no top-level JSON null) in future migrations.
+- It holds runtime settings only. Secrets and deployment settings stay in environment
+  variables, because every admin can read every entry.
 
 ## Database and configuration
 

@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Camioane App is the admin side of a business that sells advertising campaigns on LED-screen trucks running predefined routes. `BUSINESS_PLAN.md` (Romanian) holds the product requirements. So far the code covers authentication, user management, file uploads, a browser-side video editor for uploaded MP4s, a client-side route builder, and an admin dashboard UI that runs on sample data. Campaigns, credits, and payments are not built yet.
+Camioane App is the admin side of a business that sells advertising campaigns on LED-screen trucks running predefined routes. `BUSINESS_PLAN.md` (Romanian) holds the product requirements. So far the code covers authentication, user management, file uploads, a browser-side video editor for uploaded MP4s, a client-side route builder, an admin dashboard UI that runs on sample data, and a backend credit ledger whose purchases admins confirm by hand (no frontend for it yet). Campaigns and card payments are not built yet.
 
 Detailed rules live in `AGENTS.md` (root), `backend/AGENTS.md`, and `frontend/AGENTS.md`. **Read the AGENTS.md for a package before changing it.** The package READMEs document the API contract, environment variables, and setup. `DESIGN.md` (root) holds the frontend's visual system: tokens, type, layout, components, and data formatting.
 

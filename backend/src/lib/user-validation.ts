@@ -23,7 +23,7 @@ function parseRole(value: unknown): CreateUserData['role'] {
   return value;
 }
 
-function parseBody(body: unknown): Record<string, unknown> {
+export function parseBody(body: unknown): Record<string, unknown> {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
     throw new AppError(400, 'A JSON object is required');
   }

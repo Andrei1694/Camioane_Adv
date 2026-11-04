@@ -157,7 +157,9 @@ npx prisma migrate status
 npm test
 ```
 
-Existing tests use Node's runner and the development PostgreSQL database, creating uniquely named fixtures with targeted cleanup. Run only against a development database. Test files were intentionally left unchanged for this integration: the legacy suite still expects open registration, email-only users, email-based JWTs, and a missing users-list route. Those expectations are obsolete; the suite is not a passing validation of the new management API. No new automated coverage was added.
+Tests use Node's runner and the migrated development PostgreSQL database, with the built-in roles present and the shared ADMIN role currently active. Each integration test seeds a uniquely named administrator and creates disposable accounts through the protected API. Cleanup removes only fixture accounts; tests do not modify shared roles or existing accounts. Run only against a development database.
+
+The suite covers administrator-created accounts, password hashing and validation, UUID/session-version JWTs, login-only rate limiting, profile and management permissions for all four roles, user listing and updates, duplicate emails, session revocation, delete/recreate identity isolation, administrator self-protection, removed public registration, CORS, and JSON errors. File upload/deletion checks remain manual; no automated file API suite is included.
 
 Verify the new API manually with disposable development accounts: bootstrap and idempotency, admin/non-admin access, CRUD and duplicate emails, validation and missing IDs, password/email/role session revocation, self-protection, concurrent administrator changes, and delete/recreate identity isolation. Clean up only the accounts created for verification. Never inspect logs unless explicitly requested.
 

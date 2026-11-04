@@ -229,9 +229,11 @@ migrations in this project.
 - Verify changes to shared role validity only in an isolated development database
   so existing accounts are not affected. Cover date boundaries, admin-only denial,
   continued login/profile access, reactivation, and bootstrap rejection.
-- The unchanged legacy integration tests expect public registration, email-only
-  users and old JWT claims. Report their known contract failures honestly;
-  do not rewrite tests without an explicit request.
+- Integration tests cover the current authentication and user-management API.
+  They require a migrated development database with the built-in roles and a
+  currently active ADMIN role. Fixtures seed disposable administrators and use
+  the protected API for account creation; never change shared role lifecycle
+  settings or existing accounts to make tests pass. File API checks remain manual.
 - For documentation-only changes, review accuracy and check whitespace;
   application startup and database changes are unnecessary.
 - If test tooling changes, document its commands here. Write or modify tests only

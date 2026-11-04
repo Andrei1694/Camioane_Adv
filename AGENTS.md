@@ -31,7 +31,7 @@ Use two-space indentation, single quotes, and type-only imports. Backend code us
 
 ## Testing Guidelines
 
-Backend tests use `node:test`, `node:assert/strict`, and `tests/*.test.ts`. Integration tests require development PostgreSQL and isolated fixtures. Legacy tests expect obsolete registration/JWT contracts; report failures honestly. No coverage threshold or frontend test runner is configured. Verify frontend changes with build, lint, and browser interaction checks. Write or modify tests only when explicitly requested; inspect logs only when explicitly requested.
+Backend tests use `node:test`, `node:assert/strict`, and `tests/*.test.ts`. Integration tests cover the current authentication/user-management API and require migrated development PostgreSQL, built-in roles with an active ADMIN role, and isolated fixtures. No coverage threshold or frontend test runner is configured. Verify frontend changes with build, lint, and browser interaction checks. Write or modify tests only when explicitly requested; inspect logs only when explicitly requested.
 
 ## Commit & Pull Request Guidelines
 

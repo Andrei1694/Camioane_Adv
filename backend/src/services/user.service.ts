@@ -6,9 +6,10 @@ import { AppError } from '../lib/app-error.ts';
 import { createAuthenticationData } from '../lib/jwt.ts';
 import { prisma } from '../lib/prisma.ts';
 import { isRoleValid } from '../lib/role.ts';
+import type { StorageLocation } from '../types/file.ts';
 import type { CreateUserData, PublicUser, RoleName, SessionIdentity, SessionUser, UpdateUserData, UserCredentials, UserWithRole } from '../types/user.ts';
 
-const publicSelect = { id: true, email: true, role: true } as const;
+export const publicSelect = { id: true, email: true, role: true, avatar: { select: { updatedAt: true } } } as const;
 const sessionSelect = { ...publicSelect, sessionVersion: true } as const;
 const hashOptions = { type: argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 } satisfies HashOptions;
 let dummyHash: Promise<string> | undefined;
@@ -21,7 +22,12 @@ function getDummyHash() {
 }
 
 export function publicUser(user: UserWithRole): PublicUser {
-  return { id: user.id, email: user.email, role: user.role.name };
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role.name,
+    avatar: user.avatar ? { url: `/users/${user.id}/avatar`, updatedAt: user.avatar.updatedAt } : null,
+  };
 }
 
 export async function loginUser(credentials: UserCredentials) {
@@ -135,14 +141,20 @@ export async function updateUser(actor: SessionIdentity, id: string, data: Updat
   });
 }
 
-export function deleteUser(actor: SessionIdentity, id: string): Promise<void> {
+// Returns the deleted profile picture's location: the row cascades, but the
+// caller removes the stored object after the commit.
+export function deleteUser(actor: SessionIdentity, id: string): Promise<StorageLocation | null> {
   return transaction(async (tx) => {
     await requireAdministrator(tx, actor);
     if (id === actor.id) throw new AppError(409, 'You cannot delete your own account');
-    const target = await tx.user.findUnique({ where: { id }, select: publicSelect });
+    const target = await tx.user.findUnique({
+      where: { id },
+      select: { ...publicSelect, avatar: { select: { storageProvider: true, storageKey: true, updatedAt: true } } },
+    });
     if (!target) throw new AppError(404, 'User not found');
     await protectAdministrator(tx, target);
     await tx.user.delete({ where: { id } });
+    return target.avatar ? { provider: target.avatar.storageProvider, key: target.avatar.storageKey } : null;
   });
 }
 

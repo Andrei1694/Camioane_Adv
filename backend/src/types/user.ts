@@ -1,8 +1,13 @@
-import type { Role, User } from '../generated/prisma/client.ts';
+import type { Role, User, UserAvatar } from '../generated/prisma/client.ts';
 
 export type RoleName = Role['name'];
-export type PublicUser = Pick<User, 'id' | 'email'> & { role: RoleName };
-export type UserWithRole = Pick<User, 'id' | 'email'> & { role: Role };
+/** url is relative to the API and needs the bearer token; updatedAt changes with each upload. */
+export interface PublicAvatar {
+  url: string;
+  updatedAt: Date;
+}
+export type PublicUser = Pick<User, 'id' | 'email'> & { role: RoleName; avatar: PublicAvatar | null };
+export type UserWithRole = Pick<User, 'id' | 'email'> & { role: Role; avatar: Pick<UserAvatar, 'updatedAt'> | null };
 export type SessionUser = UserWithRole & Pick<User, 'sessionVersion'>;
 export type SessionIdentity = Pick<User, 'id' | 'sessionVersion'>;
 

@@ -66,7 +66,7 @@ async function createAccount(email = fixtureEmail(), userPassword = password, ro
   assert.deepEqual(Object.keys(data), ['user']);
   assert.match(data.user.id, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   assert.deepEqual(data.user, {
-    id: data.user.id, email: email.trim().toLowerCase(), role: role ?? 'USER',
+    id: data.user.id, email: email.trim().toLowerCase(), role: role ?? 'USER', avatar: null,
   });
   assert.equal(response.headers.get('cache-control'), 'no-store');
   const authentication = await login(data.user.email, userPassword);
@@ -115,7 +115,7 @@ describe('User authentication and management API', { concurrency: false }, () =>
     const user = await prisma.user.create({
       data: { email, password: fixturePasswordHash, roleId: adminRoleId },
     });
-    administrator = { id: user.id, email, role: 'ADMIN' };
+    administrator = { id: user.id, email, role: 'ADMIN', avatar: null };
     // Seed only a disposable administrator; setup must not consume login limits.
     adminToken = await signToken(user.id, { sessionVersion: user.sessionVersion });
     server = createApp().listen(0, '127.0.0.1');
@@ -166,7 +166,7 @@ describe('User authentication and management API', { concurrency: false }, () =>
 
     const me = await getMe(token);
     assert.equal(me.status, 200);
-    assert.deepEqual(await me.json(), { user: { id, email, role: 'USER' } });
+    assert.deepEqual(await me.json(), { user: { id, email, role: 'USER', avatar: null } });
     assert.equal(me.headers.get('cache-control'), 'no-store');
     const adminMe = await getMe(adminToken);
     assert.equal(adminMe.status, 200);
@@ -179,12 +179,12 @@ describe('User authentication and management API', { concurrency: false }, () =>
     assert.equal(response.status, 200);
     const data = await response.json();
     assert.deepEqual(Object.keys(data).sort(), ['accessToken', 'expiresIn', 'tokenType', 'user']);
-    assert.deepEqual(data.user, { id, email, role: 'USER' });
+    assert.deepEqual(data.user, { id, email, role: 'USER', avatar: null });
     assert.equal(data.tokenType, 'Bearer');
     assert.equal(data.expiresIn, 3600);
     const me = await getMe(data.accessToken);
     assert.equal(me.status, 200);
-    assert.deepEqual(await me.json(), { user: { id, email, role: 'USER' } });
+    assert.deepEqual(await me.json(), { user: { id, email, role: 'USER', avatar: null } });
 
     const trimmed = await post('/users/login', { email, password: password.trim() });
     assert.equal(trimmed.status, 401);
@@ -224,7 +224,7 @@ describe('User authentication and management API', { concurrency: false }, () =>
     for (const response of responses) {
       const data = await response.json();
       if (response.status === 409) assert.deepEqual(data, { error: 'Email is already registered' });
-      else assert.deepEqual(data.user, { id: data.user.id, email, role: 'USER' });
+      else assert.deepEqual(data.user, { id: data.user.id, email, role: 'USER', avatar: null });
     }
     assert.equal(await prisma.user.count({ where: { email } }), 1);
   });
@@ -255,7 +255,7 @@ describe('User authentication and management API', { concurrency: false }, () =>
       const { id, email } = await createAccount(fixtureEmail(), boundaryPassword);
       const response = await post('/users/login', { email, password: boundaryPassword });
       assert.equal(response.status, 200);
-      assert.deepEqual((await response.json()).user, { id, email, role: 'USER' });
+      assert.deepEqual((await response.json()).user, { id, email, role: 'USER', avatar: null });
     }
   });
 
@@ -372,7 +372,7 @@ describe('User authentication and management API', { concurrency: false }, () =>
       if (account) {
         const profile = await getMe(account.token);
         assert.equal(profile.status, 200);
-        assert.deepEqual(await profile.json(), { user: { id: account.id, email: account.email, role } });
+        assert.deepEqual(await profile.json(), { user: { id: account.id, email: account.email, role, avatar: null } });
       }
       for (const [method, path, body] of [
         ['GET', '/users', undefined],
@@ -407,7 +407,7 @@ describe('User authentication and management API', { concurrency: false }, () =>
     const data: { users: PublicUser[] } = await response.json();
     assert.deepEqual(Object.keys(data), ['users']);
     assert.ok(Array.isArray(data.users));
-    for (const user of data.users) assert.deepEqual(Object.keys(user).sort(), ['email', 'id', 'role']);
+    for (const user of data.users) assert.deepEqual(Object.keys(user).sort(), ['avatar', 'email', 'id', 'role']);
     const fixtures = data.users.filter(user => fixtureEmails.has(user.email));
     assert.deepEqual(fixtures, [...accounts, administrator].sort((left, right) => left.email.localeCompare(right.email)));
   });
@@ -421,7 +421,7 @@ describe('User authentication and management API', { concurrency: false }, () =>
       const change = { [field]: { email, password: userPassword, role }[field] };
       const response = await request('PATCH', `/users/${account.id}`, change, adminToken);
       assert.equal(response.status, 200);
-      const expected = { id: account.id, email, role };
+      const expected = { id: account.id, email, role, avatar: null };
       assert.deepEqual(await response.json(), { user: expected });
       const revoked = await getMe(account.token);
       assert.equal(revoked.status, 401);
@@ -453,7 +453,7 @@ describe('User authentication and management API', { concurrency: false }, () =>
       email: ` ${account.email.toUpperCase()} `, role: account.role,
     }, adminToken);
     assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { user: { id: account.id, email: account.email, role: account.role } });
+    assert.deepEqual(await response.json(), { user: { id: account.id, email: account.email, role: account.role, avatar: null } });
     const after = await prisma.user.findUniqueOrThrow({ where: { id: account.id } });
     assert.equal(after.password, before.password);
     assert.equal(after.sessionVersion, before.sessionVersion);
@@ -489,7 +489,7 @@ describe('User authentication and management API', { concurrency: false }, () =>
     assert.deepEqual(await response.json(), { error: 'Email is already registered' });
     const profile = await getMe(account.token);
     assert.equal(profile.status, 200);
-    assert.deepEqual(await profile.json(), { user: { id: account.id, email: account.email, role: 'USER' } });
+    assert.deepEqual(await profile.json(), { user: { id: account.id, email: account.email, role: 'USER', avatar: null } });
   });
 
   it('distinguishes malformed and missing IDs for updates and deletion', async () => {

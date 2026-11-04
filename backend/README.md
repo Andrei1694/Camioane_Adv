@@ -12,6 +12,8 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 
 Keep the generated secret in the local environment only.
 
+npm installs [sharp](https://sharp.pixelplumbing.com/), which re-encodes profile pictures, with a prebuilt libvips for Linux, macOS, and Windows; it needs no other system packages.
+
 Install FFmpeg so that `ffprobe` is available. The API checks MP4 uploads with it and refuses to start without it. On Windows, run `winget install Gyan.FFmpeg` and open a new terminal so `PATH` updates; on macOS, `brew install ffmpeg`; on Debian or Ubuntu, `sudo apt-get install ffmpeg`. If `ffprobe` isn't on `PATH`, set `FFPROBE_PATH` to the binary.
 
 Start Docker Desktop with Linux containers, then:
@@ -44,13 +46,13 @@ The API listens on port 3000 by default. Compose runs PostgreSQL only. `npm run 
 | `CREDIT_CURRENCY` | Three-letter uppercase currency code for credit purchases, default `EUR` |
 | `CREDIT_UNIT_PRICE_MINOR` | Price of one credit in the currency's minor unit (cents), default `100`; integer from 1 through 21474 |
 
-Existing environment variables take precedence over `.env`. CORS allows GET, POST, PATCH, DELETE, JSON, and Authorization headers from the configured origin. Authentication uses bearer tokens, not cookies. Keep private database credentials and signing keys out of frontend `VITE_*` configuration.
+Existing environment variables take precedence over `.env`. CORS allows GET, POST, PUT, PATCH, DELETE, JSON, and Authorization headers from the configured origin. Authentication uses bearer tokens, not cookies. Keep private database credentials and signing keys out of frontend `VITE_*` configuration.
 
 Production must set its actual frontend origin, configure HTTPS, and supply the actual API URL when building the frontend. When serving the frontend separately, configure its host to serve `index.html` for application routes such as `/users`. Deploy committed migrations with `npx prisma migrate deploy` and generate Prisma Client during installation/build. Do not run `migrate dev` in production.
 
 ## API
 
-Public users are `{ id, email, role }`, where `id` is an immutable UUID and `role` is `ADMIN`, `OPERATOR`, `DRIVER`, or `USER`. Roles are stored in a shared table, but API requests and responses use these enum names as strings. Only `ADMIN` grants account-management access; all roles can access their profile and manage their own uploaded files. Responses never include password hashes, session versions, role IDs, or role validity fields. User responses have `Cache-Control: no-store`. There are no role-management endpoints.
+Public users are `{ id, email, role, avatar }`, where `id` is an immutable UUID, `role` is `ADMIN`, `OPERATOR`, `DRIVER`, or `USER`, and `avatar` is `null` or `{ url, updatedAt }` (see [Profile pictures](#profile-pictures)). Roles are stored in a shared table, but API requests and responses use these enum names as strings. Only `ADMIN` grants account-management access; all roles can access their profile and manage their own uploaded files and profile picture. Responses never include password hashes, session versions, role IDs, or role validity fields. User responses have `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. There are no role-management endpoints.
 
 | Method and route | Access | Result |
 | --- | --- | --- |
@@ -61,7 +63,10 @@ Public users are `{ id, email, role }`, where `id` is an immutable UUID and `rol
 | `GET /users` | Admin | `{ users }`, all accounts ordered by email |
 | `POST /users` | Admin | `201 { user }`; does not change the acting admin's session |
 | `PATCH /users/:id` | Admin | `{ user }` |
-| `DELETE /users/:id` | Admin | `204`, no response body |
+| `DELETE /users/:id` | Admin | `204`, no response body; also deletes the user's profile picture |
+| `PUT /users/:id/avatar` | Self or active admin | Multipart `file` (JPEG, PNG, or WebP); `{ user }` |
+| `GET /users/:id/avatar` | Self or active admin | The picture as `image/webp`; `404` when there is none |
+| `DELETE /users/:id/avatar` | Self or active admin | `204`, also when there is no picture |
 | `POST /files` | Signed in | Multipart `file`; `201 { file }` |
 | `GET /files` | Signed in | `{ files, total }`; own files, or all files for an active admin |
 | `GET /files/:id/download` | Owner or active admin | Binary attachment with the detected MIME type |
@@ -81,7 +86,7 @@ Login accepts `{ email, password }` and returns:
 
 ```json
 {
-  "user": { "id": "<uuid>", "email": "admin@example.com", "role": "ADMIN" },
+  "user": { "id": "<uuid>", "email": "admin@example.com", "role": "ADMIN", "avatar": null },
   "accessToken": "<signed JWT>",
   "tokenType": "Bearer",
   "expiresIn": 3600
@@ -138,6 +143,20 @@ To add S3, implement the same contract and register it in `createFileStorage` in
 
 Metadata is inserted only after successful storage and, for MP4 files, a successful probe. A failed probe or failed metadata creation triggers object cleanup; malformed/interrupted uploads and storage failures clean up partial files. Deletion removes the object first, then metadata, so a database failure can be retried safely. Storage and PostgreSQL do not share a transaction: a process crash or failed compensating cleanup can leave orphaned objects, and a failed metadata deletion can leave a record whose content is missing. Automatic reconciliation and storage migration are not implemented. Retrying an upload after a lost success response may create another file.
 
+## Profile pictures
+
+`PUT /users/:id/avatar` sets or replaces a user's profile picture. Users can change their own, and a currently valid administrator can change anyone's. Send exactly one nonempty image in the multipart field `file`, with no other fields, as for file uploads. It must be JPEG, PNG, or WebP, detected from its content, and at most 10 MiB. The API decodes it with sharp, applies the EXIF orientation, crops it to a centered 512×512 square, and stores it as WebP. The uploaded file itself is never stored and no metadata is kept, so EXIF data such as GPS location is dropped. Images over 50 megapixels, or that can't be decoded, return `422`.
+
+```sh
+curl -X PUT -H "Authorization: Bearer <accessToken>" -F "file=@me.jpg" http://localhost:3000/users/<id>/avatar
+```
+
+The response is `{ user }` with the new `avatar`. In every public user, `avatar` is `null` or `{ url, updatedAt }`: `url` is `/users/<id>/avatar`, and `updatedAt` is the ISO time of the last upload, so it changes with each upload and works as a cache key. Like `downloadUrl` for files, `url` is relative to the API and needs the bearer token; browsers fetch it with authorization and show it through an object URL. `GET /users/:id/avatar` returns the image with `Content-Type: image/webp` and `Content-Length`, or `404` when the user has none. `DELETE /users/:id/avatar` returns `204`, also when there was no picture. Picture changes don't increment the session version, so they sign no one out.
+
+Access is checked before the upload is read: a malformed ID returns `400`, and a non-administrator naming another user gets `403`. A missing user returns `404`. Other upload errors match file uploads: `400` for malformed multipart, `413` over 10 MiB, and `415` for unsupported request or content types.
+
+Pictures use the provider selected for new uploads (`FILE_STORAGE_DRIVER`) under their own UUID keys, persist their provider and key, and never appear in `/files`. A replacement is saved in one serializable transaction, and the old object is deleted after it commits. Removing a picture deletes the object first, then the row, so a failed database delete can be retried. Deleting a user cascades to their picture's row, and the API deletes the object after the deletion commits. Those after-commit deletions are best effort: a failure is logged without details and leaves an orphaned object, never a broken picture. Concurrent changes to one user's picture are serialized; after three conflicting attempts the request returns `409`. Re-encoding happens in memory, so each upload in progress holds the original (up to 10 MiB) plus libvips' working memory. The image code lives in `src/lib/avatar-image.ts`.
+
 ## Credits
 
 Clients buy prepaid credits with money and will later spend them on campaigns. Credits are whole numbers. No card processor is integrated yet, so a purchase is settled by hand:
@@ -178,6 +197,8 @@ The local Compose defaults are database/user `camioane`, password `camioane_dev_
 
 `UploadedFile` stores a UUID ID, optional owner relation (`ON DELETE SET NULL`), provider/key pair, sanitized original name, detected MIME type, integer byte count, and creation timestamp. Provider/key pairs are unique. Owner/time/ID and time/ID indexes support filtered and administrator listings. The uploaded-files migration adds this table and its indexes without changing existing user or role data.
 
+`UserAvatar` stores at most one profile picture per user: the user ID as primary key and foreign key (`ON DELETE CASCADE`), a unique provider/key pair, the MIME type, the byte count, and the time of the last upload. The user-avatars migration adds this table without changing existing data.
+
 `CreditPurchase` stores the owner (`ON DELETE SET NULL`), credits, unit price and total in minor units, currency, status (`PENDING`, `PAID`, `FAILED`, `CANCELED`), provider and provider payment ID (unique together), the settling admin, and timestamps. `CreditTransaction` is the append-only ledger: owner (`ON DELETE SET NULL`), signed amount, balance after the movement, type, an optional unique purchase link (one ledger row per purchase), the creating admin, a note, and a timestamp. `User.creditBalance` defaults to zero. The credits migration adds database CHECK constraints that Prisma schema syntax can't express: non-negative balances, positive purchase credits and prices, `amountMinor = credits × unitPriceMinor`, uppercase three-letter currencies, non-zero ledger amounts, and a purchase link on exactly the `PURCHASE` rows. Keep them in future migrations.
 
 `Role` has a UUID primary key, unique `name` constrained by the Prisma/PostgreSQL `RoleName` enum (`ADMIN`, `OPERATOR`, `DRIVER`, `USER`), `startDate` defaulting to creation time, nullable `endDate` for no expiry, and `activ` defaulting to `true`. Dates use PostgreSQL `TIMESTAMPTZ(3)` to represent instants with millisecond precision. The migration enforces `endDate > startDate` when an end date exists through the `Role_date_range_check` database constraint, which is not represented by Prisma schema syntax. Adding another role name requires a schema migration and corresponding API/frontend support.
@@ -200,7 +221,7 @@ npm test
 
 Tests use Node's runner and the migrated development PostgreSQL database, with the built-in roles present and the shared ADMIN role currently active. Each integration test seeds a uniquely named administrator and creates disposable accounts through the protected API. Cleanup removes only fixture accounts; tests do not modify shared roles or existing accounts. Run only against a development database.
 
-The suite covers administrator-created accounts, password hashing and validation, UUID/session-version JWTs, login-only rate limiting, profile and management permissions for all four roles, user listing and updates, duplicate emails, session revocation, delete/recreate identity isolation, administrator self-protection, removed public registration, CORS, and JSON errors. File upload/deletion checks remain manual; no automated file API suite is included.
+The suite covers administrator-created accounts, password hashing and validation, UUID/session-version JWTs, login-only rate limiting, profile and management permissions for all four roles, user listing and updates, duplicate emails, session revocation, delete/recreate identity isolation, administrator self-protection, removed public registration, CORS, and JSON errors. File and profile picture checks remain manual; no automated suite covers those APIs.
 
 Verify the new API manually with disposable development accounts: bootstrap and idempotency, admin/non-admin access, CRUD and duplicate emails, validation and missing IDs, password/email/role session revocation, self-protection, concurrent administrator changes, and delete/recreate identity isolation. Clean up only the accounts created for verification. Never inspect logs unless explicitly requested.
 

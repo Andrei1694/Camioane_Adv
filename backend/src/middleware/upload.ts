@@ -6,14 +6,21 @@ import type { StorageEngine } from 'multer';
 import { validateUploadSize } from '../config/files.ts';
 import { AppError } from '../lib/app-error.ts';
 import { inspectUpload, sanitizeFilename } from '../lib/file-validation.ts';
+import type { UploadTypes } from '../lib/file-validation.ts';
 import type { FileStorage } from '../storage/file-storage.ts';
 import type { StoredUpload } from '../types/file.ts';
+
+export interface UploadOptions {
+  accept: UploadTypes;
+  /** Replaces the inspected body before storage, for example to re-encode an image. */
+  transform?: (body: Readable, signal: AbortSignal) => Promise<{ body: Readable; mimeType: string }>;
+}
 
 function asError(error: unknown) {
   return error instanceof Error ? error : new Error('Upload failed');
 }
 
-async function storeUpload(req: Request, file: Express.Multer.File, storage: FileStorage) {
+async function storeUpload(req: Request, file: Express.Multer.File, storage: FileStorage, options: UploadOptions) {
   const abort = new AbortController();
   const cancel = () => abort.abort(new AppError(400, 'Upload interrupted'));
   const limit = () => abort.abort(new multer.MulterError('LIMIT_FILE_SIZE'));
@@ -25,19 +32,21 @@ async function storeUpload(req: Request, file: Express.Multer.File, storage: Fil
   let stored = false;
   let body: Readable | undefined;
   try {
-    const inspected = await inspectUpload(file.stream, abort.signal);
+    const inspected = await inspectUpload(file.stream, abort.signal, options.accept);
     body = inspected.body;
-    const result = await storage.put({ key, body, contentType: inspected.mimeType, signal: abort.signal });
+    const prepared = options.transform ? await options.transform(inspected.body, abort.signal) : inspected;
+    body = prepared.body;
+    const result = await storage.put({ key, body, contentType: prepared.mimeType, signal: abort.signal });
     stored = true;
     abort.signal.throwIfAborted();
     const storedFile: StoredUpload = {
       provider: storage.name,
       key,
       originalName: sanitizeFilename(file.originalname),
-      mimeType: inspected.mimeType,
+      mimeType: prepared.mimeType,
       size: result.size,
     };
-    return { storedFile, size: result.size, mimetype: inspected.mimeType };
+    return { storedFile, size: result.size, mimetype: prepared.mimeType };
   } catch (error) {
     body?.destroy();
     file.stream.resume();
@@ -50,10 +59,10 @@ async function storeUpload(req: Request, file: Express.Multer.File, storage: Fil
   }
 }
 
-export function createUploadMiddleware(storage: FileStorage, maxFileSize: number): RequestHandler {
+export function createUploadMiddleware(storage: FileStorage, maxFileSize: number, options: UploadOptions): RequestHandler {
   const engine: StorageEngine = {
     _handleFile(req, file, callback) {
-      void storeUpload(req, file, storage).then(
+      void storeUpload(req, file, storage, options).then(
         (info) => callback(null, info),
         (error: unknown) => callback(asError(error)),
       );

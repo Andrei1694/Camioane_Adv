@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { createFileController } from '../controllers/file.controller.ts';
+import { fileUploadTypes } from '../lib/file-validation.ts';
 import { authenticate } from '../middleware/authenticate.ts';
 import { createUploadMiddleware } from '../middleware/upload.ts';
 import { createFileService } from '../services/file.service.ts';
@@ -13,7 +14,7 @@ export function createFileRouter(storage: FileStorageRegistry, maxFileSize: numb
     next();
   });
   router.use(authenticate);
-  router.post('/', createUploadMiddleware(storage.uploadStorage, maxFileSize), controller.create);
+  router.post('/', createUploadMiddleware(storage.uploadStorage, maxFileSize, { accept: fileUploadTypes }), controller.create);
   router.get('/', controller.list);
   router.get('/:id/download', controller.download);
   router.delete('/:id', controller.remove);

@@ -1,8 +1,9 @@
 import { Link } from '@tanstack/react-router'
 import { fileKind, fileTypeLabel } from '../../../lib/file'
 import type { StoredFile } from '../../../lib/file'
-import { byteSize, formatCount, formatLocalDay, formatLocalTime, plural } from '../../../lib/format'
-import OwnerLabel from './OwnerLabel'
+import { byteSize, formatLocalDay, formatLocalTime, plural } from '../../../lib/format'
+import OwnerLabel from '../../../components/OwnerLabel'
+import Pagination from '../../../components/Pagination'
 
 export type FilesView =
   | { status: 'loading' }
@@ -98,21 +99,8 @@ export default function FilesTable({ view, offset, pageSize, downloading, deleti
           })}
         </tbody>
       </table>
-      {view.status === 'ready' && view.total > pageSize && (
-        <nav className="files-pagination" aria-label="File pages">
-          <p className="num">
-            {formatCount(Math.min(offset + 1, view.total))}–{formatCount(Math.min(offset + pageSize, view.total))}
-            <span className="unit"> of {formatCount(view.total)}</span>
-          </p>
-          <div className="pagination-buttons">
-            <button type="button" className="ghost-button" disabled={offset === 0} onClick={() => onPage(Math.max(0, offset - pageSize))}>
-              Previous<span className="sr-only"> page</span>
-            </button>
-            <button type="button" className="ghost-button" disabled={offset + pageSize >= view.total} onClick={() => onPage(offset + pageSize)}>
-              Next<span className="sr-only"> page</span>
-            </button>
-          </div>
-        </nav>
+      {view.status === 'ready' && (
+        <Pagination offset={offset} pageSize={pageSize} total={view.total} label="File pages" onPage={onPage} />
       )}
     </div>
   )

@@ -6,7 +6,7 @@ import { fileKind, fileTypeLabel } from '../../../lib/file'
 import type { StoredFile } from '../../../lib/file'
 import { formatByteSize, formatLocalDay, formatLocalTime } from '../../../lib/format'
 import { saveBlob } from '../saveFile'
-import OwnerLabel from './OwnerLabel'
+import OwnerLabel from '../../../components/OwnerLabel'
 
 export default function FilePreviewDialog({ file, onClose }: { file: StoredFile, onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
@@ -47,17 +47,17 @@ export default function FilePreviewDialog({ file, onClose }: { file: StoredFile,
   const size = formatByteSize(file.size)
 
   return (
-    <dialog ref={dialog} className="preview-dialog" aria-labelledby={`${id}-title`} aria-describedby={`${id}-sub`} onClose={onClose}
+    <dialog ref={dialog} className="dialog preview-dialog" aria-labelledby={`${id}-title`} aria-describedby={`${id}-sub`} onClose={onClose}
       onClick={(event) => {
         if (event.target !== event.currentTarget) return
         const bounds = event.currentTarget.getBoundingClientRect()
         if (event.clientX < bounds.left || event.clientX > bounds.right
           || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.current?.close()
       }}>
-      <div className="preview-head">
+      <div className="dialog-head">
         <div>
           <h2 id={`${id}-title`}>{file.originalName}</h2>
-          <p className="preview-sub" id={`${id}-sub`}>
+          <p className="dialog-sub" id={`${id}-sub`}>
             {/* Non-breaking spaces keep each separator at the end of its line when the subline wraps. */}
             {fileTypeLabel(file.mimeType)}{'\u00a0· '}<span className="num">{size}</span>{'\u00a0· '}
             {formatLocalDay(file.createdAt)}, <span className="num">{formatLocalTime(file.createdAt)}</span>{'\u00a0· '}

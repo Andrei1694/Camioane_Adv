@@ -1,5 +1,5 @@
-import { useAdminAccess } from '../../../auth/adminAccess'
-import { useCurrentUser } from '../../../auth/currentUser'
+import { useAdminAccess } from '../auth/adminAccess'
+import { useCurrentUser } from '../auth/currentUser'
 
 /** The owner's email from the admin user list, "Deleted user" once the account is gone, or a dash. */
 export default function OwnerLabel({ ownerId }: { ownerId: string | null }) {

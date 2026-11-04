@@ -38,6 +38,12 @@ scoped here unless the requested feature also requires changes elsewhere.
   edit, replace or single-file endpoint. Check the library's behaviour in its
   `src/` before working around it: bars keep their own position state, and the
   ruler caches tick cells per zoom.
+- The Credits page lives under `src/pages/CreditsPage/` (admin-only at `/credits`)
+  and uses the real `/credits` API through the typed calls in `src/lib/api.ts`;
+  credit types, labels and limits live in `src/lib/credit.ts`. Keep every credits
+  query under `creditsKey(revision)` so one invalidation refreshes the page after an
+  action, and send 403s from its mutations through `handleAdminError`. The API has
+  no list of every account's balance; read one account at a time.
 - The admin dashboard lives under `src/pages/DashboardPage/` and runs on the
   invented rows in `sampleData.ts` until fleet, booking, creative and playback
   APIs exist. Its actions change local state only. Compute figures in

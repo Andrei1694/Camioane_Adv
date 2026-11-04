@@ -1,0 +1,437 @@
+/* The credits tables take the full sheet, like Files. This file loads before App.css,
+   so selectors that meet a shared primitive stay two classes deep to win ties. */
+.app-content:has(> .credits-page) {
+  max-width: none;
+}
+
+.credits-page {
+  font-size: 14px;
+}
+
+.credits-page .page-heading {
+  flex-wrap: wrap;
+}
+
+.credits-page .page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* The outcome line is one grey sentence under the title. */
+.credits-page .status-message {
+  color: var(--muted);
+}
+
+.credits-page h2 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.credits-page .credits-section {
+  margin-top: 32px;
+}
+
+.credits-page .credits-section + .credits-section {
+  margin-top: 48px;
+}
+
+/* History heading: the title, with the account filter on the same line. */
+.credits-page .section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+
+.credits-page .account-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.credits-page .account-filter label {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.credits-page .account-filter select {
+  width: min(320px, 100%);
+  min-width: 0;
+}
+
+.credits-page .account-balance {
+  margin-top: 8px;
+}
+
+.credits-page .balance-label {
+  color: var(--muted);
+}
+
+.credits-page .balance-figure {
+  font-weight: 500;
+}
+
+.credits-page .inline-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: 0;
+}
+
+.credits-page .inline-error button {
+  margin-top: 0;
+}
+
+.credits-page .tabs {
+  margin-top: 16px;
+}
+
+/* Credits tables: the files table's rules, with the account as the identity column ---------- */
+
+.credits-page .credits-frame {
+  margin-top: 16px;
+  container: credits / inline-size;
+}
+
+.credits-page .credits-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.credits-page .credits-table caption {
+  margin-bottom: 12px;
+  color: var(--muted);
+  text-align: left;
+}
+
+.credits-page .credits-table th,
+.credits-page .credits-table td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+.credits-page .credits-table th:first-child,
+.credits-page .credits-table td:first-child {
+  padding-left: 0;
+}
+
+.credits-page .credits-table th:last-child,
+.credits-page .credits-table td:last-child {
+  padding-right: 0;
+}
+
+.credits-page .credits-table thead th {
+  padding-top: 0;
+  border-top: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.credits-page .credits-table .num {
+  text-align: right;
+}
+
+.credits-page .credits-table tbody th {
+  font-weight: 500;
+}
+
+.credits-page .col-when {
+  width: 136px;
+}
+
+.credits-page .col-wait,
+.credits-page .col-credits,
+.credits-page .col-change {
+  width: 112px;
+}
+
+.credits-page .col-money,
+.credits-page .col-balance {
+  width: 136px;
+}
+
+.credits-page .col-review {
+  width: 96px;
+}
+
+.credits-page .col-note {
+  width: 30%;
+}
+
+/* Stamps keep their digits in columns without taking the figures' right alignment. */
+.credits-page .when-cell {
+  font-variant-numeric: tabular-nums;
+}
+
+.credits-page .owner-email,
+.credits-page .note-cell {
+  overflow-wrap: anywhere;
+}
+
+/* The email and its one pill share the first line; the pill never squeezes. */
+.credits-page .account-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+}
+
+.credits-page .reference {
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
+
+/* Labels that only the stacked rows need; the column headers carry them otherwise. */
+.credits-page .stack-label {
+  display: none;
+}
+
+/* 32px buttons sit centred on the first 21px text line of the row. */
+.credits-page .row-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-block: -5px;
+}
+
+.credits-page .state-cell .request-error {
+  margin-top: 0;
+}
+
+/* Below 760px of its own width, each row becomes stacked lines: the account, the figures,
+   then one line for each stamp, then the action. */
+@container credits (max-width: 760px) {
+  .credits-page .credits-table,
+  .credits-page .credits-table tbody,
+  .credits-page .credits-table caption {
+    display: block;
+  }
+
+  .credits-page .credits-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .credits-page .credits-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    padding: 12px 0;
+    border-top: 1px solid var(--rule);
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .credits-page .credits-table th,
+  .credits-page .credits-table td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .credits-page .credits-table .num {
+    text-align: left;
+  }
+
+  .credits-page .credits-table .account-cell,
+  .credits-page .credits-table .state-cell {
+    flex: 1 1 100%;
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  .credits-page .credits-table .stack-lead {
+    order: 1;
+    margin-top: 4px;
+    color: var(--text);
+  }
+
+  .credits-page .credits-table .stack-pair {
+    order: 2;
+    margin-top: 4px;
+    color: var(--text);
+  }
+
+  .credits-page .credits-table .stack-pair::before {
+    content: '·' / '';
+    padding-inline: 6px;
+    color: var(--muted);
+  }
+
+  .credits-page .credits-table .stack-line {
+    flex: 1 1 100%;
+    order: 3;
+    margin-top: 2px;
+  }
+
+  .credits-page .credits-table .actions-cell {
+    flex: 1 1 100%;
+    order: 4;
+    margin-top: 8px;
+  }
+
+  .credits-page .stack-label {
+    display: inline;
+    color: var(--muted);
+  }
+
+  .credits-page .when-cell .cell-sub {
+    display: inline;
+    margin: 0;
+    font-size: inherit;
+  }
+
+  .credits-page .when-cell .cell-sub::before {
+    content: ', ' / '';
+  }
+
+  /* A missing note or settlement is a dash in a column, but noise as a line of its own. */
+  .credits-page .credits-table .note-cell:has(> .missing),
+  .credits-page .credits-table .settled-cell:has(> .missing) {
+    display: none;
+  }
+
+  .credits-page .row-buttons {
+    justify-content: flex-start;
+    margin: 0;
+  }
+}
+
+/* Dialogs: the shared .dialog frame, with the review dialog's order ------------------------ */
+
+.credits-dialog .dialog-field {
+  margin-top: 20px;
+}
+
+.credits-dialog .dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.credits-dialog .request-error {
+  margin-top: 16px;
+}
+
+.credits-dialog .dialog-note {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.credits-dialog .inline-error {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.credits-dialog .inline-error .text-button {
+  margin-block: -6px;
+}
+
+/* Adjust: the account across the top, the change and its size side by side, then the note. */
+.credits-dialog .adjust-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.credits-dialog .adjust-account,
+.credits-dialog .adjust-note,
+.credits-dialog .adjust-error,
+.credits-dialog .adjust-actions {
+  grid-column: 1 / -1;
+}
+
+.credits-dialog .adjust-error,
+.credits-dialog .adjust-actions {
+  margin-top: 0;
+}
+
+.credits-dialog .field-hint .text-button,
+.credits-dialog .field-error .text-button {
+  min-height: 0;
+  padding: 0;
+  margin-left: 4px;
+  text-decoration: underline;
+}
+
+.credits-dialog .choice-field {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.credits-dialog .choice-field legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.credits-dialog .choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+}
+
+.credits-dialog .choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.credits-dialog .choice input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+@media (max-width: 767px) {
+  .credits-page .page-actions,
+  .credits-page .page-actions button {
+    flex: 1 1 auto;
+  }
+
+  .credits-page .page-actions {
+    width: 100%;
+  }
+
+  .credits-page .account-filter {
+    flex: 1 1 100%;
+  }
+
+  .credits-page .account-filter select {
+    flex: 1 1 auto;
+    width: auto;
+  }
+
+  .credits-dialog .adjust-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .credits-dialog .dialog-actions button {
+    flex: 1 1 100%;
+  }
+}

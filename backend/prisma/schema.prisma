@@ -10,16 +10,48 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  USER
+enum RoleName {
   ADMIN
+  OPERATOR
+  DRIVER
+  USER
+}
+
+model Role {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      RoleName  @unique
+  startDate DateTime  @default(now()) @db.Timestamptz(3)
+  /// A null end date means the role does not expire.
+  endDate   DateTime? @db.Timestamptz(3)
+  activ     Boolean   @default(true)
+  users     User[]
 }
 
 model User {
-  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email          String @unique
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String         @unique
   /// Stores a password hash, never a plaintext password.
   password       String
-  role           Role   @default(USER)
-  sessionVersion Int    @default(0)
+  roleId         String         @db.Uuid
+  role           Role           @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  sessionVersion Int            @default(0)
+  files          UploadedFile[]
+
+  @@index([roleId])
+}
+
+model UploadedFile {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId         String?  @db.Uuid
+  owner           User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  storageProvider String
+  storageKey      String
+  originalName    String
+  mimeType        String
+  size            Int
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([storageProvider, storageKey])
+  @@index([ownerId, createdAt, id])
+  @@index([createdAt, id])
 }

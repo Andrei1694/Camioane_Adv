@@ -23,6 +23,22 @@
   --focus: #245bba;
   --navigation-backdrop: rgb(32 32 32 / 35%);
 
+  /* Data and status colours. The brand cyan carries the data: #007c92 is #00c9e8 darkened to
+     4.9:1 on white, so it holds white labels. */
+  --data: #007c92;
+  --data-pale: #ddf5fa;
+  --data-ink: #12263a;
+  --negative: #c4242a;
+  --positive: #247b50;
+  --pill-positive-bg: #dcfae5;
+  --pill-positive-ink: #04250e;
+  --pill-negative-bg: #ffedea;
+  --pill-negative-ink: #831c1e;
+  --pill-warning-bg: #fffbeb;
+  --pill-warning-ink: #92400e;
+  --pill-neutral-bg: #eef1f3;
+  --rule: #eef1f3;
+
   color: var(--text);
   background: var(--surface);
 }

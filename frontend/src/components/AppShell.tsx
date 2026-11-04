@@ -51,6 +51,15 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
             Route builder
           </Link>
         )}
+        {canManage && (
+          <Link to="/files" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+              <path d="M14 3v5h5M9 13h6m-6 4h4" />
+            </svg>
+            Files
+          </Link>
+        )}
         {canManage ? (
           <Link to="/users" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

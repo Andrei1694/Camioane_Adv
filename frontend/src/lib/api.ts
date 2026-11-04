@@ -1,6 +1,7 @@
 import { sessionSignal, signOut, useSession } from '../auth/session'
 import { isRole } from './user'
 import type { Credentials, User, UserInput } from './user'
+import type { FilePage, StoredFile } from './file'
 
 export class ApiError extends Error {
   readonly status: number
@@ -45,13 +46,44 @@ interface RequestOptions {
   body?: unknown
   signal?: AbortSignal
   authenticated?: boolean
+  /** Milliseconds before the request gives up. JSON calls keep the 15 s default. */
+  timeout?: number
+  /** Read a successful body as a Blob. Error bodies are still read as JSON. */
+  binary?: boolean
 }
 
-async function request<T>(path: string, decode: (value: unknown) => T, options: RequestOptions = {}): Promise<T> {
+interface RequestContext {
+  token?: string
+  revision: number
+  globalSignal: AbortSignal
+}
+
+function begin(authenticated: boolean): RequestContext {
   const state = useSession.getState()
-  const token = options.authenticated === false ? undefined : state.session?.accessToken
-  const globalSignal = sessionSignal()
-  const signal = AbortSignal.any([globalSignal, AbortSignal.timeout(15_000), ...(options.signal ? [options.signal] : [])])
+  return { token: authenticated ? state.session?.accessToken : undefined, revision: state.revision, globalSignal: sessionSignal() }
+}
+
+// Shared by fetch and XHR: drops responses after a session change, signs out on 401, then decodes.
+function settle<T>(context: RequestContext, status: number, data: unknown, decode: (value: unknown) => T): T {
+  if (context.globalSignal.aborted || context.revision !== useSession.getState().revision) {
+    throw new DOMException('Session changed', 'AbortError')
+  }
+  if (status < 200 || status > 299) {
+    if (status === 401 && context.token) signOut('Your session is no longer valid. Please sign in again.')
+    const message = record(data) && typeof data.error === 'string' ? data.error : 'The request failed. Please try again.'
+    throw new ApiError(status, message)
+  }
+  return decode(data)
+}
+
+const cancelled = () => new DOMException('Request cancelled', 'AbortError')
+const unreachable = () => new ApiError(0, 'Could not reach the API. Check your connection and try again.')
+
+async function request<T>(path: string, decode: (value: unknown) => T, options: RequestOptions = {}): Promise<T> {
+  const context = begin(options.authenticated !== false)
+  const signal = AbortSignal.any([
+    context.globalSignal, AbortSignal.timeout(options.timeout ?? 15_000), ...(options.signal ? [options.signal] : []),
+  ])
   try {
     const response = await fetch(apiBase() + path, {
       method: options.method ?? 'GET',
@@ -59,27 +91,119 @@ async function request<T>(path: string, decode: (value: unknown) => T, options: 
       cache: 'no-store',
       headers: {
         ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
-        ...(token ? { Authorization: 'Bearer ' + token } : {}),
+        ...(context.token ? { Authorization: 'Bearer ' + context.token } : {}),
       },
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
       signal,
     })
-    const data: unknown = response.status === 204 ? undefined : await response.json().catch(() => undefined)
-    if (globalSignal.aborted || state.revision !== useSession.getState().revision) {
-      throw new DOMException('Session changed', 'AbortError')
-    }
-    if (!response.ok) {
-      if (response.status === 401 && token) signOut('Your session is no longer valid. Please sign in again.')
-      const message = record(data) && typeof data.error === 'string' ? data.error : 'The request failed. Please try again.'
-      throw new ApiError(response.status, message)
-    }
-    return decode(data)
+    const data: unknown = response.status === 204 ? undefined
+      : response.ok && options.binary ? await response.blob()
+      : await response.json().catch(() => undefined)
+    return settle(context, response.status, data, decode)
   } catch (error) {
     if (error instanceof ApiError) throw error
-    if (globalSignal.aborted || options.signal?.aborted) throw new DOMException('Request cancelled', 'AbortError')
+    if (context.globalSignal.aborted || options.signal?.aborted) throw cancelled()
     if (signal.aborted) throw new ApiError(0, 'The API took too long to respond. Please try again.')
-    throw new ApiError(0, 'Could not reach the API. Check your connection and try again.')
+    throw unreachable()
   }
+}
+
+export interface UploadOptions {
+  signal?: AbortSignal
+  /** Bytes of the file sent so far, scaled from the multipart body to the file's own size. */
+  onProgress?: (sent: number) => void
+  /** Every byte has been sent; the API is now checking and storing the file. */
+  onSent?: () => void
+}
+
+// fetch cannot report upload progress, so uploads use XMLHttpRequest with the same session rules.
+function upload<T>(path: string, file: File, decode: (value: unknown) => T, options: UploadOptions = {}): Promise<T> {
+  const context = begin(true)
+  return new Promise<T>((resolve, reject) => {
+    if (context.globalSignal.aborted || options.signal?.aborted) {
+      reject(cancelled())
+      return
+    }
+    let url: string
+    try {
+      url = apiBase() + path
+    } catch (error) {
+      reject(error)
+      return
+    }
+    const xhr = new XMLHttpRequest()
+    const signals = [context.globalSignal, ...(options.signal ? [options.signal] : [])]
+    const abort = () => xhr.abort()
+    signals.forEach((signal) => signal.addEventListener('abort', abort))
+    function done(outcome: () => T) {
+      signals.forEach((signal) => signal.removeEventListener('abort', abort))
+      try {
+        resolve(outcome())
+      } catch (error) {
+        reject(error)
+      }
+    }
+    xhr.open('POST', url)
+    xhr.responseType = 'json'
+    xhr.timeout = 30 * 60_000
+    if (context.token) xhr.setRequestHeader('Authorization', 'Bearer ' + context.token)
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && event.total > 0) {
+        options.onProgress?.(Math.min(file.size, Math.round((event.loaded / event.total) * file.size)))
+      }
+    }
+    xhr.upload.onload = () => options.onSent?.()
+    xhr.onload = () => done(() => {
+      const data: unknown = xhr.status === 204 ? undefined : xhr.response ?? undefined
+      return settle(context, xhr.status, data, decode)
+    })
+    xhr.onabort = () => done(() => { throw cancelled() })
+    xhr.ontimeout = () => done(() => { throw new ApiError(0, 'The upload took too long. Please try again.') })
+    xhr.onerror = () => done(() => { throw unreachable() })
+    // The browser sets the multipart Content-Type and boundary itself.
+    const body = new FormData()
+    body.append('file', file, file.name)
+    xhr.send(body)
+  })
+}
+
+function decodeFile(value: unknown): StoredFile {
+  if (!record(value) || typeof value.id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value.id)
+    || (value.ownerId !== null && typeof value.ownerId !== 'string')
+    || typeof value.originalName !== 'string' || typeof value.mimeType !== 'string'
+    || typeof value.size !== 'number' || !Number.isSafeInteger(value.size) || value.size < 0
+    || typeof value.createdAt !== 'string' || Number.isNaN(Date.parse(value.createdAt))
+    // The token goes wherever this path points, so accept only the file's own download route.
+    || value.downloadUrl !== '/files/' + value.id + '/download') {
+    throw new ApiError(0, 'The API returned an unexpected file response.')
+  }
+  return {
+    id: value.id,
+    ownerId: value.ownerId,
+    originalName: value.originalName,
+    mimeType: value.mimeType,
+    size: value.size,
+    createdAt: value.createdAt,
+    downloadUrl: '/files/' + value.id + '/download',
+  }
+}
+
+function decodeFileResponse(value: unknown) {
+  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  return decodeFile(value.file)
+}
+
+function decodeFilePage(value: unknown): FilePage {
+  if (!record(value) || !Array.isArray(value.files)
+    || typeof value.total !== 'number' || !Number.isSafeInteger(value.total) || value.total < 0) {
+    throw new ApiError(0, 'The API returned an unexpected files response.')
+  }
+  return { files: value.files.map(decodeFile), total: value.total }
+}
+
+function decodeBlob(value: unknown) {
+  if (!(value instanceof Blob)) throw new ApiError(0, 'The API returned an unexpected download.')
+  return value
 }
 
 export const api = {
@@ -98,6 +222,13 @@ export const api = {
   createUser: (data: UserInput) => request('/users', decodeUserResponse, { method: 'POST', body: data }),
   updateUser: (id: string, data: Partial<UserInput>) => request('/users/' + encodeURIComponent(id), decodeUserResponse, { method: 'PATCH', body: data }),
   deleteUser: (id: string) => request('/users/' + encodeURIComponent(id), () => undefined, { method: 'DELETE' }),
+  files: (page: { limit: number, offset: number }, signal: AbortSignal) => request(
+    '/files?' + new URLSearchParams({ limit: String(page.limit), offset: String(page.offset) }), decodeFilePage, { signal },
+  ),
+  uploadFile: (file: File, options?: UploadOptions) => upload('/files', file, decodeFileResponse, options),
+  // Downloads read the whole file into memory, so they get far longer than the JSON timeout.
+  downloadFile: (file: StoredFile, signal?: AbortSignal) => request(file.downloadUrl, decodeBlob, { signal, binary: true, timeout: 10 * 60_000 }),
+  deleteFile: (id: string) => request('/files/' + encodeURIComponent(id), () => undefined, { method: 'DELETE' }),
 }
 
 export function errorMessage(error: unknown) {

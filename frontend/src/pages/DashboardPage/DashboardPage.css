@@ -8,20 +8,7 @@
 }
 
 .dashboard {
-  /* The brand cyan carries the data. #007c92 is #00c9e8 darkened to 4.9:1 on white, so it holds white labels. */
-  --data: #007c92;
-  --data-pale: #ddf5fa;
-  --data-ink: #12263a;
-  --negative: #c4242a;
-  --positive: #247b50;
-  --pill-positive-bg: #dcfae5;
-  --pill-positive-ink: #04250e;
-  --pill-negative-bg: #ffedea;
-  --pill-negative-ink: #831c1e;
-  --pill-warning-bg: #fffbeb;
-  --pill-warning-ink: #92400e;
-  --pill-neutral-bg: #eef1f3;
-  --rule: #eef1f3;
+  /* Colour tokens live on :root in index.css; layout tokens stay with the dashboard. */
   --gap: 20px;
   --card-pad: 20px;
   --radius-card: 10px;
@@ -32,26 +19,9 @@
   font-size: 14px;
 }
 
-.dashboard .num {
-  font-variant-numeric: tabular-nums;
-}
-
-.dashboard .unit {
-  color: var(--muted);
-}
-
 .dashboard .plate {
   font-family: var(--mono);
   font-size: 13px;
-}
-
-.dashboard .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 .dashboard p,
@@ -519,25 +489,6 @@
   white-space: nowrap;
 }
 
-.dashboard .ghost-button,
-.dashboard .text-button {
-  min-height: 32px;
-  padding: 4px 12px;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.dashboard .text-button,
-.review-dialog .text-button {
-  border-color: transparent;
-  background: transparent;
-}
-
-.dashboard .danger,
-.review-dialog .danger {
-  color: var(--danger);
-}
-
 .pill {
   display: inline-flex;
   flex: none;
@@ -568,13 +519,6 @@
 .pill-neutral {
   color: var(--text);
   background: var(--pill-neutral-bg);
-}
-
-.empty-state {
-  padding: 10px 12px;
-  border: 1px dashed var(--control-border);
-  border-radius: 8px;
-  color: var(--muted);
 }
 
 /* Tabs: a 2px underline in the data hue on the selected queue. */
@@ -666,14 +610,6 @@
   display: block;
 }
 
-.cell-sub {
-  display: block;
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 400;
-}
-
 .share-track {
   display: block;
   width: 100%;
@@ -695,16 +631,9 @@
   color: var(--negative);
 }
 
-.missing {
-  color: var(--muted);
-}
-
 /* Review dialog ------------------------------------------------------------------------ */
 
 .review-dialog {
-  --rule: #eef1f3;
-  --negative: #c4242a;
-
   width: min(720px, calc(100% - 32px));
   max-width: none;
   max-height: calc(100dvh - 32px);
@@ -727,11 +656,6 @@
   margin: 0;
 }
 
-.review-dialog .num {
-  font-variant-numeric: tabular-nums;
-}
-
-.review-dialog .unit,
 .review-dialog .cell-sub,
 .review-dialog .row-meta {
   color: var(--muted);
@@ -762,27 +686,6 @@
 .review-sub {
   margin-top: 4px;
   color: var(--muted);
-}
-
-.icon-button {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  min-height: 40px;
-  padding: 8px;
-  border-color: transparent;
-  background: transparent;
-}
-
-.icon-button svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
 }
 
 .review-checks {
@@ -1105,8 +1008,6 @@
     font-size: 24px;
   }
 
-  .dashboard .ghost-button,
-  .dashboard .text-button,
   .dashboard .tab {
     min-height: 44px;
   }

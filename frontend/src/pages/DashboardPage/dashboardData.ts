@@ -1,3 +1,4 @@
+import { formatCount, plural } from '../../lib/format'
 import { asOf, campaigns, cars, clients, operatingDay, peakWindow, routes } from './sampleData'
 import type {
   Booking, BookingRequest, CancellationRequest, Car, Client, Commitment, Confirmation, Creative, CreativeStatus, FleetRoute, RouteId,
@@ -40,12 +41,13 @@ export function campaignOf(booking: Booking) {
 
 // Formatting ---------------------------------------------------------------------------------
 
-const integer = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 })
+// Counts and plurals are shared with other pages; re-exported so dashboard imports stay in one place.
+export { formatCount, plural }
+
 const oneDecimal = new Intl.NumberFormat('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 const dayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
 const longDayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
 
-export const formatCount = (value: number) => integer.format(value)
 /** Car-hours from minutes, to one decimal, the way the screen shows them. */
 export const formatHours = (mins: number) => oneDecimal.format(mins / 60)
 export const formatHourValue = (hours: number) => oneDecimal.format(hours)
@@ -69,10 +71,6 @@ export function waitingFor(iso: string) {
   const hours = Math.floor((mins % 1440) / 60)
   if (days > 0) return `${days} d ${hours} h`
   return hours > 0 ? `${hours} h ${mins % 60} min` : `${mins} min`
-}
-
-export function plural(count: number, one: string, many = `${one}s`) {
-  return `${formatCount(count)} ${count === 1 ? one : many}`
 }
 
 /** Rounds to one decimal the way formatHours does, for sums that must match what is shown. */

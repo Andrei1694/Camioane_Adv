@@ -29,13 +29,14 @@ Production has no localhost fallback. For a local production preview, build with
 
 - `/` redirects to login or the appropriate signed-in view.
 - `/login` accepts existing accounts only; account creation is administrator-controlled.
+- `/files` lists, uploads, previews, downloads and deletes uploaded images and videos; it requires administrator access.
 - `/users` requires administrator access.
 - `/routes` opens the administrator-only route builder.
 - `/access-denied` explains missing management access and lets Admin accounts retry their access check. Successful revalidation returns to `/users`; sign-out remains available in navigation.
 
 Signed-in views share a sidebar with role-aware navigation, the verified account email and role, and sign-out. Below 768px, navigation opens in a modal drawer with keyboard focus containment, Escape/backdrop dismissal, and focus restoration. A skip link moves keyboard users directly to the page content. Login and session-verification screens keep their standalone layout.
 
-The assigned role name is separate from verified management access. After `GET /users/me` verifies an Admin account, one shared `GET /users` query checks administrator access and supplies the Users table. Both `/users` and `/routes`, including their navigation links, require a successful access check. Non-admin accounts never request the administrator user list.
+The assigned role name is separate from verified management access. After `GET /users/me` verifies an Admin account, one shared `GET /users` query checks administrator access and supplies the Users table. `/dashboard`, `/files`, `/users` and `/routes`, including their navigation links, require a successful access check. Non-admin accounts never request the administrator user list.
 
 Access is rechecked on page entry, window focus/tab visibility, reconnect, and manual retry, without polling. A `403` from a list or management mutation discards cached users and redirects to account access without signing out. Inactive, future, and expired Admin roles still allow login/profile access; reactivating the shared role allows access to be restored with the same unexpired session. The UI cannot distinguish the reason for denial because the API exposes role names only, not IDs, active flags, or validity dates. Role changes become visible at the next access check or management API response.
 
@@ -54,6 +55,16 @@ Save and Delete update the table only after server success and refresh the share
 TanStack Query owns API data, Zustand owns session state, and TanStack Router owns navigation. The API client and shared user types live in `src/lib/`; session behavior lives in `src/auth/`. The Users page and its form remain under `src/pages/UsersPage/`. Styling stays in plain CSS.
 
 The previous `camioane.users-demo.v1` local-storage data is neither read, modified, nor imported. Demo users are not backend accounts.
+
+## Files
+
+Open **Files** in the sidebar, or visit `/files` as an administrator. The page uses the backend's `/files` API, so an active admin sees every user's files, newest first, 50 per page with Previous and Next. Each row shows the name and type, the owner's email from the shared users query ("Deleted user" once the account is gone), the local upload day and time, and the size in decimal units.
+
+- **Upload file** opens a picker limited to JPEG, PNG, WebP and MP4, one file at a time. A file whose declared type is something else, or that is empty, is refused before any byte is sent; the API still checks the content of everything else. Uploads go through `XMLHttpRequest` in `src/lib/api.ts`, because `fetch` cannot report upload progress. The block shows "12.4 of 48.0 MB · 26%", then "Checking and saving…" once every byte is sent, with Cancel. Leaving the page during an upload asks first and cancels it. Failures stay in the block; Retry appears only for network, conflict and server errors.
+- **Preview** opens a dialog that fetches that one file with the bearer token and shows the image or plays the video, with Download reusing the loaded file. **Download** fetches the file and saves it under its original name. Both load the whole file into memory: the API has no thumbnails or range playback.
+- **Delete** asks for confirmation naming the file. The API deletes for its owner too.
+
+Formats, sizes and owners are not filtered or searched: the API supports only `limit` and `offset`.
 
 ## Route builder
 

@@ -1,9 +1,9 @@
 .app-shell {
-  /* The 232px sidebar and flexible sheet share the viewport; the sheet has an 8px outer inset. */
+  /* 228px navigation + flexible work area + the sheet's 8px outer inset = viewport. */
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
+  grid-template-columns: 228px minmax(0, 1fr);
   min-height: 100dvh;
-  background: var(--hover);
+  background: var(--ground);
 }
 
 .app-sidebar {
@@ -11,9 +11,9 @@
   top: 0;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 28px;
   height: 100dvh;
-  padding: 32px 16px 20px;
+  padding: 16px 14px 20px;
   overflow-y: auto;
 }
 
@@ -26,7 +26,18 @@
   font-size: 18px;
   font-weight: 600;
   text-decoration: none;
+  gap: 9px;
 }
+
+.brand-mark { width: 30px; height: 30px; color: var(--accent); flex: none; }
+.brand-app { font-weight: 400; }
+.sidebar-workspace { display: flex; align-items: center; gap: 10px; margin: 0 12px; font-size: 13px; }
+.sidebar-workspace small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+.workspace-dot { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--accent); }
+.app-work-area { min-width: 0; display: flex; flex-direction: column; }
+.app-context-bar { height: 48px; flex: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 0 32px 0 25px; font-size: 12px; color: var(--muted); }
+.app-context-bar strong { color: var(--text); font-weight: 400; }
+.app-context-bar > span:first-child { display: flex; gap: 14px; }
 
 .sidebar-label,
 .sidebar-role {
@@ -59,7 +70,7 @@
 }
 
 .sidebar-link[aria-current='page'] {
-  background: var(--border);
+  background: var(--active);
   font-weight: 600;
 }
 
@@ -102,8 +113,9 @@
 }
 
 .app-main {
+  flex: 1;
   min-width: 0;
-  margin: 8px 8px 8px 0;
+  margin: 0 8px 8px 0;
   padding: 40px clamp(24px, 4vw, 64px);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -151,7 +163,7 @@
   transform: translateY(0);
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1100px) {
   .app-shell {
     display: block;
     background: var(--surface);
@@ -170,9 +182,10 @@
   }
 
   .mobile-header {
-    padding: 10px 16px;
+    min-height: 56px;
+    padding: 6px 16px;
     border-bottom: 1px solid var(--border);
-    background: var(--hover);
+    background: var(--ground);
   }
 
   .mobile-header .sidebar-brand,
@@ -198,7 +211,7 @@
     border: 0;
     border-right: 1px solid var(--border);
     color: var(--text);
-    background: var(--hover);
+    background: var(--ground);
     overflow-y: auto;
   }
 
@@ -219,6 +232,8 @@
   .mobile-navigation-heading {
     flex-shrink: 0;
   }
+
+  .app-context-bar { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,6 +1,6 @@
 # Camioane App frontend
 
-React, TypeScript, and Vite administrator dashboard connected to the Express API and PostgreSQL. Administrators can list, create, edit, and delete accounts and assign Admin, Operator, Driver, and User roles. Management access requires a currently valid Admin role; the other roles currently have account/profile access.
+React, TypeScript, and Vite administrator dashboard connected to the Express API and PostgreSQL. The fleet overview provides an interactive demo of city advertising operations. Administrators can also list, create, edit, and delete real accounts and assign Admin, Operator, Driver, and User roles. Management access requires a currently valid Admin role; the other roles currently have account/profile access.
 
 ## Development
 
@@ -29,13 +29,14 @@ Production has no localhost fallback. For a local production preview, build with
 
 - `/` redirects to login or the appropriate signed-in view.
 - `/login` accepts existing accounts only; account creation is administrator-controlled.
+- `/dashboard` is the administrator landing page and opens the fleet operations demo.
 - `/users` requires administrator access.
 - `/routes` opens the administrator-only route builder.
-- `/access-denied` explains missing management access and lets Admin accounts retry their access check. Successful revalidation returns to `/users`; sign-out remains available in navigation.
+- `/access-denied` explains missing management access and lets Admin accounts retry their access check. Successful revalidation returns to `/dashboard`; sign-out remains available in navigation.
 
-Signed-in views share a sidebar with role-aware navigation, the verified account email and role, and sign-out. Below 768px, navigation opens in a modal drawer with keyboard focus containment, Escape/backdrop dismissal, and focus restoration. A skip link moves keyboard users directly to the page content. Login and session-verification screens keep their standalone layout.
+Signed-in views share a sidebar with role-aware navigation, the verified account email and role, and sign-out. At 1100px and below, navigation opens in a modal drawer with keyboard focus containment, Escape/backdrop dismissal, and focus restoration. A skip link moves keyboard users directly to the page content. Login and session-verification screens keep their standalone layout. IBM Plex Sans loads from Google Fonts with a system-font fallback.
 
-The assigned role name is separate from verified management access. After `GET /users/me` verifies an Admin account, one shared `GET /users` query checks administrator access and supplies the Users table. Both `/users` and `/routes`, including their navigation links, require a successful access check. Non-admin accounts never request the administrator user list.
+The assigned role name is separate from verified management access. After `GET /users/me` verifies an Admin account, one shared `GET /users` query checks administrator access and supplies the Users table. `/dashboard`, `/users` and `/routes`, including their navigation links, require a successful access check. Non-admin accounts never request the administrator user list.
 
 Access is rechecked on page entry, window focus/tab visibility, reconnect, and manual retry, without polling. A `403` from a list or management mutation discards cached users and redirects to account access without signing out. Inactive, future, and expired Admin roles still allow login/profile access; reactivating the shared role allows access to be restored with the same unexpired session. The UI cannot distinguish the reason for denial because the API exposes role names only, not IDs, active flags, or validity dates. Role changes become visible at the next access check or management API response.
 
@@ -54,6 +55,18 @@ Save and Delete update the table only after server success and refresh the share
 TanStack Query owns API data, Zustand owns session state, and TanStack Router owns navigation. The API client and shared user types live in `src/lib/`; session behavior lives in `src/auth/`. The Users page and its form remain under `src/pages/UsersPage/`. Styling stays in plain CSS.
 
 The previous `camioane.users-demo.v1` local-storage data is neither read, modified, nor imported. Demo users are not backend accounts.
+
+## Fleet overview
+
+`/dashboard` uses the typed fixture data in `src/pages/DashboardPage/fleet.ts`: twelve fictional vehicles and drivers, twelve LED screens, and four fictional campaigns. The snapshot is fixed at **4 November 2026, 14:30 Europe/Bucharest**. It is explicitly sample data, not live GPS or device telemetry. Campaign artwork is original SVG in `public/campaigns/`.
+
+- Search by registration or driver, filter by screen state or assigned campaign, and inspect a vehicle through its map marker, row, or alert. Totals, markers, alerts, and campaign assignment counts derive from the same filtered records.
+- Vehicle details distinguish **last confirmed creative** from **planned campaign**. Assign campaign changes only the latter; screen health and last-contact timestamps remain unchanged. Scheduled campaigns are not assignable yet.
+- Assignments live in a feature-local Zustand store. They survive navigation within the current session, and reset on reload, logout, session replacement, or **Reset demo**. No demo data is written to browser storage or the backend.
+- MapLibre uses the same public `VITE_MAP_STYLE_URL` as the route builder. Map failure and missing coordinates leave the fleet list usable. Attribution remains visible. Filters, list actions, and markers are keyboard accessible.
+- Below 641px, the fleet list is the default and a Fleet list / City map switch changes the main view. Filters expand on demand, and details become a full-screen dialog.
+
+The dashboard adds no backend endpoints, migrations, remote screen commands, revenue estimates, or impression estimates. Authentication and user management remain connected to the real API.
 
 ## Route builder
 

@@ -8,7 +8,7 @@ export interface RouteResult {
   duration: number
 }
 
-export const mapStyle = import.meta.env.VITE_MAP_STYLE_URL?.trim() || 'https://tiles.openfreemap.org/styles/positron'
+export { mapStyle } from '../../lib/mapConfig'
 export const routingApi = (import.meta.env.VITE_ROUTING_API_URL?.trim() || 'https://router.project-osrm.org/route/v1').replace(/\/$/, '')
 
 export function isCoordinate(value: unknown): value is Coordinate {

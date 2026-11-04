@@ -1,16 +1,21 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 import { signOut, useSession } from '../auth/session'
 import { roleLabels } from '../lib/user'
 import type { User } from '../lib/user'
 import './AppShell.css'
+
+function Brand() {
+  return <><svg className="brand-mark" viewBox="0 0 30 30" aria-hidden="true"><path d="M4 5h22v17H4zM10 26h10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />{[9, 15, 21].flatMap(x => [10, 16].map(y => <rect key={`${x}-${y}`} x={x - 1} y={y - 1} width="2.5" height="2.5" fill="currentColor" />))}</svg><span>Camioane<span className="brand-app"> App</span></span></>
+}
 
 function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage: boolean, onNavigate?: () => void }) {
   return (
     <>
       <nav className="sidebar-nav" aria-label="Main navigation">
         <p className="sidebar-label">Workspace</p>
+        {canManage && <Link to="/dashboard" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>Dashboard</Link>}
         {canManage && (
           <Link to="/routes" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -56,10 +61,14 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
 
 export default function AppShell({ children, user, canManage = false }: { children: ReactNode, user?: User, canManage?: boolean }) {
   const notice = useSession((state) => state.notice)
+  const pathname = useRouterState({ select: state => state.location.pathname })
+  const pageName = pathname === '/dashboard' ? 'Fleet overview' : pathname === '/routes' ? 'Route builder' : pathname === '/users' ? 'Users' : pathname === '/login' ? 'Sign in' : 'Account access'
   const mobileNavigation = useRef<HTMLDialogElement>(null)
 
+  useEffect(() => { document.title = `${pageName} · Camioane App` }, [pageName])
+
   useEffect(() => {
-    const desktop = window.matchMedia('(min-width: 768px)')
+    const desktop = window.matchMedia('(min-width: 1101px)')
     function closeOnDesktop() {
       if (desktop.matches) mobileNavigation.current?.close()
     }
@@ -83,11 +92,12 @@ export default function AppShell({ children, user, canManage = false }: { childr
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="app-sidebar" aria-label="Sidebar">
-        <Link to="/" className="sidebar-brand">Camioane App</Link>
+        <Link to="/" className="sidebar-brand"><Brand /></Link>
+        <div className="sidebar-workspace"><span className="workspace-dot" /><div>Bucharest operations<small>Administrator workspace</small></div></div>
         <SidebarContent user={user} canManage={canManage} />
       </aside>
       <header className="mobile-header">
-        <Link to="/" className="sidebar-brand">Camioane App</Link>
+        <Link to="/" className="sidebar-brand"><Brand /></Link>
         <button className="navigation-toggle" type="button" aria-label="Open navigation"
           aria-haspopup="dialog" aria-controls="mobile-navigation"
           onClick={() => mobileNavigation.current?.showModal()}>
@@ -104,7 +114,7 @@ export default function AppShell({ children, user, canManage = false }: { childr
             || event.clientY < bounds.top || event.clientY > bounds.bottom) closeNavigation()
         }}>
         <div className="mobile-navigation-heading">
-          <Link to="/" className="sidebar-brand" onClick={closeNavigation}>Camioane App</Link>
+          <Link to="/" className="sidebar-brand" onClick={closeNavigation}><Brand /></Link>
           <button className="navigation-toggle" type="button" aria-label="Close navigation" onClick={closeNavigation}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="m6 6 12 12M6 18 18 6" />
@@ -113,12 +123,15 @@ export default function AppShell({ children, user, canManage = false }: { childr
         </div>
         <SidebarContent user={user} canManage={canManage} onNavigate={closeNavigation} />
       </dialog>
-      <main className="app-main" id="main-content" tabIndex={-1}>
-        <div className="app-content">
-          {notice && <p className="storage-notice" role="alert">{notice}</p>}
-          {children}
-        </div>
-      </main>
+      <div className="app-work-area">
+        <div className="app-context-bar"><span>Operations <span aria-hidden="true">/</span> <strong>{pageName}</strong></span><span>Camioane network</span></div>
+        <main className="app-main" id="main-content" tabIndex={-1}>
+          <div className="app-content">
+            {notice && <p className="storage-notice" role="alert">{notice}</p>}
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

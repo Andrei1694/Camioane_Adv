@@ -11,7 +11,7 @@ import AppShell from '../components/AppShell'
 
 export function HomeRedirect() {
   const access = useAdminAccess()
-  return <Navigate to={access.status === 'granted' ? '/users' : '/access-denied'} replace />
+  return <Navigate to={access.status === 'granted' ? '/dashboard' : '/access-denied'} replace />
 }
 
 function VerifiedAccount({ children, user, revision, adminOnly }: {
@@ -41,7 +41,7 @@ function VerifiedAccount({ children, user, revision, adminOnly }: {
               <section>
                 <h1>Could not verify administrator access</h1>
                 <p className="request-error" role="alert">{errorMessage(result.error)}</p>
-                <p className="page-description">You are still signed in. Retry to open user management and the route builder.</p>
+                <p className="page-description">You are still signed in. Retry to open the fleet dashboard, user management and route builder.</p>
                 <div className="form-actions">
                   <button type="button" disabled={result.isFetching} onClick={access.retry}>{result.isFetching ? 'Checking…' : 'Retry access check'}</button>
                   <button type="button" onClick={() => signOut()}>Sign out</button>

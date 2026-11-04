@@ -1,5 +1,5 @@
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 16px;
   line-height: 1.5;
   font-synthesis: none;
@@ -9,18 +9,46 @@
   color-scheme: light;
 
   --surface: #fff;
-  --text: #202020;
-  --muted: #646464;
-  --border: #e5e5e5;
-  --control-border: #b8b8b8;
-  --hover: #f5f5f5;
-  --primary: #202020;
+  --ground: #f2f6f7;
+  --raised: #f4f6f8;
+  --active: #e5ebed;
+  --text: #131416;
+  --muted: #5d5f60;
+  --border: #e8eaec;
+  --rule: #f0f1f2;
+  --control-border: #cdced1;
+  --hover: #f4f6f8;
+  --primary: #1d1f20;
+  --accent: #1b6c80;
+  --positive: #1e7b4f;
+  --warning: #92400e;
+  --negative: #c4242a;
+  --pill-positive-bg: #edf5f0;
+  --pill-positive-ink: #256344;
+  --pill-negative-bg: #ffedea;
+  --pill-negative-ink: #831c1e;
+  --pill-warning-bg: #fffbeb;
+  --pill-warning-ink: #92400e;
+  --pill-neutral-bg: #ebedee;
+  --pill-neutral-ink: #353736;
   --danger: #b42318;
   --focus: #245bba;
   --navigation-backdrop: rgb(32 32 32 / 35%);
 
   color: var(--text);
   background: var(--surface);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 * {

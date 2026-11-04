@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { getEmailError, getPasswordError, normalizeEmail } from '../../../lib/user'
+import { getEmailError, getPasswordError, isRole, normalizeEmail, roleLabels, roles } from '../../../lib/user'
 import type { Role, User, UserInput } from '../../../lib/user'
 
 interface UserFormProps {
@@ -114,9 +114,11 @@ export default function UserForm({ user, users, isSelf, pending, error, onSave, 
           <label htmlFor={`${id}-role`}>Role</label>
           <select id={`${id}-role`} name="role" value={role} disabled={pending || isSelf}
             aria-describedby={isSelf ? `${id}-role-hint` : undefined}
-            onChange={(event) => setRole(event.target.value === 'ADMIN' ? 'ADMIN' : 'USER')}>
-            <option value="USER">User</option>
-            <option value="ADMIN">Admin</option>
+            onChange={(event) => {
+              const selectedRole = event.target.value
+              if (isRole(selectedRole)) setRole(selectedRole)
+            }}>
+            {roles.map((option) => <option key={option} value={option}>{roleLabels[option]}</option>)}
           </select>
           {isSelf && <p className="field-hint" id={`${id}-role-hint`}>Another administrator must change your role.</p>}
         </div>

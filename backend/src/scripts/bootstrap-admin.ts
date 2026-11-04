@@ -35,8 +35,9 @@ try {
     throw new AppError(400, 'Run admin:bootstrap in an interactive terminal.');
   }
   const email = parseEmail(await ask('Administrator email: '));
-  const existing = await prisma.user.findUnique({ where: { email }, select: { role: true } });
-  if (existing?.role === 'ADMIN') {
+  const existing = await prisma.user.findUnique({ where: { email }, select: { role: { select: { name: true } } } });
+  if (existing?.role.name === 'ADMIN') {
+    await bootstrapAdministrator(email);
     console.log('This account is already an administrator. No changes made.');
   } else if (existing) {
     const confirmation = await ask('Promote this existing account to administrator? Type yes: ');

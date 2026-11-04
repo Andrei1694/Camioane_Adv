@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { AppError } from '../lib/app-error.ts';
 import { verifyAccessToken } from '../lib/jwt.ts';
+import { isRoleValid } from '../lib/role.ts';
 import { findSessionUser, publicUser } from '../services/user.service.ts';
 import type { UserLocals } from '../types/user.ts';
 
@@ -19,11 +20,15 @@ export async function authenticate(req: Request, res: Response<unknown, UserLoca
   }
 
   res.locals.user = publicUser(user);
+  res.locals.role = user.role;
   res.locals.session = session;
   next();
 }
 
 export function requireAdmin(req: Request, res: Response<unknown, UserLocals>, next: NextFunction) {
-  if (res.locals.user?.role !== 'ADMIN') throw new AppError(403, 'Administrator access is required');
+  const role = res.locals.role;
+  if (!role || role.name !== 'ADMIN' || !isRoleValid(role)) {
+    throw new AppError(403, 'Administrator access is required');
+  }
   next();
 }

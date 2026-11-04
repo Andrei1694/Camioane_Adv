@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { MulterError } from 'multer';
 import { AppError } from '../lib/app-error.ts';
 
 export function errorHandler(error: unknown, req: Request, res: Response, next: NextFunction) {
@@ -9,6 +10,14 @@ export function errorHandler(error: unknown, req: Request, res: Response, next: 
 
   if (error instanceof AppError) {
     res.status(error.status).json({ error: error.message });
+    return;
+  }
+
+  if (error instanceof MulterError) {
+    const tooLarge = error.code === 'LIMIT_FILE_SIZE';
+    res.status(tooLarge ? 413 : 400).json({
+      error: tooLarge ? 'File exceeds the upload size limit' : 'Upload exactly one file in the file field, without additional fields',
+    });
     return;
   }
 

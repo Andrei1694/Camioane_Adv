@@ -2,15 +2,16 @@ import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { signOut, useSession } from '../auth/session'
+import { roleLabels } from '../lib/user'
 import type { User } from '../lib/user'
 import './AppShell.css'
 
-function SidebarContent({ user, onNavigate }: { user: User, onNavigate?: () => void }) {
+function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage: boolean, onNavigate?: () => void }) {
   return (
     <>
       <nav className="sidebar-nav" aria-label="Main navigation">
         <p className="sidebar-label">Workspace</p>
-        {user.role === 'ADMIN' && (
+        {canManage && (
           <Link to="/routes" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle cx="6" cy="6" r="3" />
@@ -20,7 +21,7 @@ function SidebarContent({ user, onNavigate }: { user: User, onNavigate?: () => v
             Route builder
           </Link>
         )}
-        {user.role === 'ADMIN' ? (
+        {canManage ? (
           <Link to="/users" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle cx="9" cy="8" r="3" />
@@ -41,7 +42,7 @@ function SidebarContent({ user, onNavigate }: { user: User, onNavigate?: () => v
       <div className="sidebar-account">
         <p className="sidebar-label">Signed in as</p>
         <p className="sidebar-email">{user.email}</p>
-        <p className="sidebar-role">{user.role === 'ADMIN' ? 'Administrator' : 'User'}</p>
+        <p className="sidebar-role">{user.role === 'ADMIN' ? 'Administrator' : roleLabels[user.role]}</p>
         <button className="sidebar-signout" type="button" onClick={() => signOut()}>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5M21 12H9" />
@@ -53,7 +54,7 @@ function SidebarContent({ user, onNavigate }: { user: User, onNavigate?: () => v
   )
 }
 
-export default function AppShell({ children, user }: { children: ReactNode, user?: User }) {
+export default function AppShell({ children, user, canManage = false }: { children: ReactNode, user?: User, canManage?: boolean }) {
   const notice = useSession((state) => state.notice)
   const mobileNavigation = useRef<HTMLDialogElement>(null)
 
@@ -83,7 +84,7 @@ export default function AppShell({ children, user }: { children: ReactNode, user
       <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="app-sidebar" aria-label="Sidebar">
         <Link to="/" className="sidebar-brand">Camioane App</Link>
-        <SidebarContent user={user} />
+        <SidebarContent user={user} canManage={canManage} />
       </aside>
       <header className="mobile-header">
         <Link to="/" className="sidebar-brand">Camioane App</Link>
@@ -110,7 +111,7 @@ export default function AppShell({ children, user }: { children: ReactNode, user
             </svg>
           </button>
         </div>
-        <SidebarContent user={user} onNavigate={closeNavigation} />
+        <SidebarContent user={user} canManage={canManage} onNavigate={closeNavigation} />
       </dialog>
       <main className="app-main" id="main-content" tabIndex={-1}>
         <div className="app-content">

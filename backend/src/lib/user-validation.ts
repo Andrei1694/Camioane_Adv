@@ -1,4 +1,5 @@
 import { AppError } from './app-error.ts';
+import { isRoleName } from './role.ts';
 import type { CreateUserData, UpdateUserData, UserCredentials } from '../types/user.ts';
 
 export function parseEmail(value: unknown): string {
@@ -18,7 +19,7 @@ export function parsePassword(value: unknown): string {
 }
 
 function parseRole(value: unknown): CreateUserData['role'] {
-  if (value !== 'USER' && value !== 'ADMIN') throw new AppError(400, 'Role must be USER or ADMIN');
+  if (!isRoleName(value)) throw new AppError(400, 'Role must be ADMIN, OPERATOR, DRIVER, or USER');
   return value;
 }
 

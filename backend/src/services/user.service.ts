@@ -5,7 +5,8 @@ import { Prisma } from '../generated/prisma/client.ts';
 import { AppError } from '../lib/app-error.ts';
 import { createAuthenticationData } from '../lib/jwt.ts';
 import { prisma } from '../lib/prisma.ts';
-import type { CreateUserData, PublicUser, SessionIdentity, SessionUser, UpdateUserData, UserCredentials } from '../types/user.ts';
+import { isRoleValid } from '../lib/role.ts';
+import type { CreateUserData, PublicUser, RoleName, SessionIdentity, SessionUser, UpdateUserData, UserCredentials, UserWithRole } from '../types/user.ts';
 
 const publicSelect = { id: true, email: true, role: true } as const;
 const sessionSelect = { ...publicSelect, sessionVersion: true } as const;
@@ -19,8 +20,8 @@ function getDummyHash() {
   });
 }
 
-export function publicUser(user: SessionUser): PublicUser {
-  return { id: user.id, email: user.email, role: user.role };
+export function publicUser(user: UserWithRole): PublicUser {
+  return { id: user.id, email: user.email, role: user.role.name };
 }
 
 export async function loginUser(credentials: UserCredentials) {
@@ -30,7 +31,7 @@ export async function loginUser(credentials: UserCredentials) {
   });
   const passwordMatches = await verify(user?.password ?? await getDummyHash(), credentials.password);
   if (!user || !passwordMatches) throw new AppError(401, 'Invalid email or password');
-  return createAuthenticationData(user);
+  return createAuthenticationData({ ...publicUser(user), sessionVersion: user.sessionVersion });
 }
 
 export async function findSessionUser(id: string): Promise<SessionUser | null> {
@@ -70,13 +71,22 @@ async function transaction<T>(action: (tx: Prisma.TransactionClient) => Promise<
 async function requireAdministrator(tx: Prisma.TransactionClient, actor: SessionIdentity) {
   const current = await tx.user.findUnique({ where: { id: actor.id }, select: sessionSelect });
   if (!current || current.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
-  if (current.role !== 'ADMIN') throw new AppError(403, 'Administrator access is required');
+  if (current.role.name !== 'ADMIN' || !isRoleValid(current.role)) {
+    throw new AppError(403, 'Administrator access is required');
+  }
+}
+
+async function resolveRole(tx: Prisma.TransactionClient, name: RoleName) {
+  const role = await tx.role.findUnique({ where: { name } });
+  if (!role) throw new AppError(409, 'The requested role is missing. Check role configuration.');
+  return role;
 }
 
 export function listUsers(actor: SessionIdentity): Promise<PublicUser[]> {
   return transaction(async (tx) => {
     await requireAdministrator(tx, actor);
-    return tx.user.findMany({ select: publicSelect, orderBy: { email: 'asc' } });
+    const users = await tx.user.findMany({ select: publicSelect, orderBy: { email: 'asc' } });
+    return users.map(publicUser);
   });
 }
 
@@ -84,12 +94,16 @@ export async function createUser(actor: SessionIdentity, data: CreateUserData): 
   const password = await hash(data.password, hashOptions);
   return transaction(async (tx) => {
     await requireAdministrator(tx, actor);
-    return tx.user.create({ data: { ...data, password }, select: publicSelect });
+    const role = await resolveRole(tx, data.role);
+    return publicUser(await tx.user.create({
+      data: { email: data.email, password, roleId: role.id },
+      select: publicSelect,
+    }));
   });
 }
 
-async function protectAdministrator(tx: Prisma.TransactionClient, target: PublicUser) {
-  if (target.role === 'ADMIN' && await tx.user.count({ where: { role: 'ADMIN' } }) <= 1) {
+async function protectAdministrator(tx: Prisma.TransactionClient, target: UserWithRole) {
+  if (target.role.name === 'ADMIN' && await tx.user.count({ where: { role: { name: 'ADMIN' } } }) <= 1) {
     throw new AppError(409, 'The last administrator cannot be removed or demoted');
   }
 }
@@ -100,18 +114,24 @@ export async function updateUser(actor: SessionIdentity, id: string, data: Updat
     await requireAdministrator(tx, actor);
     const target = await tx.user.findUnique({ where: { id }, select: publicSelect });
     if (!target) throw new AppError(404, 'User not found');
-    if (data.role === 'USER' && target.role === 'ADMIN') {
+    if (data.role !== undefined && data.role !== 'ADMIN' && target.role.name === 'ADMIN') {
       if (id === actor.id) throw new AppError(409, 'You cannot remove your own administrator access');
       await protectAdministrator(tx, target);
     }
+    const role = data.role === undefined ? undefined : await resolveRole(tx, data.role);
     const changed = password !== undefined
       || (data.email !== undefined && data.email !== target.email)
-      || (data.role !== undefined && data.role !== target.role);
-    return tx.user.update({
+      || (data.role !== undefined && data.role !== target.role.name);
+    return publicUser(await tx.user.update({
       where: { id },
-      data: { ...data, password, ...(changed ? { sessionVersion: { increment: 1 } } : {}) },
+      data: {
+        email: data.email,
+        password,
+        ...(role ? { roleId: role.id } : {}),
+        ...(changed ? { sessionVersion: { increment: 1 } } : {}),
+      },
       select: publicSelect,
-    });
+    }));
   });
 }
 
@@ -127,20 +147,27 @@ export function deleteUser(actor: SessionIdentity, id: string): Promise<void> {
 }
 
 // Only the local bootstrap command calls this; it is never exposed over HTTP.
-export async function bootstrapAdministrator(email: string, password?: string, promoteExisting = false) {
+export async function bootstrapAdministrator(email: string, password?: string, promoteExisting = false): Promise<PublicUser> {
   const passwordHash = password === undefined ? undefined : await hash(password, hashOptions);
   return transaction(async (tx) => {
+    const role = await resolveRole(tx, 'ADMIN');
+    if (!isRoleValid(role)) {
+      throw new AppError(409, 'The ADMIN role is inactive, not yet started, or expired. Check role configuration.');
+    }
     const existing = await tx.user.findUnique({ where: { email }, select: publicSelect });
-    if (existing?.role === 'ADMIN') return existing;
+    if (existing?.role.name === 'ADMIN') return publicUser(existing);
     if (existing) {
       if (!promoteExisting) throw new AppError(409, 'Promotion of the existing account must be confirmed');
-      return tx.user.update({
+      return publicUser(await tx.user.update({
         where: { id: existing.id },
-        data: { role: 'ADMIN', sessionVersion: { increment: 1 } },
+        data: { roleId: role.id, sessionVersion: { increment: 1 } },
         select: publicSelect,
-      });
+      }));
     }
     if (!passwordHash) throw new AppError(400, 'A password is required for a new administrator');
-    return tx.user.create({ data: { email, password: passwordHash, role: 'ADMIN' }, select: publicSelect });
+    return publicUser(await tx.user.create({
+      data: { email, password: passwordHash, roleId: role.id },
+      select: publicSelect,
+    }));
   });
 }

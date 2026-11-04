@@ -1,4 +1,5 @@
 import { sessionSignal, signOut, useSession } from '../auth/session'
+import { isRole } from './user'
 import type { Credentials, User, UserInput } from './user'
 
 export class ApiError extends Error {
@@ -17,7 +18,7 @@ function record(value: unknown): value is Record<string, unknown> {
 
 function decodeUser(value: unknown): User {
   if (!record(value) || typeof value.id !== 'string' || typeof value.email !== 'string'
-    || (value.role !== 'USER' && value.role !== 'ADMIN')) {
+    || !isRole(value.role)) {
     throw new ApiError(0, 'The API returned an unexpected user response.')
   }
   return { id: value.id, email: value.email, role: value.role }

@@ -1,4 +1,16 @@
-export type Role = 'USER' | 'ADMIN'
+export const roles = ['ADMIN', 'OPERATOR', 'DRIVER', 'USER'] as const
+export type Role = typeof roles[number]
+
+export const roleLabels: Record<Role, string> = {
+  ADMIN: 'Admin',
+  OPERATOR: 'Operator',
+  DRIVER: 'Driver',
+  USER: 'User',
+}
+
+export function isRole(value: unknown): value is Role {
+  return roles.some((role) => role === value)
+}
 
 export interface User {
   id: string

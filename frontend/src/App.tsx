@@ -1,8 +1,9 @@
 import { Suspense, useEffect } from 'react'
-import { createRootRoute, createRoute, createRouter, lazyRouteComponent, Link, Outlet, RouterProvider } from '@tanstack/react-router'
+import { createRootRoute, createRoute, createRouter, lazyRouteComponent, Link, Navigate, Outlet, RouterProvider } from '@tanstack/react-router'
 import { QueryClientProvider } from '@tanstack/react-query'
 import Authenticated, { HomeRedirect } from './auth/Authenticated'
 import { useCurrentUser } from './auth/currentUser'
+import { useAdminAccess } from './auth/adminAccess'
 import { startSessionSync, useSession } from './auth/session'
 import { queryClient } from './lib/queryClient'
 import AppShell from './components/AppShell'
@@ -26,11 +27,17 @@ function LoginRoute() {
 
 function AccessDenied() {
   const user = useCurrentUser()
+  const access = useAdminAccess()
+  if (access.status === 'granted') return <Navigate to="/users" replace />
   return (
     <section>
       <h1>Administrator access required</h1>
-      <p className="page-description">Your account does not have access to user management. Contact your administrator if you need access.</p>
-      {user.role === 'ADMIN' && <p className="page-description"><Link to="/users">Retry user management</Link></p>}
+      <p className="page-description">{user.role === 'ADMIN'
+        ? 'Your administrator access is currently unavailable. Your role may be inactive, not yet active, or expired.'
+        : 'Your account does not have administrator access.'} User management and the route builder require active administrator access. Contact your administrator if you need access.</p>
+      {user.role === 'ADMIN' && <button type="button" disabled={access.isFetching} onClick={access.retry}>
+        {access.isFetching ? 'Checking…' : 'Retry access check'}
+      </button>}
     </section>
   )
 }

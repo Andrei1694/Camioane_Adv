@@ -7,6 +7,7 @@ For a new checkout, copy `.env.example` to `.env` and start Docker Desktop. Run 
 ```sh
 npm install
 docker compose up --build -d --wait
+npm run db:migrate
 npm run db:check
 npm run dev
 ```
@@ -67,7 +68,7 @@ Database credentials and the initial database name are applied only when the vol
 
 ## Prisma
 
-`prisma/schema.prisma` defines the PostgreSQL datasource. Add application models there when their fields are known; no application tables or migrations are created by this initial connection setup.
+`prisma/schema.prisma` defines the PostgreSQL datasource and the `User` model. A user has two required fields: `email` (the primary key, so each address is unique) and `password` (for a password hash, never plaintext). Code that creates or updates users must hash passwords before saving them; Prisma does not hash them automatically. The initial migration creates the `User` table.
 
 `prisma.config.ts` loads `.env` with Node's built-in environment loader and supplies `DATABASE_URL` to the Prisma CLI. The shared client in `src/lib/prisma.ts` uses the [Prisma 7 PostgreSQL driver adapter](https://www.prisma.io/docs/orm/v7/core-concepts/supported-databases/database-drivers). Import that client in backend modules:
 

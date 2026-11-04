@@ -9,3 +9,9 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  email    String @id
+  /// Stores a password hash, never a plaintext password.
+  password String
+}

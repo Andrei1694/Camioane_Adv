@@ -27,15 +27,35 @@ model Role {
   users     User[]
 }
 
+enum CreditPurchaseStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELED
+}
+
+enum CreditTransactionType {
+  PURCHASE
+  ADJUSTMENT
+  CAMPAIGN_DEBIT
+  REFUND
+}
+
 model User {
-  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email          String         @unique
+  id                        String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                     String              @unique
   /// Stores a password hash, never a plaintext password.
-  password       String
-  roleId         String         @db.Uuid
-  role           Role           @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  sessionVersion Int            @default(0)
-  files          UploadedFile[]
+  password                  String
+  roleId                    String              @db.Uuid
+  role                      Role                @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  sessionVersion            Int                 @default(0)
+  /// Cached sum of this user's credit ledger. Only applyCreditChange changes it.
+  creditBalance             Int                 @default(0)
+  files                     UploadedFile[]
+  creditPurchases           CreditPurchase[]    @relation("CreditPurchaseUser")
+  settledCreditPurchases    CreditPurchase[]    @relation("CreditPurchaseSettler")
+  creditTransactions        CreditTransaction[] @relation("CreditTransactionUser")
+  createdCreditTransactions CreditTransaction[] @relation("CreditTransactionCreator")
 
   @@index([roleId])
 }
@@ -54,4 +74,53 @@ model UploadedFile {
   @@unique([storageProvider, storageKey])
   @@index([ownerId, createdAt, id])
   @@index([createdAt, id])
+}
+
+/// A request to buy credits with money. Credits reach the balance only through
+/// the PURCHASE ledger row written when the purchase is confirmed as paid.
+model CreditPurchase {
+  id                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Null after the account is deleted; the financial record is kept.
+  userId            String?              @db.Uuid
+  user              User?                @relation("CreditPurchaseUser", fields: [userId], references: [id], onDelete: SetNull)
+  credits           Int
+  /// Price per credit in the currency's minor unit, snapshotted at purchase time.
+  unitPriceMinor    Int
+  amountMinor       Int
+  currency          String               @db.Char(3)
+  status            CreditPurchaseStatus @default(PENDING)
+  /// "manual" while admins confirm payments; the card processor's name later.
+  provider          String?
+  /// The admin's payment reference, or the processor's payment ID later.
+  providerPaymentId String?
+  settledById       String?              @db.Uuid
+  settledBy         User?                @relation("CreditPurchaseSettler", fields: [settledById], references: [id], onDelete: SetNull)
+  settledAt         DateTime?            @db.Timestamptz(3)
+  createdAt         DateTime             @default(now()) @db.Timestamptz(3)
+  transaction       CreditTransaction?
+
+  @@unique([provider, providerPaymentId])
+  @@index([userId, createdAt, id])
+  @@index([status, createdAt, id])
+}
+
+/// Append-only credit ledger. Corrections are new ADJUSTMENT rows, never edits.
+model CreditTransaction {
+  id           String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Null after the account is deleted; the financial record is kept.
+  userId       String?               @db.Uuid
+  user         User?                 @relation("CreditTransactionUser", fields: [userId], references: [id], onDelete: SetNull)
+  /// Positive adds credits, negative removes them; never zero.
+  amount       Int
+  balanceAfter Int
+  type         CreditTransactionType
+  /// Unique so one purchase can credit the balance only once.
+  purchaseId   String?               @unique @db.Uuid
+  purchase     CreditPurchase?       @relation(fields: [purchaseId], references: [id], onDelete: Restrict)
+  createdById  String?               @db.Uuid
+  createdBy    User?                 @relation("CreditTransactionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  note         String?
+  createdAt    DateTime              @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, createdAt, id])
 }

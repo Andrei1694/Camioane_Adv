@@ -41,6 +41,8 @@ The API listens on port 3000 by default. Compose runs PostgreSQL only. `npm run 
 | `FILE_STORAGE_ROOT` | Private filesystem directory, default `./uploads`; relative to `backend/`, independent of the working directory |
 | `UPLOAD_MAX_FILE_SIZE_BYTES` | Maximum file bytes, default `104857600` (100 MiB); integer from 1 through 2147483647 |
 | `FFPROBE_PATH` | `ffprobe` command name or path, default `ffprobe` from `PATH`; startup fails if it can't run or isn't ffprobe |
+| `CREDIT_CURRENCY` | Three-letter uppercase currency code for credit purchases, default `EUR` |
+| `CREDIT_UNIT_PRICE_MINOR` | Price of one credit in the currency's minor unit (cents), default `100`; integer from 1 through 21474 |
 
 Existing environment variables take precedence over `.env`. CORS allows GET, POST, PATCH, DELETE, JSON, and Authorization headers from the configured origin. Authentication uses bearer tokens, not cookies. Keep private database credentials and signing keys out of frontend `VITE_*` configuration.
 
@@ -64,6 +66,14 @@ Public users are `{ id, email, role }`, where `id` is an immutable UUID and `rol
 | `GET /files` | Signed in | `{ files, total }`; own files, or all files for an active admin |
 | `GET /files/:id/download` | Owner or active admin | Binary attachment with the detected MIME type |
 | `DELETE /files/:id` | Owner or active admin | `204`, no response body |
+| `GET /credits/balance` | Signed in | `{ balance, currency, unitPriceMinor }`; own balance, or `?userId=` for an active admin |
+| `GET /credits/transactions` | Signed in | `{ transactions, total }`; own ledger, or all / `?userId=` for an active admin |
+| `POST /credits/purchases` | Signed in | `{ credits }`; `201 { purchase }` with status `PENDING` |
+| `GET /credits/purchases` | Signed in | `{ purchases, total }`; own, or all / `?userId=` for an active admin; optional `?status=` |
+| `POST /credits/purchases/:id/cancel` | Owner or active admin | `{ purchase }`; pending → `CANCELED` |
+| `POST /credits/purchases/:id/confirm` | Admin | Optional `{ reference }`; `{ purchase, transaction }`; pending → `PAID` and credits the owner |
+| `POST /credits/purchases/:id/fail` | Admin | `{ purchase }`; pending → `FAILED` |
+| `POST /credits/adjustments` | Admin | `{ userId, amount, note }`; `201 { transaction }` |
 
 Public registration is removed: `POST /users/register` returns the standard JSON 404. Unknown routes also return JSON 404.
 
@@ -128,6 +138,22 @@ To add S3, implement the same contract and register it in `createFileStorage` in
 
 Metadata is inserted only after successful storage and, for MP4 files, a successful probe. A failed probe or failed metadata creation triggers object cleanup; malformed/interrupted uploads and storage failures clean up partial files. Deletion removes the object first, then metadata, so a database failure can be retried safely. Storage and PostgreSQL do not share a transaction: a process crash or failed compensating cleanup can leave orphaned objects, and a failed metadata deletion can leave a record whose content is missing. Automatic reconciliation and storage migration are not implemented. Retrying an upload after a lost success response may create another file.
 
+## Credits
+
+Clients buy prepaid credits with money and will later spend them on campaigns. Credits are whole numbers. No card processor is integrated yet, so a purchase is settled by hand:
+
+1. A signed-in user creates a purchase with `{ credits }` (1–100000). The server sets the price from `CREDIT_UNIT_PRICE_MINOR` and `CREDIT_CURRENCY` and stores it on the purchase, so later price changes don't affect it. Request bodies can't set a price.
+2. The purchase stays `PENDING` and adds nothing to the balance.
+3. After checking the payment outside the app, an admin confirms it, optionally with a payment `reference` (1–128 characters, unique among manual confirmations). This marks it `PAID` and writes one `PURCHASE` ledger row in the same transaction. Alternatively the admin marks it `FAILED`, or the owner or an admin cancels it.
+
+Confirming a `PAID` purchase again returns the original purchase and ledger row without crediting twice. Marking a `FAILED` purchase failed again, or canceling a `CANCELED` one again, returns it unchanged. A later card-payment webhook should call the same confirmation service so retried notifications stay idempotent.
+
+Public purchases are `{ id, userId, credits, unitPriceMinor, amountMinor, currency, status, reference, createdAt, settledAt }`, where `amountMinor = credits × unitPriceMinor`. Ledger rows are `{ id, userId, amount, balanceAfter, type, purchaseId, note, createdAt }`, where `amount` is positive for credits and negative for debits, and `type` is `PURCHASE`, `ADJUSTMENT`, `CAMPAIGN_DEBIT`, or `REFUND`. Campaign debits and refunds have no endpoints yet; campaign confirmation should call `applyCreditChange` from `src/services/credit.service.ts` inside its own transaction. Admin adjustments take a non-zero `amount` (±1000000) and a required `note` (1–500 characters), and the owner can see the note.
+
+The ledger is append-only: corrections are new `ADJUSTMENT` rows. `User.creditBalance` caches the ledger total. It only changes through a guarded increment that can't go below zero, together with the matching ledger row. Every credit operation runs in a serializable transaction that rechecks the session and administrator validity. Lists use the same `limit`/`offset` rules as files, newest first. A non-admin who passes another user's `userId` gets `403`, and another user's purchase IDs return `404`.
+
+Errors: `400` for invalid bodies, IDs, or query parameters; `403` for admin-only actions; `404` for missing or inaccessible purchases and users; `409` for insufficient credits, a balance over the INT4 maximum, invalid status changes, a deleted purchase owner, a reused payment reference, or repeated concurrent-write conflicts. Deleting a user sets `userId` to `null` on their purchases and ledger rows, so the financial history is kept. Their remaining balance is lost with the account.
+
 ## Sessions and administrator safety
 
 JWTs use HS256, immutable user ID as `sub`, a private session-version claim, issuer `camioane-api`, audience `camioane-frontend`, and a one-hour lifetime. Middleware checks the account and session version against PostgreSQL on every request.
@@ -151,6 +177,8 @@ The local Compose defaults are database/user `camioane`, password `camioane_dev_
 `User` has a UUID primary key, unique email, password hash, required indexed `roleId` foreign key, and session version defaulting to zero. User creation resolves the role name in the service and defaults to `USER` at the API boundary; direct database inserts must supply a role reference. Referenced roles cannot be deleted. Reuse the client in `src/lib/prisma.ts`.
 
 `UploadedFile` stores a UUID ID, optional owner relation (`ON DELETE SET NULL`), provider/key pair, sanitized original name, detected MIME type, integer byte count, and creation timestamp. Provider/key pairs are unique. Owner/time/ID and time/ID indexes support filtered and administrator listings. The uploaded-files migration adds this table and its indexes without changing existing user or role data.
+
+`CreditPurchase` stores the owner (`ON DELETE SET NULL`), credits, unit price and total in minor units, currency, status (`PENDING`, `PAID`, `FAILED`, `CANCELED`), provider and provider payment ID (unique together), the settling admin, and timestamps. `CreditTransaction` is the append-only ledger: owner (`ON DELETE SET NULL`), signed amount, balance after the movement, type, an optional unique purchase link (one ledger row per purchase), the creating admin, a note, and a timestamp. `User.creditBalance` defaults to zero. The credits migration adds database CHECK constraints that Prisma schema syntax can't express: non-negative balances, positive purchase credits and prices, `amountMinor = credits × unitPriceMinor`, uppercase three-letter currencies, non-zero ledger amounts, and a purchase link on exactly the `PURCHASE` rows. Keep them in future migrations.
 
 `Role` has a UUID primary key, unique `name` constrained by the Prisma/PostgreSQL `RoleName` enum (`ADMIN`, `OPERATOR`, `DRIVER`, `USER`), `startDate` defaulting to creation time, nullable `endDate` for no expiry, and `activ` defaulting to `true`. Dates use PostgreSQL `TIMESTAMPTZ(3)` to represent instants with millisecond precision. The migration enforces `endDate > startDate` when an end date exists through the `Role_date_range_check` database constraint, which is not represented by Prisma schema syntax. Adding another role name requires a schema migration and corresponding API/frontend support.
 

@@ -60,6 +60,15 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
             Files
           </Link>
         )}
+        {canManage && (
+          <Link to="/credits" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <ellipse cx="12" cy="6" rx="7" ry="3" />
+              <path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6" />
+            </svg>
+            Credits
+          </Link>
+        )}
         {canManage ? (
           <Link to="/users" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

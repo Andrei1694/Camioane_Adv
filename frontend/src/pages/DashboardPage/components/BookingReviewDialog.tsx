@@ -37,17 +37,17 @@ export default function BookingReviewDialog({ review, onClose, onConfirm, onDeci
   }
 
   return (
-    <dialog ref={dialog} className="review-dialog" aria-labelledby={`${id}-title`} onClose={onClose}
+    <dialog ref={dialog} className="dialog review-dialog" aria-labelledby={`${id}-title`} onClose={onClose}
       onClick={(event) => {
         if (event.target !== event.currentTarget) return
         const bounds = event.currentTarget.getBoundingClientRect()
         if (event.clientX < bounds.left || event.clientX > bounds.right
           || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.current?.close()
       }}>
-      <div className="review-head">
+      <div className="dialog-head">
         <div>
           <h2 id={`${id}-title`}>{request.campaign}</h2>
-          <p className="review-sub">{client.name} · sent {formatStamp(request.submittedAt)}</p>
+          <p className="dialog-sub">{client.name} · sent {formatStamp(request.submittedAt)}</p>
         </div>
         <button type="button" className="icon-button" aria-label="Close review" onClick={() => dialog.current?.close()}>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M6 18 18 6" /></svg>

@@ -10,7 +10,11 @@ From `backend/`, install with `npm ci`. On a new checkout, copy `.env.example` t
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-Keep the generated secret in the local environment only. Start Docker Desktop with Linux containers, then:
+Keep the generated secret in the local environment only.
+
+Install FFmpeg so that `ffprobe` is available. The API checks MP4 uploads with it and refuses to start without it. On Windows, run `winget install Gyan.FFmpeg` and open a new terminal so `PATH` updates; on macOS, `brew install ffmpeg`; on Debian or Ubuntu, `sudo apt-get install ffmpeg`. If `ffprobe` isn't on `PATH`, set `FFPROBE_PATH` to the binary.
+
+Start Docker Desktop with Linux containers, then:
 
 ```sh
 docker compose up --build -d --wait
@@ -36,6 +40,7 @@ The API listens on port 3000 by default. Compose runs PostgreSQL only. `npm run 
 | `FILE_STORAGE_DRIVER` | Provider for new uploads, default `filesystem`; unknown providers fail startup |
 | `FILE_STORAGE_ROOT` | Private filesystem directory, default `./uploads`; relative to `backend/`, independent of the working directory |
 | `UPLOAD_MAX_FILE_SIZE_BYTES` | Maximum file bytes, default `104857600` (100 MiB); integer from 1 through 2147483647 |
+| `FFPROBE_PATH` | `ffprobe` command name or path, default `ffprobe` from `PATH`; startup fails if it can't run or isn't ffprobe |
 
 Existing environment variables take precedence over `.env`. CORS allows GET, POST, PATCH, DELETE, JSON, and Authorization headers from the configured origin. Authentication uses bearer tokens, not cookies. Keep private database credentials and signing keys out of frontend `VITE_*` configuration.
 
@@ -91,7 +96,7 @@ Login is limited to 20 requests per IP per 15 minutes, including successful and 
 
 ## Uploaded files
 
-Send exactly one nonempty file in the multipart field `file`, with no additional fields. The API accepts JPEG, PNG, WebP, and MP4, identified from a bounded 4100-byte content sample using `file-type`. The client-declared MIME type and filename extension do not determine acceptance. This detects format signatures; it does not validate entire media files, codecs, dimensions, duration, or suitability for a controller. There is no transcoding or campaign approval workflow in this API.
+Send exactly one nonempty file in the multipart field `file`, with no additional fields. The API accepts JPEG, PNG, WebP, and MP4, identified from a bounded 4100-byte content sample using `file-type`. The client-declared MIME type and filename extension do not determine acceptance. This detects format signatures only; MP4 uploads are then checked with `ffprobe` (see [Video probing](#video-probing)). Neither check enforces limits on codecs, dimensions, duration, or suitability for a controller, because those constraints aren't decided yet. There is no transcoding or campaign approval workflow in this API.
 
 ```sh
 curl -H "Authorization: Bearer <accessToken>" -F "file=@advertisement.mp4" http://localhost:3000/files
@@ -103,7 +108,15 @@ Public file metadata is `{ id, ownerId, originalName, mimeType, size, createdAt,
 
 `GET /files?limit=50&offset=0` paginates newest first, with descending IDs breaking timestamp ties. `limit` is 1–100 and `offset` is 0–2147483647; defaults are 50 and 0. Invalid, repeated, or unsupported query parameters return `400`. `total` counts only files visible to the current user. An inactive, future, or expired administrator retains ordinary owner access but cannot access other users' files. Missing and inaccessible file IDs both return `404`; malformed IDs return `400`.
 
-All file routes require a current session and return `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. Downloads are streamed as attachments with `Content-Length`; range playback is not implemented. Upload errors use the existing `{ error: message }` format: `400` for malformed multipart, missing/empty files, wrong fields, or additional parts; `413` for files over the configured limit; `415` for unsupported request/content types; and generic `500` for storage or database failures. Authentication runs before multipart parsing.
+All file routes require a current session and return `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. Downloads are streamed as attachments with `Content-Length`; range playback is not implemented. Upload errors use the existing `{ error: message }` format: `400` for malformed multipart, missing/empty files, wrong fields, or additional parts; `413` for files over the configured limit; `415` for unsupported request/content types; `422` for MP4 files that ffprobe can't read or that lack a usable video stream; and generic `500` for storage or database failures, or when ffprobe can't run. Authentication runs before multipart parsing.
+
+### Video probing
+
+After an MP4 is stored, and before its metadata is saved, the API copies it from the storage provider into a new private directory under the OS temporary directory (`os.tmpdir()`, which follows `TMPDIR` on Unix and `TEMP` on Windows) and runs `ffprobe` on the copy. The copy is needed because many MP4 files keep their index at the end, which ffprobe can't reach through a pipe, and it keeps probing independent of the storage provider. The temporary directory is removed afterward.
+
+The upload is rejected with `422`, and its stored object deleted, when ffprobe can't read the file as MP4, or when the first video stream lacks a codec, positive dimensions, or a positive duration. ffprobe runs without a shell, may read only local files (`-protocol_whitelist file`), uses only the MP4 demuxer, and is killed after 30 seconds. A missing binary or a timeout returns the generic `500`.
+
+Probing reads container metadata only. It doesn't decode frames, enforce limits, store the metadata, or transcode. Each MP4 upload in progress needs temporary disk space equal to its size. The helpers live in `src/lib/ffmpeg.ts`; run any future FFmpeg work through `runMediaTool` there, with argument arrays and the same input restrictions.
 
 ### Storage providers
 
@@ -113,7 +126,7 @@ The filesystem provider writes exclusively to generated UUID keys beneath `FILE_
 
 To add S3, implement the same contract and register it in `createFileStorage` in `src/config/files.ts`, then select its name with `FILE_STORAGE_DRIVER`. Each metadata row retains its provider and key, so keep the filesystem provider registered and its root available while existing files remain there. Changing the selected provider affects new uploads only; it does not migrate old files. Controllers and HTTP response shapes stay unchanged. Factories accept injected storage, including `createApp({ fileStorage, uploadMaxFileSizeBytes })`, for isolated verification.
 
-Metadata is inserted only after successful storage. Failed metadata creation triggers object cleanup; malformed/interrupted uploads and storage failures clean up partial files. Deletion removes the object first, then metadata, so a database failure can be retried safely. Storage and PostgreSQL do not share a transaction: a process crash or failed compensating cleanup can leave orphaned objects, and a failed metadata deletion can leave a record whose content is missing. Automatic reconciliation and storage migration are not implemented. Retrying an upload after a lost success response may create another file.
+Metadata is inserted only after successful storage and, for MP4 files, a successful probe. A failed probe or failed metadata creation triggers object cleanup; malformed/interrupted uploads and storage failures clean up partial files. Deletion removes the object first, then metadata, so a database failure can be retried safely. Storage and PostgreSQL do not share a transaction: a process crash or failed compensating cleanup can leave orphaned objects, and a failed metadata deletion can leave a record whose content is missing. Automatic reconciliation and storage migration are not implemented. Retrying an upload after a lost success response may create another file.
 
 ## Sessions and administrator safety
 

@@ -19,7 +19,9 @@ export function loadFileConfig(env: NodeJS.ProcessEnv = process.env) {
   if (!root.trim() || root.includes('\0')) throw new Error('FILE_STORAGE_ROOT must be a valid directory path.');
   const rawSize = env.UPLOAD_MAX_FILE_SIZE_BYTES ?? '104857600';
   if (!/^\d+$/.test(rawSize)) throw new Error('UPLOAD_MAX_FILE_SIZE_BYTES must be a positive integer.');
-  return { driver, root: resolve(backendRoot, root), maxFileSize: validateUploadSize(Number(rawSize)) };
+  const ffprobePath = env.FFPROBE_PATH ?? 'ffprobe';
+  if (!ffprobePath.trim() || ffprobePath.includes('\0')) throw new Error('FFPROBE_PATH must be a command name or file path.');
+  return { driver, root: resolve(backendRoot, root), maxFileSize: validateUploadSize(Number(rawSize)), ffprobePath };
 }
 
 export function createFileStorage(config: ReturnType<typeof loadFileConfig>) {

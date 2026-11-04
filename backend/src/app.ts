@@ -28,7 +28,11 @@ export function createApp(options: { fileStorage?: FileStorageRegistry; uploadMa
   });
 
   app.use('/users', createUserRouter());
-  app.use('/files', createFileRouter(fileStorage, options.uploadMaxFileSizeBytes ?? fileConfig.maxFileSize));
+  app.use('/files', createFileRouter(
+    fileStorage,
+    options.uploadMaxFileSizeBytes ?? fileConfig.maxFileSize,
+    fileConfig.ffprobePath,
+  ));
 
   app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });

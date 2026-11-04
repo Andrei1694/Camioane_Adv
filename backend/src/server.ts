@@ -1,10 +1,21 @@
 import app from './app.ts';
+import { loadFileConfig } from './config/files.ts';
+import { checkFfprobe } from './lib/ffmpeg.ts';
 import { prisma } from './lib/prisma.ts';
 
 const port = Number(process.env.PORT || 3000);
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('PORT must be an integer between 1 and 65535.');
+}
+
+// MP4 uploads depend on ffprobe, so fail at startup rather than on the first video.
+// Prisma connects lazily, so there is nothing to disconnect yet.
+try {
+  await checkFfprobe(loadFileConfig().ffprobePath);
+} catch {
+  console.error('ffprobe could not run. Install FFmpeg, or set FFPROBE_PATH to the ffprobe binary.');
+  process.exit(1);
 }
 
 try {

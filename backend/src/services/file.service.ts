@@ -1,10 +1,16 @@
+import { createWriteStream } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pipeline } from 'node:stream/promises';
 import { Prisma } from '../generated/prisma/client.ts';
 import type { UploadedFile } from '../generated/prisma/client.ts';
 import { AppError } from '../lib/app-error.ts';
+import { InvalidVideoError, probeVideo } from '../lib/ffmpeg.ts';
 import { prisma } from '../lib/prisma.ts';
 import { isRoleValid } from '../lib/role.ts';
 import { StorageNotFoundError } from '../storage/file-storage.ts';
-import type { FileStorageRegistry } from '../storage/file-storage.ts';
+import type { FileStorage, FileStorageRegistry } from '../storage/file-storage.ts';
 import type { FilePagination, StoredUpload } from '../types/file.ts';
 import type { SessionIdentity } from '../types/user.ts';
 
@@ -55,11 +61,31 @@ async function accessibleFile(actor: SessionIdentity, id: string) {
   });
 }
 
-export function createFileService(storage: FileStorageRegistry) {
+async function probeStoredVideo(provider: FileStorage, key: string, ffprobePath: string) {
+  // ffprobe needs a seekable file because many MP4s keep their index at the end,
+  // which a pipe cannot reach. Copying through the provider works for any storage.
+  const directory = await mkdtemp(join(tmpdir(), 'camioane-probe-'));
+  try {
+    const path = join(directory, 'upload.mp4');
+    await pipeline(await provider.open(key), createWriteStream(path, { flags: 'wx', mode: 0o600 }));
+    return await probeVideo(ffprobePath, path);
+  } catch (error) {
+    if (error instanceof InvalidVideoError) throw new AppError(422, error.message);
+    throw error;
+  } finally {
+    await rm(directory, { recursive: true, force: true, maxRetries: 3 }).catch(() => {
+      console.error(`Failed to remove temporary directory ${directory}`);
+    });
+  }
+}
+
+export function createFileService(storage: FileStorageRegistry, ffprobePath: string) {
   return {
     async create(actor: SessionIdentity, upload: StoredUpload) {
       const provider = storage.get(upload.provider);
       try {
+        // Reject unreadable videos before saving metadata; the catch deletes the object.
+        if (upload.mimeType === 'video/mp4') await probeStoredVideo(provider, upload.key, ffprobePath);
         const file = await transaction(async (tx) => {
           await accessScope(tx, actor);
           return tx.uploadedFile.create({

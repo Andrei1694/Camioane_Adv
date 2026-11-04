@@ -6,11 +6,41 @@ import { roleLabels } from '../lib/user'
 import type { User } from '../lib/user'
 import './AppShell.css'
 
+// The app icon (a car carrying a rooftop LED screen) redrawn small enough for the sidebar.
+function BrandMark() {
+  return (
+    <svg className="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+      <rect x="5" y="2" width="22" height="13" rx="2.5" fill="#12263a" />
+      <rect x="7" y="4" width="18" height="9" rx="1.2" fill="#00c9e8" />
+      <path d="M9 6.5h4v4H9zm5 0h4v4h-4zm5 0h4v4h-4zM11 15h2v3h-2zm8 0h2v3h-2z" fill="#12263a" />
+      <path d="M3 26.5v-3.6c0-1.4 1-2.4 2.4-2.6l3-.4 3.1-3.3c.5-.5 1.1-.8 1.8-.8h6.6c.8 0 1.5.4 2 1l2.6 3.1 1.6.2c1.4.2 2.4 1.4 2.4 2.8v3.6z" fill="#12263a" />
+      <path d="m10.4 20.2 2.4-2.6h3v2.6zm7.2-2.6h2.9l2.2 2.6h-5.1z" fill="#fff" />
+      <rect x="4.6" y="22.6" width="3.2" height="1.4" rx=".7" fill="#00c9e8" />
+      <circle cx="9.5" cy="26.5" r="3" fill="#12263a" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="22.5" cy="26.5" r="3" fill="#12263a" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
+function Brand({ onNavigate }: { onNavigate?: () => void }) {
+  return <Link to="/" className="sidebar-brand" onClick={onNavigate}><BrandMark />Camioane App</Link>
+}
+
 function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage: boolean, onNavigate?: () => void }) {
   return (
     <>
       <nav className="sidebar-nav" aria-label="Main navigation">
         <p className="sidebar-label">Workspace</p>
+        {canManage && (
+          <Link to="/dashboard" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M3.5 16a8.5 8.5 0 0 1 17 0" />
+              <path d="m12 16 4.5-4.5" />
+              <path d="M4 20h16" />
+            </svg>
+            Dashboard
+          </Link>
+        )}
         {canManage && (
           <Link to="/routes" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -83,11 +113,11 @@ export default function AppShell({ children, user, canManage = false }: { childr
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="app-sidebar" aria-label="Sidebar">
-        <Link to="/" className="sidebar-brand">Camioane App</Link>
+        <Brand />
         <SidebarContent user={user} canManage={canManage} />
       </aside>
       <header className="mobile-header">
-        <Link to="/" className="sidebar-brand">Camioane App</Link>
+        <Brand />
         <button className="navigation-toggle" type="button" aria-label="Open navigation"
           aria-haspopup="dialog" aria-controls="mobile-navigation"
           onClick={() => mobileNavigation.current?.showModal()}>
@@ -104,7 +134,7 @@ export default function AppShell({ children, user, canManage = false }: { childr
             || event.clientY < bounds.top || event.clientY > bounds.bottom) closeNavigation()
         }}>
         <div className="mobile-navigation-heading">
-          <Link to="/" className="sidebar-brand" onClick={closeNavigation}>Camioane App</Link>
+          <Brand onNavigate={closeNavigation} />
           <button className="navigation-toggle" type="button" aria-label="Close navigation" onClick={closeNavigation}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="m6 6 12 12M6 18 18 6" />

@@ -24,6 +24,10 @@ scoped here unless the requested feature also requires changes elsewhere.
   page uses a semantic table; TanStack Table remains available but unconfigured.
 - The Users page and form live under `src/pages/UsersPage/`; shared types,
   validation, API client and query client live under `src/lib/`.
+- The admin dashboard lives under `src/pages/DashboardPage/` and runs on the
+  invented rows in `sampleData.ts` until fleet, booking, creative and playback
+  APIs exist. Its actions change local state only. Compute figures in
+  `dashboardData.ts` from rows; never type a total by hand.
 - Role values are ADMIN, OPERATOR, DRIVER, and USER. Reuse the role list,
   validation guard, and labels in `src/lib/user.ts`. Only a verified, currently
   valid ADMIN role grants management access; preserve denial for other roles.
@@ -115,6 +119,8 @@ the build and lint checks were run.
 
 ## UI and verification
 
+- Follow `../DESIGN.md` for tokens, type, layout, components and data
+  formatting. Update it when you add or change one.
 - Use semantic elements, labeled controls, visible keyboard focus, and layouts
   that work on narrow screens. Verify changed interactions in a browser when one
   is available.

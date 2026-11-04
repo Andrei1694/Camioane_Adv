@@ -1,6 +1,6 @@
 # Design
 
-This file describes the visual system of the Camioane App admin frontend as it is built. When the code changes a token, a size or a pattern listed here, update this file in the same commit.
+This file describes the visual system of the Camioane App admin frontend as it is built. The mobile app (`mobile/`) uses the same tokens and type; see [Mobile app](#mobile-app) for what differs. When the code changes a token, a size or a pattern listed here, update this file in the same commit.
 
 The system follows one idea: the admin screens are tools people work in every day. Colour belongs to the data and the one action that matters. The chrome stays quiet, and the product's own things (its cars, routes, clients, credits) carry the screen.
 
@@ -22,6 +22,8 @@ The system follows one idea: the admin screens are tools people work in every da
 | Car-hours, sample-data times and dates, waiting times at the sample's moment | `frontend/src/pages/DashboardPage/dashboardData.ts` |
 | Video timecodes | `frontend/src/pages/VideoEditorPage/edit.ts` |
 | Brand artwork | `assets/app-icon/` |
+| Mobile tokens, type scale and touch sizes | `mobile/src/lib/theme.ts` |
+| Mobile buttons and screen frame | `mobile/src/components/Button.tsx`, `Screen.tsx` |
 
 ## Principles
 
@@ -304,6 +306,17 @@ Use the helpers in `frontend/src/lib/format.ts` (shared) and `dashboardData.ts` 
 - Emoji, "Welcome back" greetings, placeholder people or companies, invented vanity figures.
 - Monospace outside plates, IDs and code.
 - A second primary button on a screen.
+
+## Mobile app
+
+The driver app in `mobile/` reuses the tokens and type above, written out as React Native constants in `mobile/src/lib/theme.ts`. When a token changes, update both files.
+
+- **Theme:** light only (`userInterfaceStyle: "light"`), with white screens. There is no sidebar or sheet: each screen is one column on `--surface`, 16px side padding, at most 560px wide, inside the safe area.
+- **Fonts:** IBM Plex Sans 400, 500 and 600, bundled from `@expo-google-fonts/ibm-plex-sans`, so there are no font requests at run time. Each weight is its own family, so styles set `fontFamily` (`fonts.medium`), not `fontWeight`. Plex Mono isn't loaded yet; add it when the app shows plates or IDs.
+- **Sizes:** the type scale is the web's (title 22px, section 16px, body and buttons 14px, meta 13px). Two things differ: every tappable element is at least 44pt tall, and input text is 16px so iOS doesn't zoom and fields read at arm's length.
+- **Components:** `Button` has the web's primary and secondary looks, with pressed in place of hover and the same disabled fill. Inputs use a 1px `--control-border`, a 6px radius, `--focus` on the border while focused, and `--danger` when invalid. The home screen's empty state is the web's dashed `.empty-state` box.
+- **Icon and splash:** from `assets/app-icon/`. The iOS icon is flattened onto white because the App Store rejects icons with transparency. Android's adaptive icon uses `android-icon.png` on white, and the splash shows the mark on white.
+- **Checking a change:** run `npm run typecheck`, `npm run lint` and `npx expo export` in `mobile/`. Look at the screen on a small phone (375pt wide) and a large one with the keyboard open, and with the largest system text size.
 
 ## Known gaps
 

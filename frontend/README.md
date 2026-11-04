@@ -33,12 +33,13 @@ Production has no localhost fallback. For a local production preview, build with
 - `/files/:fileId/edit` opens the administrator-only video editor for one uploaded MP4.
 - `/users` requires administrator access.
 - `/routes` opens the administrator-only route builder.
+- `/cars/new` opens the administrator-only Add car form. Nothing is saved yet: the backend has no fleet API.
 - `/profile` lets every signed-in account, whatever its role, set or remove its own profile picture.
 - `/access-denied` explains missing management access and lets Admin accounts retry their access check. Successful revalidation returns to `/users`; sign-out remains available in navigation.
 
 Signed-in views share a sidebar with role-aware navigation, the verified account's picture, email and role, a Profile link, and sign-out. Below 768px, navigation opens in a modal drawer with keyboard focus containment, Escape/backdrop dismissal, and focus restoration. A skip link moves keyboard users directly to the page content. Login and session-verification screens keep their standalone layout.
 
-The assigned role name is separate from verified management access. After `GET /users/me` verifies an Admin account, one shared `GET /users` query checks administrator access and supplies the Users table. `/dashboard`, `/files` (and its video editor), `/users` and `/routes`, including their navigation links, require a successful access check. Non-admin accounts never request the administrator user list.
+The assigned role name is separate from verified management access. After `GET /users/me` verifies an Admin account, one shared `GET /users` query checks administrator access and supplies the Users table. `/dashboard`, `/files` (and its video editor), `/users`, `/routes` and `/cars/new`, including their navigation links, require a successful access check. Non-admin accounts never request the administrator user list.
 
 Access is rechecked on page entry, window focus/tab visibility, reconnect, and manual retry, without polling. A `403` from a list or management mutation discards cached users and redirects to account access without signing out. Inactive, future, and expired Admin roles still allow login/profile access; reactivating the shared role allows access to be restored with the same unexpired session. The UI cannot distinguish the reason for denial because the API exposes role names only, not IDs, active flags, or validity dates. Role changes become visible at the next access check or management API response.
 
@@ -90,6 +91,17 @@ Open it with **Edit** on a video row in Files, or visit `/files/<file id>/edit` 
 - Leaving with an export running, or with an edit that hasn't been exported, asks first.
 
 The API has no `GET /files/:id`, so the editor finds the file's name and type in the Files pages already cached, or else pages through `GET /files?limit=100` until it finds the ID. A missing or malformed ID shows "This file isn't in Files any more, or the link is wrong."
+
+## Add car
+
+Open **Add car** in the sidebar, or visit `/cars/new` as an administrator. The backend has no fleet API yet, so the page saves nothing: each car added goes into a list on the page, newest first, and the list is gone once you leave or reload the page. The page says so in its description.
+
+- **Plate** is required. It is upper-cased, with each run of spaces or hyphens between groups made one space ("b-101  cmn" becomes "B 101 CMN"). It takes the letters A–Z, digits and spaces, 2–10 letters and digits in all, and a plate already in the list is refused, whatever its spacing.
+- **Make and model** is optional, up to 60 characters, with its spaces collapsed.
+- **Driver** is optional. It lists the accounts with the Driver role from the shared users query, by email. With none, the select is disabled and its hint points to the Users page. A row whose driver later loses the role says "(no longer a driver)", and one whose account is gone says "Account not found".
+- **Remove** takes a car off the list and moves focus to the list's heading.
+
+The page's validation lives in `src/pages/AddCarPage/car.ts`. When a fleet API exists, mirror its limits there, add cars through a TanStack Query mutation, and list them from the API instead of page state.
 
 ## Route builder
 

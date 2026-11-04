@@ -54,6 +54,13 @@ scoped here unless the requested feature also requires changes elsewhere.
   query under `creditsKey(revision)` so one invalidation refreshes the page after an
   action, and send 403s from its mutations through `handleAdminError`. The API has
   no list of every account's balance; read one account at a time.
+- The Add car page lives under `src/pages/AddCarPage/` (admin-only at `/cars/new`).
+  The backend has no fleet API, so added cars live in the page's React state only and
+  are gone when it unmounts; the page says so. Plate and model rules live in
+  `car.ts`. The Driver select lists accounts with the Driver role from the shared
+  `useAdminAccess` users. When a fleet API exists, add through a TanStack Query
+  mutation and read the list from the API; don't move the page state into Zustand
+  or browser storage in the meantime.
 - The admin dashboard lives under `src/pages/DashboardPage/` and runs on the
   invented rows in `sampleData.ts` until fleet, booking, creative and playback
   APIs exist. Its actions change local state only. Compute figures in

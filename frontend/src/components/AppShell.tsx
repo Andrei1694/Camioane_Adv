@@ -55,6 +55,17 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
           </Link>
         )}
         {canManage && (
+          <Link to="/cars/new" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <rect x="6" y="2.5" width="12" height="6.5" rx="1" />
+              <path d="M12 9v2M5.5 18H3v-3.5L5 11h14l2 3.5V18h-2.5m-9 0h5" />
+              <circle cx="7.5" cy="18" r="2" />
+              <circle cx="16.5" cy="18" r="2" />
+            </svg>
+            Add car
+          </Link>
+        )}
+        {canManage && (
           <Link to="/files" className="sidebar-link" onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />

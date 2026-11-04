@@ -14,6 +14,7 @@ The system follows one idea: the admin screens are tools people work in every da
 | Dashboard layout tokens and the data patterns (KPIs, timeline, rows, tables, the review dialog's contents) | `frontend/src/pages/DashboardPage/DashboardPage.css` |
 | Files page: files table, preview dialog | `frontend/src/pages/FilesPage/FilesPage.css` |
 | Credits page: pending queue, ledger and purchase tables, review and adjust dialogs | `frontend/src/pages/CreditsPage/CreditsPage.css` |
+| Add car page: the car form box, the added-cars table | `frontend/src/pages/AddCarPage/AddCarPage.css` |
 | Shared row pieces: the owner's email (`OwnerLabel`), "1–50 of 132" paging (`Pagination`) | `frontend/src/components/OwnerLabel.tsx`, `Pagination.tsx` |
 | Profile pictures: the circle (`Avatar`) and the upload/remove block (`AvatarEditor`) | `frontend/src/components/Avatar.css`, `Avatar.tsx`, `AvatarEditor.css`, `AvatarEditor.tsx` |
 | Profile page | `frontend/src/pages/ProfilePage/ProfilePage.css` |
@@ -143,6 +144,7 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 | `.routes-panel` | ≤ 720px | Each route becomes two lines: the route and its booked hours, then the other figures with their labels. |
 | `.files-frame` | ≤ 760px | Each file becomes stacked lines: the name and type, the owner on its own line (so a long email never strands a separator), "uploaded · size", then the actions. The header row is visually hidden. |
 | `.credits-frame` | ≤ 760px | Each row becomes stacked lines: the account (with its pill or kind), the figures as one line ("1,000 cr · 1,000.00 EUR", "+100 cr · balance 540 cr"), one line per stamp or note with a grey label ("Requested …", "Waiting …"), then the action. A missing note or settlement drops its line. The header row is visually hidden. |
+| `.cars-frame` | ≤ 560px | Each car becomes stacked lines: the plate and its model ("B 101 CMN · Iveco Daily 70C"; a missing model drops out), the driver with a grey "Driver" label, then Remove. The header row is visually hidden. |
 | `.segments-frame` | ≤ 720px | Each segment becomes stacked lines: its name, then the In and Out fields and the length with grey labels, "Plays …", then the actions. The header row is visually hidden. |
 
 - The page itself never scrolls sideways.
@@ -157,7 +159,7 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 | 16px | Sheet |
 | 12px | Dialog |
 | 10px | Panels, KPI strip |
-| 8px | Inner boxes: review checks, empty state, Users form |
+| 8px | Inner boxes: review checks, empty state, Users and car forms |
 | 6px | Buttons, inputs, sidebar links, sample-data notice |
 | 4px | Pills, timeline bars |
 
@@ -203,7 +205,7 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 - One card split into 3–5 cells by 1px dividers. Each cell has a 13px/500 grey label, a 28px/400 value with its unit, and a 12px note that names the baseline or window.
 - Don't repeat a figure that another block on the screen already leads with.
 
-### Tables (`.routes-table`, `.price-table`, `.files-table`, `.credits-table`, `.users-table`)
+### Tables (`.routes-table`, `.price-table`, `.files-table`, `.credits-table`, `.cars-table`, `.users-table`)
 
 - Headers are 12px, grey, regular weight and sentence case, with no fill band. The older Users table differs: it uses 13px/500 headers over a 1px `--border` rule.
 - Rows are separated by 1px `--rule`. Don't stripe them.
@@ -213,6 +215,7 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 - The Users table's identity cell starts with the account's 32px avatar, 12px before the email.
 - The files table puts the file name (14px/500) and its type ("MP4 video") in the identity column. The owner is an email with a grey "(you)", or a grey "Deleted user". The upload day sits over the time, and the size is right-aligned with a grey unit. Its actions are Preview (ghost), Edit (ghost link, videos only), Download (text) and Delete (text, `danger`), centred on the first text line.
 - The credits tables put the account's email in the identity column. The ledger adds the kind ("Purchase", "Adjustment") as its grey subline, and the purchases table adds the status pill beside the email and "Ref" with the payment reference in mono under it. Credits, money, changes and balances are right-aligned with grey units. Changes carry their sign ("+1,000", "−200") and no colour, because up or down isn't good or bad. A missing note or settlement is a grey dash.
+- The cars table puts the plate in mono (400) in the identity column, then the make and model, the driver's email, and Remove (text, `danger`). A missing model or driver is a grey dash. A driver who has lost the role keeps the email with a grey "(no longer a driver)"; a gone account reads "Account not found" in grey.
 - A long list pages in the API's steps (50 rows) with a footer (`Pagination`, `.pagination`): "1–50 of 132" and Previous and Next ghost buttons. It shows only when there is more than one page.
 
 ### Fleet timeline (`FleetTimeline.tsx`)
@@ -270,6 +273,13 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 - Waiting times count to the moment the list was read, not to a clock that ticks.
 - Outcome lines quote the server's figures: "Confirmed 1,000 cr for ana@client.ro. Balance now 1,440 cr."
 
+### Add car page (`AddCarPage/`)
+
+- **Order:** the h1 "Add car" and a description that says cars can't be saved yet and stay on the page until it's left or reloaded, then the grey outcome line ("Added B 101 CMN.", "Removed B 101 CMN."). Then the form in an inner box (1px `--border`, 8px radius, 24px padding; 20px 16px at ≤ 600px), and "Added on this page" (18px/600 h2) with the table, or the empty state "No cars added yet."
+- **Form:** Plate (mono input, hint "As on the number plate, for example B 101 CMN.") beside Make and model (optional), then Driver (optional, "No driver" first, then the Driver accounts by email). The form's one action, "Add car", is the screen's primary button. Inputs stay 16px, as in the Users form; the table below is 14px.
+- **Focus:** an invalid field takes focus. After adding, the cleared Plate field takes it, so the next car can be typed at once. After Remove, the list's heading takes it.
+- With no Driver accounts, the select is disabled and its hint says why, with a link to Users.
+
 ### Notices and empty states
 
 - **Sample-data notice** (`.sample-notice`): `#fffbeb` fill, 1px `#fde68a` border, 12px `#92400e` text. It is for snapshot or static data only, never a page ground.
@@ -293,6 +303,7 @@ Use the helpers in `frontend/src/lib/format.ts` (shared) and `dashboardData.ts` 
 | Date | en-GB, short: `Wed 4 Nov`; with the year where the day stands alone: `Wed, 4 Nov 2026` | `formatDay`, `formatLongDay` |
 | Waiting time | `2 d 4 h`, `22 h 25 min`, `5 min` | `formatDuration`; the dashboard's `waitingFor` measures to the sample's moment |
 | Counts with nouns | Singular or plural: `1 car`, `6 dates`, `132 files` | `plural` |
+| Plates | Upper case, groups split by single spaces, in mono: `B 101 CMN` | `normalizePlate` (`AddCarPage/car.ts`) |
 | Video timecode | Minutes and seconds to the tenth: `0:12.4`, `1:02:03.4` past an hour; ruler labels drop the tenth: `0:05`. Source points in the editor's fields are seconds to the tenth: `12.0` | `formatTimecode` (`VideoEditorPage/edit.ts`) |
 | Missing value | A grey em dash, `—` (`.missing`) | — |
 

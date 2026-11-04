@@ -1,0 +1,186 @@
+/* Add car page: the form box, then the cars added on this page. This file loads before App.css,
+   so selectors stay two classes deep to win ties with the shared primitives. */
+
+/* The outcome line is one grey sentence under the title. */
+.add-car-page .status-message {
+  color: var(--muted);
+}
+
+.add-car-page .car-form {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* Plates are the one mono text on the page, in the field and in the table alike. Plex Mono
+   loads at 400 only, so the plate keeps that weight even as the row's identity cell. */
+.add-car-page .plate-input,
+.add-car-page .plate {
+  font-family: var(--mono);
+  font-weight: 400;
+}
+
+/* Rows are 14px; the form above keeps 16px inputs, as the Users form does. */
+.add-car-page .added-cars {
+  margin-top: 32px;
+  font-size: 14px;
+}
+
+.add-car-page .added-cars h2 {
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Cars table: the files table's rules, with the plate as the identity column -------------- */
+
+.add-car-page .cars-frame {
+  container: cars / inline-size;
+}
+
+.add-car-page .cars-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.add-car-page .cars-table caption {
+  margin-bottom: 12px;
+  color: var(--muted);
+  text-align: left;
+}
+
+.add-car-page .cars-table th,
+.add-car-page .cars-table td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+.add-car-page .cars-table th:first-child,
+.add-car-page .cars-table td:first-child {
+  padding-left: 0;
+}
+
+.add-car-page .cars-table th:last-child,
+.add-car-page .cars-table td:last-child {
+  padding-right: 0;
+}
+
+.add-car-page .cars-table thead th {
+  padding-top: 0;
+  border-top: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.add-car-page .cars-table tbody th {
+  font-weight: 400;
+}
+
+.add-car-page .col-plate {
+  width: 136px;
+}
+
+.add-car-page .col-driver {
+  width: 36%;
+}
+
+.add-car-page .col-actions {
+  width: 96px;
+}
+
+.add-car-page .model-cell,
+.add-car-page .driver-email {
+  overflow-wrap: anywhere;
+}
+
+/* The 32px button sits centred on the row's first 21px text line. */
+.add-car-page .actions-cell {
+  text-align: right;
+}
+
+.add-car-page .actions-cell .text-button {
+  margin-block: -5px;
+}
+
+/* A label that only the stacked rows need; the column header carries it otherwise. */
+.add-car-page .stack-label {
+  display: none;
+}
+
+/* Below 560px of its own width, each car becomes stacked lines: the plate and its model,
+   the driver with a grey label, then the action. */
+@container cars (max-width: 560px) {
+  .add-car-page .cars-table,
+  .add-car-page .cars-table tbody,
+  .add-car-page .cars-table caption {
+    display: block;
+  }
+
+  .add-car-page .cars-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .add-car-page .cars-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    padding: 12px 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .add-car-page .cars-table th,
+  .add-car-page .cars-table td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .add-car-page .cars-table .model-cell::before {
+    content: '·' / '';
+    padding-inline: 6px;
+    color: var(--muted);
+  }
+
+  /* A missing model is a dash in a column, but noise beside the plate. */
+  .add-car-page .cars-table .model-cell:has(> .missing) {
+    display: none;
+  }
+
+  .add-car-page .cars-table .driver-cell {
+    flex: 1 1 100%;
+    margin-top: 2px;
+    font-size: 13px;
+  }
+
+  .add-car-page .stack-label {
+    display: inline;
+    color: var(--muted);
+  }
+
+  .add-car-page .cars-table .actions-cell {
+    flex: 1 1 100%;
+    margin-top: 8px;
+    text-align: left;
+  }
+
+  .add-car-page .actions-cell .text-button {
+    margin: 0 0 0 -12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .add-car-page .car-form {
+    padding: 20px 16px;
+  }
+}

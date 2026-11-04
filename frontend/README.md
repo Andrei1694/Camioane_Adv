@@ -30,13 +30,14 @@ Production has no localhost fallback. For a local production preview, build with
 - `/` redirects to login or the appropriate signed-in view.
 - `/login` accepts existing accounts only; account creation is administrator-controlled.
 - `/files` lists, uploads, previews, downloads and deletes uploaded images and videos; it requires administrator access.
+- `/files/:fileId/edit` opens the administrator-only video editor for one uploaded MP4.
 - `/users` requires administrator access.
 - `/routes` opens the administrator-only route builder.
 - `/access-denied` explains missing management access and lets Admin accounts retry their access check. Successful revalidation returns to `/users`; sign-out remains available in navigation.
 
 Signed-in views share a sidebar with role-aware navigation, the verified account email and role, and sign-out. Below 768px, navigation opens in a modal drawer with keyboard focus containment, Escape/backdrop dismissal, and focus restoration. A skip link moves keyboard users directly to the page content. Login and session-verification screens keep their standalone layout.
 
-The assigned role name is separate from verified management access. After `GET /users/me` verifies an Admin account, one shared `GET /users` query checks administrator access and supplies the Users table. `/dashboard`, `/files`, `/users` and `/routes`, including their navigation links, require a successful access check. Non-admin accounts never request the administrator user list.
+The assigned role name is separate from verified management access. After `GET /users/me` verifies an Admin account, one shared `GET /users` query checks administrator access and supplies the Users table. `/dashboard`, `/files` (and its video editor), `/users` and `/routes`, including their navigation links, require a successful access check. Non-admin accounts never request the administrator user list.
 
 Access is rechecked on page entry, window focus/tab visibility, reconnect, and manual retry, without polling. A `403` from a list or management mutation discards cached users and redirects to account access without signing out. Inactive, future, and expired Admin roles still allow login/profile access; reactivating the shared role allows access to be restored with the same unexpired session. The UI cannot distinguish the reason for denial because the API exposes role names only, not IDs, active flags, or validity dates. Role changes become visible at the next access check or management API response.
 
@@ -62,9 +63,22 @@ Open **Files** in the sidebar, or visit `/files` as an administrator. The page u
 
 - **Upload file** opens a picker limited to JPEG, PNG, WebP and MP4, one file at a time. A file whose declared type is something else, or that is empty, is refused before any byte is sent; the API still checks the content of everything else. Uploads go through `XMLHttpRequest` in `src/lib/api.ts`, because `fetch` cannot report upload progress. The block shows "12.4 of 48.0 MB · 26%", then "Checking and saving…" once every byte is sent, with Cancel. Leaving the page during an upload asks first and cancels it. Failures stay in the block; Retry appears only for network, conflict and server errors.
 - **Preview** opens a dialog that fetches that one file with the bearer token and shows the image or plays the video, with Download reusing the loaded file. **Download** fetches the file and saves it under its original name. Both load the whole file into memory: the API has no thumbnails or range playback.
+- **Edit** (videos only) opens the video editor described below.
 - **Delete** asks for confirmation naming the file. The API deletes for its owner too.
 
 Formats, sizes and owners are not filtered or searched: the API supports only `limit` and `offset`.
+
+## Video editor
+
+Open it with **Edit** on a video row in Files, or visit `/files/<file id>/edit` as an administrator. The page is lazy-loaded and cuts one uploaded MP4:
+
+- The preview plays the edit, not the source: it jumps over the cuts. The video loads whole into memory, like Preview, because the API has no range playback.
+- The timeline uses [`@xzdarcy/react-timeline-editor`](https://github.com/xzdarcy/react-timeline-editor). Each kept segment is a bar on one row, packed end to end, so the timeline always shows the exported video. Drag a bar's edges to trim it, drag the bar to reorder it, click the ruler or drag the playhead to seek, and use **Split at playhead**, **Delete segment**, **Undo**, **Redo** (also Ctrl/Cmd+Z and Shift+Ctrl/Cmd+Z), **Reset** and the zoom buttons.
+- The table under the timeline repeats each segment with its source in and out points in seconds, which can be typed, and Earlier, Later and Delete buttons. Together with the **Playhead** slider under the preview, it is the keyboard route through the editor; the timeline itself is pointer-only.
+- **Export to Files** renders the edit in the browser with WebCodecs, through [mediabunny](https://mediabunny.dev/) (loaded only when you export). It writes an MP4 with H.264 video and AAC sound, or Opus where the browser can't encode AAC (as in Chromium on Linux). Then it uploads the result through `POST /files` as `<name> (edited).mp4`, with the same progress, Cancel and Retry as an upload. The original file is never changed. Browsers without `VideoEncoder` or an H.264 encoder can edit but not export, and the page says so.
+- Leaving with an export running, or with an edit that hasn't been exported, asks first.
+
+The API has no `GET /files/:id`, so the editor finds the file's name and type in the Files pages already cached, or else pages through `GET /files?limit=100` until it finds the ID. A missing or malformed ID shows "This file isn't in Files any more, or the link is wrong."
 
 ## Route builder
 

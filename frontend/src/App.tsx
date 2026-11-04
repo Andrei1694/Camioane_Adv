@@ -15,6 +15,7 @@ import './App.css'
 
 // Reloads once when a deployment has replaced the page's chunk.
 const RouteBuilderPage = lazyRouteComponent(() => import('./pages/RouteBuilderPage/RouteBuilderPage'))
+const VideoEditorPage = lazyRouteComponent(() => import('./pages/VideoEditorPage/VideoEditorPage'))
 
 function Layout() {
   const revision = useSession((state) => state.revision)
@@ -52,6 +53,11 @@ const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', com
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: '/login', component: LoginRoute })
 const dashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/dashboard', component: () => <Authenticated adminOnly><DashboardPage /></Authenticated> })
 const filesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/files', component: () => <Authenticated adminOnly><FilesPage /></Authenticated> })
+const videoEditorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/files/$fileId/edit',
+  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Loading video editor…</p>}><VideoEditorPage /></Suspense></Authenticated>,
+})
 const usersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/users', component: () => <Authenticated adminOnly><UsersPage /></Authenticated> })
 const routeBuilderRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -59,7 +65,7 @@ const routeBuilderRoute = createRoute({
   component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Loading route builder…</p>}><RouteBuilderPage /></Suspense></Authenticated>,
 })
 const deniedRoute = createRoute({ getParentRoute: () => rootRoute, path: '/access-denied', component: () => <Authenticated><AccessDenied /></Authenticated> })
-const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, filesRoute, usersRoute, routeBuilderRoute, deniedRoute]) })
+const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, filesRoute, videoEditorRoute, usersRoute, routeBuilderRoute, deniedRoute]) })
 
 declare module '@tanstack/react-router' {
   interface Register {

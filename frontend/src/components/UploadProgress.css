@@ -1,0 +1,62 @@
+/* Upload in progress: the Files page and the video editor both show it under their title.
+   Selectors that meet a shared primitive (.text-button, .request-error) stay two classes deep,
+   because this file can load before App.css. */
+
+.upload-block {
+  margin-top: 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.upload-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block: -4px;
+}
+
+/* Borderless buttons line their label up with the text edge beside them. */
+.upload-head .text-button {
+  margin-right: -12px;
+}
+
+.upload-actions > .text-button:first-child {
+  margin-left: -12px;
+}
+
+.upload-title {
+  min-width: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.upload-track {
+  height: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--rule);
+}
+
+.upload-fill {
+  height: 100%;
+  background: var(--data);
+}
+
+.upload-figure {
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.upload-block .request-error {
+  margin-top: 0;
+  overflow-wrap: anywhere;
+}
+
+.upload-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}

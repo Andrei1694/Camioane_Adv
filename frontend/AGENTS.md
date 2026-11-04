@@ -28,6 +28,16 @@ scoped here unless the requested feature also requires changes elsewhere.
   uses the real `/files` API. Uploads go through the XHR path in `src/lib/api.ts`
   so they can report progress; keep its session, abort and 401 handling aligned
   with `request`. `src/lib/format.ts` holds the formatting shared between pages.
+  `UploadProgress` lives in `src/components/` because the video editor uses it too.
+- The video editor lives under `src/pages/VideoEditorPage/` (admin-only at
+  `/files/$fileId/edit`, lazy-loaded). Keep the segment model and its history in
+  `edit.ts` as pure functions. `@xzdarcy/react-timeline-editor` only draws and
+  reports drags; the page owns the edit, and the `<video>` element drives playback.
+  Export renders in the browser through mediabunny (`renderVideo.ts`, loaded with a
+  dynamic import) and uploads a new file with `api.uploadFile`; the backend has no
+  edit, replace or single-file endpoint. Check the library's behaviour in its
+  `src/` before working around it: bars keep their own position state, and the
+  ruler caches tick cells per zoom.
 - The admin dashboard lives under `src/pages/DashboardPage/` and runs on the
   invented rows in `sampleData.ts` until fleet, booking, creative and playback
   APIs exist. Its actions change local state only. Compute figures in

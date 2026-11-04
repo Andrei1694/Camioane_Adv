@@ -12,10 +12,13 @@ The system follows one idea: the admin screens are tools people work in every da
 | Shell: sidebar, sheet, mobile header and navigation | `frontend/src/components/AppShell.css`, `AppShell.tsx` |
 | Buttons, forms, page headings, the Users table, and the shared primitives: `.num`, `.unit`, `.sr-only`, `.cell-sub`, `.missing`, ghost, text and icon buttons, `.empty-state` | `frontend/src/App.css` |
 | Dashboard layout tokens and the data patterns (KPIs, timeline, rows, pills, tabs, tables, review dialog) | `frontend/src/pages/DashboardPage/DashboardPage.css` |
-| Files page: files table, upload progress, preview dialog | `frontend/src/pages/FilesPage/FilesPage.css` |
+| Files page: files table, preview dialog | `frontend/src/pages/FilesPage/FilesPage.css` |
+| Upload progress (Files page and video editor) | `frontend/src/components/UploadProgress.css`, `UploadProgress.tsx` |
+| Video editor: preview frame, toolbar, the re-themed timeline, segments table | `frontend/src/pages/VideoEditorPage/VideoEditorPage.css` |
 | Fonts | `frontend/src/main.tsx` (`@fontsource` imports) |
 | Counts, plurals, file sizes and local timestamps (shared) | `frontend/src/lib/format.ts` |
 | Car-hours, sample-data times and dates, waiting times | `frontend/src/pages/DashboardPage/dashboardData.ts` |
+| Video timecodes | `frontend/src/pages/VideoEditorPage/edit.ts` |
 | Brand artwork | `assets/app-icon/` |
 
 ## Principles
@@ -114,7 +117,7 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
   .app-content:has(> .dashboard) { max-width: none; }
   .app-main:has(.dashboard) { padding: 24px; }
   ```
-  The Files page opts out the same way (`.app-content:has(> .files-page)`), because its five columns and row actions don't fit 760px, but it keeps the shell's default padding.
+  The Files page opts out the same way (`.app-content:has(> .files-page)`), because its five columns and row actions don't fit 760px, but it keeps the shell's default padding. The video editor does the same (`.app-content:has(> .video-editor)`), so the preview and timeline get the sheet's width.
 - **Dashboard grid at 1440px:** the sheet is 1200px. Minus 2px of edges and 2 × 24px of padding, that leaves 1150px, split as 746 + 20 + 384 (`minmax(0, 1fr) 384px`, one 20px gap). Both columns end on one line: the last block in each fills the remaining height, with its content top-aligned.
 - **Breakpoints (viewport):**
 
@@ -132,6 +135,7 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 | `.timeline-frame` | ≤ 640px | The day scrolls sideways inside its frame (min 680px). Plates and the axis corner stay pinned, the route becomes a subheader, and the frame opens two hours before now. |
 | `.routes-panel` | ≤ 720px | Each route becomes two lines: the route and its booked hours, then the other figures with their labels. |
 | `.files-frame` | ≤ 760px | Each file becomes stacked lines: the name and type, the owner on its own line (so a long email never strands a separator), "uploaded · size", then the actions. The header row is visually hidden. |
+| `.segments-frame` | ≤ 720px | Each segment becomes stacked lines: its name, then the In and Out fields and the length with grey labels, "Plays …", then the actions. The header row is visually hidden. |
 
 - The page itself never scrolls sideways.
 
@@ -159,7 +163,7 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 | --- | --- | --- | --- |
 | Primary | `.primary-button` | Navy fill, white label | The screen's one main action: "Review next request", "Confirm and debit …". One per screen. |
 | Secondary | `button` | White, 1px `--control-border` | Other actions ("Request changes", "Retry") |
-| Ghost | `.ghost-button` | Secondary at 32px, 13px | Row actions in dense lists ("Review", "Approve", "Preview") |
+| Ghost | `.ghost-button` | Secondary at 32px, 13px | Row actions in dense lists ("Review", "Approve", "Preview"). A row action that opens another page is an `a.ghost-button` link in the same frame ("Edit") |
 | Text | `.text-button` | No border or fill, even when disabled | Lesser actions ("Download", "Cancel"); add `.danger` for "Reject", "Decline" and "Delete" |
 | Icon | `.icon-button` | 40px, 20px outline icon, `aria-label` required | Close |
 
@@ -197,7 +201,7 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 - Number columns and their headers are right-aligned in tabular figures.
 - The identity column (the route, the person) gets the most width and a grey subline.
 - A small proportional bar under a figure is 3px and grey (`.share-track`).
-- The files table puts the file name (14px/500) and its type ("MP4 video") in the identity column. The owner is an email with a grey "(you)", or a grey "Deleted user". The upload day sits over the time, and the size is right-aligned with a grey unit. Its actions are Preview (ghost), Download (text) and Delete (text, `danger`), centred on the first text line.
+- The files table puts the file name (14px/500) and its type ("MP4 video") in the identity column. The owner is an email with a grey "(you)", or a grey "Deleted user". The upload day sits over the time, and the size is right-aligned with a grey unit. Its actions are Preview (ghost), Edit (ghost link, videos only), Download (text) and Delete (text, `danger`), centred on the first text line.
 - A long list pages in the API's steps (50 rows) with a footer: "1–50 of 132" and Previous and Next ghost buttons. It shows only when there is more than one page.
 
 ### Fleet timeline (`FleetTimeline.tsx`)
@@ -223,11 +227,20 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 - **Review order:** title and subline, then the checks (pass in ink, a failed fact in `--negative`), the schedule with every date, the price table with its total, the note field, and finally the actions with the blocked reason.
 - **Preview order:** the file name, a subline ("MP4 video · 48.0 MB · Wed, 4 Nov 2026, 14:30 · owner"), then a fixed-height media frame on `--frame` and a Download button. The frame keeps its size while the file loads ("Loading preview (48.0 MB)…") and the image or video keeps its own shape inside it. Videos get native controls and never autoplay. Separators in the subline sit after a non-breaking space, so a wrap never starts a line with "·".
 
-### Upload progress (`UploadProgress.tsx`)
+### Upload progress (`src/components/UploadProgress.tsx`)
 
 - An inner box (1px `--border`, 8px radius) under the title while an upload runs: "Uploading spot.mp4" with a Cancel text button, a 4px `--data` bar on a `--rule` track (`role="progressbar"`), then the figure: "12.4" + grey " of 48.0 MB · 26%".
 - The figure counts the file's own bytes in the unit of its size. Once every byte is sent it reads "48.0 of 48.0 MB · Checking and saving…".
 - A failure replaces the box's content with the `request-error` line and a Dismiss button, plus Retry only when retrying can help (network, conflict, server errors).
+- The video editor's export uses the same box twice: first "Rendering spot (edited).mp4" with "42% rendered · Uploads to Files next" (`RenderProgress.tsx`), then the upload itself.
+
+### Video editor (`VideoEditorPage/`)
+
+- **Order:** a grey "Files" back link, then the h1 "Edit video" with "Export to Files" as the one primary button, then the subline ("spot.mp4 · MP4 video · 6.9 MB") and one grey note that says what export does or why it's disabled. Under those come the outcome line, the export progress, the preview, the toolbar, the hint line, the timeline and the segments table.
+- **Preview:** a fixed frame on `--frame` with an 8px radius, `min(48dvh, 420px)` tall (`min(40dvh, 280px)` under 768px). The video keeps its shape inside it and has no native controls, because those would play straight through the cuts. While loading, the frame holds "Loading video (6.9 MB)…". A full-width range input under it ("Playhead", `accent-color: --data`, 32px tall, 44px under 768px) moves the playhead from the keyboard and on touch, because the timeline's playhead is pointer-only.
+- **Toolbar:** ghost buttons in groups: Play/Pause beside the timecode ("0:12.4" + grey " of 0:20.0"), then Split at playhead and Delete segment, then Undo, Redo and Reset, with Zoom out and Zoom in pushed to the right. A grey 13px hint line under it explains the pointer gestures and describes the Split and Delete buttons.
+- **Timeline:** the library's dark theme redrawn with tokens. It sits in a white frame with a 1px `--border` and an 8px radius. Ruler labels are 12px `--muted` with whole-second timecodes, and gridlines are `--rule`. Bars are `--data-pale` with a 1px `--data` outline, a 4px radius and navy labels ("Segment 2" in 600, then the source range); the selected bar is solid `--data` with white labels. Each bar end has a 3 × 20px grip. The playhead is `--primary`, and drag guides are dashed `--focus`.
+- **Segments table:** the files table's rules. A caption ("2 segments · 0:13.0 of 0:20.0 kept"), then the name (a text button that selects), In and Out number fields (96px, right-aligned, tenths), the length, the timeline range, and Earlier and Later (ghost) and Delete (text, `danger`). The selected row is tinted `--data-pale`. When one segment is left, Delete is disabled and a grey note says why.
 
 ### Notices and empty states
 
@@ -250,6 +263,7 @@ Use the helpers in `frontend/src/lib/format.ts` (shared) and `dashboardData.ts` 
 | Date | en-GB, short: `Wed 4 Nov`; with the year where the day stands alone: `Wed, 4 Nov 2026` | `formatDay`, `formatLongDay` |
 | Waiting time | `2 d 4 h`, `22 h 25 min` | `waitingFor` |
 | Counts with nouns | Singular or plural: `1 car`, `6 dates`, `132 files` | `plural` |
+| Video timecode | Minutes and seconds to the tenth: `0:12.4`, `1:02:03.4` past an hour; ruler labels drop the tenth: `0:05`. Source points in the editor's fields are seconds to the tenth: `12.0` | `formatTimecode` (`VideoEditorPage/edit.ts`) |
 | Missing value | A grey em dash, `—` (`.missing`) | — |
 
 ## States and accessibility

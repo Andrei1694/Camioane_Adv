@@ -1,5 +1,6 @@
 import { Readable } from 'node:stream';
 import { fileTypeFromBuffer } from 'file-type';
+import type { FileTypeResult } from 'file-type';
 import { AppError } from './app-error.ts';
 import type { FilePagination } from '../types/file.ts';
 
@@ -52,7 +53,7 @@ export async function inspectUpload(stream: Readable, signal: AbortSignal) {
     }
     signal.throwIfAborted();
     if (size === 0) throw new AppError(400, 'Empty files are not allowed');
-    let detected;
+    let detected: FileTypeResult | undefined;
     try {
       detected = await fileTypeFromBuffer(Buffer.concat(chunks, size).subarray(0, sampleSize), {
         maxBufferSize: sampleSize,

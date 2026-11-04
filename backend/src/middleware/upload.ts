@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { Readable } from 'node:stream';
 import type { Request, RequestHandler } from 'express';
 import multer from 'multer';
 import type { StorageEngine } from 'multer';
@@ -22,7 +23,7 @@ async function storeUpload(req: Request, file: Express.Multer.File, storage: Fil
   if (req.aborted) cancel();
   const key = randomUUID();
   let stored = false;
-  let body;
+  let body: Readable | undefined;
   try {
     const inspected = await inspectUpload(file.stream, abort.signal);
     body = inspected.body;

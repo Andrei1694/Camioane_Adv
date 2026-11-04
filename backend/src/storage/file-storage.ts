@@ -2,13 +2,18 @@ import type { Readable } from 'node:stream';
 
 export interface FileStorage {
   readonly name: string;
+  /** Store a new UUID key without overwriting it; return the same key and actual
+   * byte count. Consume the stream, honor cancellation, and clean partial writes
+   * before rejecting. contentType is detected by the caller, not client supplied. */
   put(input: {
     key: string;
     body: Readable;
     contentType: string;
     signal?: AbortSignal;
   }): Promise<{ key: string; size: number }>;
+  /** Resolve only after opening the object; reject absence with StorageNotFoundError. */
   open(key: string): Promise<Readable>;
+  /** An already absent object counts as success. */
   delete(key: string): Promise<void>;
 }
 

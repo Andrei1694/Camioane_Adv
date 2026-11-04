@@ -1,0 +1,30 @@
+/* Profile picture editor (Profile page and the Users edit form): the 96px picture with its
+   actions and hint beside it, then the upload progress and the outcome line. */
+
+.avatar-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.avatar-editor-controls {
+  min-width: 0;
+}
+
+.avatar-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar-editor .upload-block {
+  margin-top: 16px;
+}
+
+@media (max-width: 600px) {
+  .avatar-editor-row {
+    align-items: flex-start;
+    gap: 16px;
+  }
+}

@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router'
 import { signOut, useSession } from '../auth/session'
 import { roleLabels } from '../lib/user'
 import type { User } from '../lib/user'
+import Avatar from './Avatar'
 import './AppShell.css'
 
 // The app icon (a car carrying a rooftop LED screen) redrawn small enough for the sidebar.
@@ -27,6 +28,8 @@ function Brand({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage: boolean, onNavigate?: () => void }) {
+  // Beside the avatar the email has little room, so a long one wraps before the @, not mid-word.
+  const at = user.email.lastIndexOf('@')
   return (
     <>
       <nav className="sidebar-nav" aria-label="Main navigation">
@@ -89,8 +92,20 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
       </nav>
       <div className="sidebar-account">
         <p className="sidebar-label">Signed in as</p>
-        <p className="sidebar-email">{user.email}</p>
-        <p className="sidebar-role">{user.role === 'ADMIN' ? 'Administrator' : roleLabels[user.role]}</p>
+        <div className="sidebar-identity">
+          <Avatar user={user} size={40} />
+          <div className="sidebar-identity-text">
+            <p className="sidebar-email">{at > 0 ? <>{user.email.slice(0, at)}<wbr />{user.email.slice(at)}</> : user.email}</p>
+            <p className="sidebar-role">{user.role === 'ADMIN' ? 'Administrator' : roleLabels[user.role]}</p>
+          </div>
+        </div>
+        <Link to="/profile" className="sidebar-link sidebar-profile" activeOptions={{ exact: true }} onClick={onNavigate}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21v-1a8 8 0 0 1 16 0v1" />
+          </svg>
+          Profile
+        </Link>
         <button className="sidebar-signout" type="button" onClick={() => signOut()}>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5M21 12H9" />

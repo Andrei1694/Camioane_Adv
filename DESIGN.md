@@ -15,6 +15,8 @@ The system follows one idea: the admin screens are tools people work in every da
 | Files page: files table, preview dialog | `frontend/src/pages/FilesPage/FilesPage.css` |
 | Credits page: pending queue, ledger and purchase tables, review and adjust dialogs | `frontend/src/pages/CreditsPage/CreditsPage.css` |
 | Shared row pieces: the owner's email (`OwnerLabel`), "1–50 of 132" paging (`Pagination`) | `frontend/src/components/OwnerLabel.tsx`, `Pagination.tsx` |
+| Profile pictures: the circle (`Avatar`) and the upload/remove block (`AvatarEditor`) | `frontend/src/components/Avatar.css`, `Avatar.tsx`, `AvatarEditor.css`, `AvatarEditor.tsx` |
+| Profile page | `frontend/src/pages/ProfilePage/ProfilePage.css` |
 | Upload progress (Files page and video editor) | `frontend/src/components/UploadProgress.css`, `UploadProgress.tsx` |
 | Video editor: preview frame, toolbar, the re-themed timeline, segments table | `frontend/src/pages/VideoEditorPage/VideoEditorPage.css` |
 | Fonts | `frontend/src/main.tsx` (`@fontsource` imports) |
@@ -116,6 +118,7 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 ## Layout and shell
 
 - **Frame:** a 232px sidebar on `--frame` and a white sheet. The sheet is inset 8px from the top, right and bottom, with a 16px radius, a 1px `--border` edge and no shadow. The sidebar's active link is a neutral `--border` pill with a 600 label, never a brand colour.
+- **Sidebar account block:** "Signed in as", then the 40px avatar beside the email (14px/500) and role (grey). The email wraps before the "@" when it doesn't fit, never mid-word. Under them come the Profile link (a `sidebar-link` with its active pill) and Sign out.
 - **Page width:** pages read in a 760px column (`.app-content`). A wide page opts out by matching its root class, as the dashboard does:
   ```css
   .app-content:has(> .dashboard) { max-width: none; }
@@ -207,6 +210,7 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 - Number columns and their headers are right-aligned in tabular figures.
 - The identity column (the route, the person) gets the most width and a grey subline.
 - A small proportional bar under a figure is 3px and grey (`.share-track`).
+- The Users table's identity cell starts with the account's 32px avatar, 12px before the email.
 - The files table puts the file name (14px/500) and its type ("MP4 video") in the identity column. The owner is an email with a grey "(you)", or a grey "Deleted user". The upload day sits over the time, and the size is right-aligned with a grey unit. Its actions are Preview (ghost), Edit (ghost link, videos only), Download (text) and Delete (text, `danger`), centred on the first text line.
 - The credits tables put the account's email in the identity column. The ledger adds the kind ("Purchase", "Adjustment") as its grey subline, and the purchases table adds the status pill beside the email and "Ref" with the payment reference in mono under it. Credits, money, changes and balances are right-aligned with grey units. Changes carry their sign ("+1,000", "−200") and no colour, because up or down isn't good or bad. A missing note or settlement is a grey dash.
 - A long list pages in the API's steps (50 rows) with a footer (`Pagination`, `.pagination`): "1–50 of 132" and Previous and Next ghost buttons. It shows only when there is more than one page.
@@ -243,6 +247,14 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 - The figure counts the file's own bytes in the unit of its size. Once every byte is sent it reads "48.0 of 48.0 MB · Checking and saving…".
 - A failure replaces the box's content with the `request-error` line and a Dismiss button, plus Retry only when retrying can help (network, conflict, server errors).
 - The video editor's export uses the same box twice: first "Rendering spot (edited).mp4" with "42% rendered · Uploads to Files next" (`RenderProgress.tsx`), then the upload itself.
+
+### Avatar (`src/components/Avatar.tsx`, `AvatarEditor.tsx`)
+
+- A circle with a 1px `--border` edge and the picture cropped to fill it. Sizes: 32px in table rows, 40px in the sidebar, 96px in the editor.
+- Without a picture, while it loads, or if it can't be shown, the circle holds the email's first letter in `--text`, 500 weight, on `--frame` (on `--surface` in the sidebar, which is already `--frame`). The circle keeps its size, so nothing shifts when the picture lands. It is a letter, never a placeholder face.
+- Beside an email it is decorative (`aria-hidden`). Alone, in the editor, it is `role="img"` with a label ("Your profile picture", "ana@client.ro has no profile picture").
+- **Editor order:** the 96px circle, then beside it "Upload picture" ("Change picture" once one exists) and "Remove picture" (text, `danger`), with the grey hint "JPEG, PNG or WebP up to 10 MB. It's cropped to a centred square." under them. Upload progress, the outcome line and any error follow underneath. On the Profile page the upload is the screen's one primary button. In the Users edit form it is secondary, because Save is primary, and the group's label says the picture "saves straight away, apart from Save".
+- **Profile page order:** the h1 "Profile" and its description, then "Profile picture" (18px/600 h2) with the editor, then "Account" with the email and role in the `.review-checks` box and a grey note that an administrator changes them.
 
 ### Video editor (`VideoEditorPage/`)
 

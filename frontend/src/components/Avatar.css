@@ -1,0 +1,44 @@
+/* Profile picture circle (sidebar, Users table, profile editor). The initial sits underneath and
+   shows while the picture loads, when there is none, or when it can't be shown. */
+
+.avatar {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text);
+  background: var(--frame);
+  font-weight: 500;
+  line-height: 1;
+  user-select: none;
+}
+
+.avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-32 {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+}
+
+.avatar-40 {
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+}
+
+.avatar-96 {
+  width: 96px;
+  height: 96px;
+  font-size: 36px;
+}

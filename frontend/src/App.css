@@ -492,6 +492,28 @@ a.ghost-button:hover {
   overflow-wrap: anywhere;
 }
 
+.user-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-identity > span:last-child {
+  min-width: 0;
+}
+
+.user-form-picture {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.user-form-picture-label {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .users-table .actions-column {
   width: 152px;
   text-align: right;

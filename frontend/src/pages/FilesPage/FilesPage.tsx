@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useBlocker } from '@tanstack/react-router'
 import { useSession } from '../../auth/session'
-import { api, ApiError, errorMessage } from '../../lib/api'
+import { api, ApiError, errorMessage, isRetryableUpload } from '../../lib/api'
 import { acceptedFileTypes, declaredTypeError } from '../../lib/file'
 import type { StoredFile } from '../../lib/file'
 import { formatByteSize } from '../../lib/format'
@@ -83,9 +83,7 @@ export default function FilesPage() {
         setUpload(null)
         setMessage(`Upload of ${file.name} cancelled.`)
       } else {
-        // Content, size and format rejections fail the same way again; only transport and server failures are worth a retry.
-        const retryable = !(error instanceof ApiError) || error.status === 0 || error.status === 409 || error.status >= 500
-        setUpload({ file, phase: 'failed', error: errorMessage(error), retryable })
+        setUpload({ file, phase: 'failed', error: errorMessage(error), retryable: isRetryableUpload(error) })
       }
     } finally {
       if (uploadAbort.current === controller) uploadAbort.current = null

@@ -1,6 +1,6 @@
 import { sessionSignal, signOut, useSession } from '../auth/session'
 import { isRole } from './user'
-import type { Credentials, User, UserInput } from './user'
+import type { Avatar, Credentials, User, UserInput } from './user'
 import type { FilePage, StoredFile } from './file'
 import { isPurchaseStatus, isTransactionType } from './credit'
 import type { Adjustment, CreditBalance, CreditPurchase, CreditTransaction, PurchasePage, PurchaseStatus, TransactionPage } from './credit'
@@ -47,12 +47,20 @@ function query(values: Record<string, string | number | undefined>) {
   return text ? '?' + text : ''
 }
 
+function decodeAvatar(value: unknown, userId: string): Avatar | null | undefined {
+  if (value === null) return null
+  // The token goes wherever this path points, so accept only the user's own avatar route.
+  if (!record(value) || value.url !== '/users/' + userId + '/avatar' || !isTimestamp(value.updatedAt)) return undefined
+  return { url: '/users/' + userId + '/avatar', updatedAt: value.updatedAt }
+}
+
 function decodeUser(value: unknown): User {
+  const avatar = record(value) && isUuid(value.id) ? decodeAvatar(value.avatar, value.id) : undefined
   if (!record(value) || typeof value.id !== 'string' || typeof value.email !== 'string'
-    || !isRole(value.role)) {
+    || !isRole(value.role) || avatar === undefined) {
     throw new ApiError(0, 'The API returned an unexpected user response.')
   }
-  return { id: value.id, email: value.email, role: value.role }
+  return { id: value.id, email: value.email, role: value.role, avatar }
 }
 
 function decodeUserResponse(value: unknown) {
@@ -146,8 +154,16 @@ export interface UploadOptions {
   onSent?: () => void
 }
 
+/**
+ * Whether an upload that failed this way can succeed on a second try. Content, size and format
+ * rejections fail the same way again; only transport, conflict and server failures are worth a retry.
+ */
+export function isRetryableUpload(error: unknown) {
+  return !(error instanceof ApiError) || error.status === 0 || error.status === 409 || error.status >= 500
+}
+
 // fetch cannot report upload progress, so uploads use XMLHttpRequest with the same session rules.
-function upload<T>(path: string, file: File, decode: (value: unknown) => T, options: UploadOptions = {}): Promise<T> {
+function upload<T>(method: 'POST' | 'PUT', path: string, file: File, decode: (value: unknown) => T, options: UploadOptions = {}): Promise<T> {
   const context = begin(true)
   return new Promise<T>((resolve, reject) => {
     if (context.globalSignal.aborted || options.signal?.aborted) {
@@ -173,7 +189,7 @@ function upload<T>(path: string, file: File, decode: (value: unknown) => T, opti
         reject(error)
       }
     }
-    xhr.open('POST', url)
+    xhr.open(method, url)
     xhr.responseType = 'json'
     xhr.timeout = 30 * 60_000
     if (context.token) xhr.setRequestHeader('Authorization', 'Bearer ' + context.token)
@@ -333,10 +349,16 @@ export const api = {
   createUser: (data: UserInput) => request('/users', decodeUserResponse, { method: 'POST', body: data }),
   updateUser: (id: string, data: Partial<UserInput>) => request('/users/' + encodeURIComponent(id), decodeUserResponse, { method: 'PATCH', body: data }),
   deleteUser: (id: string) => request('/users/' + encodeURIComponent(id), () => undefined, { method: 'DELETE' }),
+  /** Sets or replaces a profile picture; the API crops and re-encodes it, and returns the user. */
+  uploadAvatar: (userId: string, file: File, options?: UploadOptions) => upload(
+    'PUT', '/users/' + encodeURIComponent(userId) + '/avatar', file, decodeUserResponse, options,
+  ),
+  avatarImage: (avatar: Avatar, signal: AbortSignal) => request(avatar.url, decodeBlob, { signal, binary: true }),
+  deleteAvatar: (userId: string) => request('/users/' + encodeURIComponent(userId) + '/avatar', () => undefined, { method: 'DELETE' }),
   files: (page: { limit: number, offset: number }, signal: AbortSignal) => request(
     '/files?' + new URLSearchParams({ limit: String(page.limit), offset: String(page.offset) }), decodeFilePage, { signal },
   ),
-  uploadFile: (file: File, options?: UploadOptions) => upload('/files', file, decodeFileResponse, options),
+  uploadFile: (file: File, options?: UploadOptions) => upload('POST', '/files', file, decodeFileResponse, options),
   // Downloads read the whole file into memory, so they get far longer than the JSON timeout.
   downloadFile: (file: StoredFile, signal?: AbortSignal) => request(file.downloadUrl, decodeBlob, { signal, binary: true, timeout: 10 * 60_000 }),
   deleteFile: (id: string) => request('/files/' + encodeURIComponent(id), () => undefined, { method: 'DELETE' }),

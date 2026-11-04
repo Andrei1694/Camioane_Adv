@@ -6,6 +6,7 @@ import { signOut, useSession } from '../../auth/session'
 import { api, ApiError, errorMessage } from '../../lib/api'
 import { roleLabels } from '../../lib/user'
 import type { User, UserInput } from '../../lib/user'
+import Avatar from '../../components/Avatar'
 import UserForm from './components/UserForm'
 
 interface Editor {
@@ -29,6 +30,8 @@ export default function UsersPage() {
   const remove = useMutation({ mutationFn: api.deleteUser, onError: (error) => handleAdminError(error, revision) })
   const users = access.users
   const busy = save.isPending || remove.isPending
+  // The latest copy of the account being edited, so a picture change shows in the open form.
+  const editing = editor?.user && (users.find((user) => user.id === editor.user?.id) ?? editor.user)
 
   function openEditor(button: HTMLButtonElement, user?: User) {
     returnFocus.current = button
@@ -109,7 +112,7 @@ export default function UsersPage() {
       <p className="status-message" role="status" aria-atomic="true">{message}</p>
       {failure && <p className="request-error" role="alert">{failure}</p>}
       {editor !== null && (
-        <UserForm key={editor.user?.id ?? 'create'} user={editor.user} users={users}
+        <UserForm key={editor.user?.id ?? 'create'} user={editing} users={users}
           isSelf={editor.user?.id === currentUser.id} pending={save.isPending} error={formFailure}
           onSave={handleSave} onCancel={closeEditor} />
       )}
@@ -125,7 +128,12 @@ export default function UsersPage() {
         <tbody role="rowgroup">
           {users.map((user) => (
             <tr key={user.id} role="row">
-              <td className="email-cell" role="cell">{user.email}{user.id === currentUser.id && <span className="optional-label"> (you)</span>}</td>
+              <td className="email-cell" role="cell">
+                <span className="user-identity">
+                  <Avatar user={user} size={32} />
+                  <span>{user.email}{user.id === currentUser.id && <span className="optional-label"> (you)</span>}</span>
+                </span>
+              </td>
               <td role="cell">{roleLabels[user.role]}</td>
               <td role="cell">
                 <div className="row-actions">

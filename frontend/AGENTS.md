@@ -38,6 +38,16 @@ scoped here unless the requested feature also requires changes elsewhere.
   edit, replace or single-file endpoint. Check the library's behaviour in its
   `src/` before working around it: bars keep their own position state, and the
   ruler caches tick cells per zoom.
+- The Profile page lives under `src/pages/ProfilePage/` (`/profile`, every role)
+  and sets or removes the signed-in account's picture. `AvatarEditor` in
+  `src/components/` does the work and is also used by the Users edit form, where
+  admins change anyone's picture; it saves straight away through
+  `api.uploadAvatar` (`PUT`, the XHR upload path) and `api.deleteAvatar`, then
+  writes the returned user into every cache with `replaceCachedUser`
+  (`src/auth/currentUser.ts`). `Avatar` shows a picture with the bearer token
+  through an object URL, keyed on `avatar.updatedAt`, and falls back to the
+  email's initial. Users carry `avatar: { url, updatedAt } | null`; the decoder
+  accepts only the user's own `/users/<id>/avatar` URL.
 - The Credits page lives under `src/pages/CreditsPage/` (admin-only at `/credits`)
   and uses the real `/credits` API through the typed calls in `src/lib/api.ts`;
   credit types, labels and limits live in `src/lib/credit.ts`. Keep every credits

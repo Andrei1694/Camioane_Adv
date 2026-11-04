@@ -144,24 +144,6 @@ button:disabled {
   margin-top: 24px;
 }
 
-.session-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 28px;
-  font-size: 14px;
-}
-
-.session-bar p {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.session-bar button {
-  flex-shrink: 0;
-}
-
 .login-panel {
   max-width: 460px;
   margin-inline: auto;

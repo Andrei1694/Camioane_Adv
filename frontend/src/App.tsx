@@ -5,26 +5,20 @@ import Authenticated, { HomeRedirect } from './auth/Authenticated'
 import { useCurrentUser } from './auth/currentUser'
 import { startSessionSync, useSession } from './auth/session'
 import { queryClient } from './lib/queryClient'
+import AppShell from './components/AppShell'
 import LoginPage from './pages/LoginPage/LoginPage'
 import UsersPage from './pages/UsersPage/UsersPage'
 import './App.css'
 
 function Layout() {
-  const notice = useSession((state) => state.notice)
   const revision = useSession((state) => state.revision)
   useEffect(startSessionSync, [])
-  return (
-    <main className="users-page">
-      <p className="product-name">Camioane App</p>
-      {notice && <p className="storage-notice" role="alert">{notice}</p>}
-      <Outlet key={revision} />
-    </main>
-  )
+  return <Outlet key={revision} />
 }
 
 function LoginRoute() {
   const session = useSession((state) => state.session)
-  return session ? <Authenticated><HomeRedirect /></Authenticated> : <LoginPage />
+  return session ? <Authenticated><HomeRedirect /></Authenticated> : <AppShell><LoginPage /></AppShell>
 }
 
 function AccessDenied() {
@@ -40,7 +34,7 @@ function AccessDenied() {
 
 const rootRoute = createRootRoute({
   component: Layout,
-  notFoundComponent: () => <section><h1>Page not found</h1><p className="page-description"><Link to="/">Return to the app</Link></p></section>,
+  notFoundComponent: () => <AppShell><section><h1>Page not found</h1><p className="page-description"><Link to="/">Return to the app</Link></p></section></AppShell>,
 })
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => <Authenticated><HomeRedirect /></Authenticated> })
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: '/login', component: LoginRoute })

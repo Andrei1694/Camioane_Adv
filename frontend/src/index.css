@@ -17,6 +17,7 @@
   --primary: #202020;
   --danger: #b42318;
   --focus: #245bba;
+  --navigation-backdrop: rgb(32 32 32 / 35%);
 
   color: var(--text);
   background: var(--surface);

@@ -32,6 +32,8 @@ Production has no localhost fallback. For a local production preview, build with
 - `/users` requires administrator access.
 - `/access-denied` explains missing management access and offers sign-out.
 
+Signed-in views share a sidebar with role-aware navigation, the verified account email and role, and sign-out. Below 768px, navigation opens in a modal drawer with keyboard focus containment, Escape/backdrop dismissal, and focus restoration. A skip link moves keyboard users directly to the page content. Login and session-verification screens keep their standalone layout.
+
 The one-hour bearer token and expiry persist under `camioane.session.v1` in local storage, so refreshes and browser reopening preserve an unexpired session. Every restored session is validated through `GET /users/me`. Browser storage never contains passwords, user lists, or a trusted role.
 
 Expiry or a protected API 401 clears the session and private query cache. Logout and account replacement cancel outstanding requests; other tabs synchronize through storage events. An unavailable local-storage API falls back to in-memory sign-in with a notice. Network failures show retry without discarding the session. There are no refresh tokens.

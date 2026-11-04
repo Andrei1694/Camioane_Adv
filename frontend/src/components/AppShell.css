@@ -1,0 +1,229 @@
+.app-shell {
+  /* The 232px sidebar and flexible sheet share the viewport; the sheet has an 8px outer inset. */
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  min-height: 100dvh;
+  background: var(--hover);
+}
+
+.app-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  height: 100dvh;
+  padding: 32px 16px 20px;
+  overflow-y: auto;
+}
+
+.sidebar-brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 12px;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sidebar-label,
+.sidebar-role {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.sidebar-nav .sidebar-label {
+  margin: 0 12px 12px;
+}
+
+.sidebar-link,
+.sidebar-signout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 14px;
+  text-decoration: none;
+  transition: background-color 150ms ease;
+}
+
+.sidebar-link:hover,
+.sidebar-signout:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.sidebar-link[aria-current='page'] {
+  background: var(--border);
+  font-weight: 600;
+}
+
+.sidebar-link svg,
+.sidebar-signout svg,
+.navigation-toggle svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sidebar-account {
+  margin-top: auto;
+  padding: 20px 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-email {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sidebar-role {
+  margin-top: 4px;
+}
+
+.sidebar-signout {
+  width: calc(100% + 24px);
+  margin: 16px -12px 0;
+  border-color: transparent;
+  background: transparent;
+  text-align: left;
+}
+
+.app-main {
+  min-width: 0;
+  margin: 8px 8px 8px 0;
+  padding: 40px clamp(24px, 4vw, 64px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.app-content {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.app-content > .storage-notice,
+.app-content > .request-error {
+  margin: 0 0 24px;
+}
+
+.mobile-header,
+.mobile-navigation {
+  display: none;
+}
+
+.navigation-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  padding: 10px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  padding: 10px 16px;
+  border-radius: 6px;
+  color: var(--surface);
+  background: var(--primary);
+  transform: translateY(calc(-100% - 20px));
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+@media (max-width: 767px) {
+  .app-shell {
+    display: block;
+    background: var(--surface);
+  }
+
+  .app-sidebar {
+    display: none;
+  }
+
+  .mobile-header,
+  .mobile-navigation-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .mobile-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--hover);
+  }
+
+  .mobile-header .sidebar-brand,
+  .mobile-navigation-heading .sidebar-brand {
+    padding-inline: 0;
+  }
+
+  .app-main {
+    margin: 0;
+    padding: 28px 16px;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .mobile-navigation {
+    inset: 0 auto 0 0;
+    width: min(320px, calc(100% - 32px));
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 10px 16px max(20px, env(safe-area-inset-bottom));
+    border: 0;
+    border-right: 1px solid var(--border);
+    color: var(--text);
+    background: var(--hover);
+    overflow-y: auto;
+  }
+
+  .mobile-navigation[open] {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .mobile-navigation::backdrop {
+    background: var(--navigation-backdrop);
+  }
+
+  html:has(.mobile-navigation[open]) {
+    overflow: hidden;
+  }
+
+  .mobile-navigation-heading {
+    flex-shrink: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-link,
+  .sidebar-signout {
+    transition: none;
+  }
+}

@@ -1,32 +1,58 @@
-# React + TypeScript + Vite
+# Camioane App frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A minimal React, TypeScript, and Vite user management prototype. The Users page
+supports adding, editing, and deleting demo users. It runs independently of the
+backend and has no authentication or API integration.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+From `frontend/`:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm ci
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Use the URL printed by Vite. To verify and build the frontend:
+
+```sh
+npm run build
+npm run lint
+```
+
+`npm run preview` serves the production build. There is no test runner or
+`npm test` script.
+
+## Demo behavior
+
+- A new browser origin starts with `demo.admin@example.com`,
+  `demo.dispatcher@example.com`, and `demo.driver@example.com`. These are fictional
+  samples, not backend accounts or assigned roles.
+- Add user opens an inline form; Edit opens the same form for the selected email.
+  Save applies the change, Cancel discards it, and Delete asks for confirmation.
+- Emails are trimmed, lowercased, validated, and unique. Their maximum length is
+  254 characters, matching the backend. The list is sorted by email.
+- Passwords are required when adding and optional when editing. Nonempty
+  passwords must contain 12–128 Unicode characters, including preserved spaces.
+  Passwords are demo inputs only: they are discarded after submission or cancel,
+  never stored or transmitted, and do not change any real account.
+- Changes persist in local storage under `camioane.users-demo.v1` as an array of
+  `{ "email": "..." }` objects. Deleting every user saves an empty array, which
+  stays empty on refresh. Sample users appear only when the key is absent.
+- Invalid stored data opens an empty list with a notice; the next successful
+  save replaces it. Unavailable storage leaves CRUD usable in memory and displays
+  a notice that changes may be lost on refresh. Browser data is scoped to the
+  origin, so another hostname or port has its own list.
+
+React state owns the page and form. The page, reusable create/edit form, email
+validation, and local-storage helper live under `src/pages/UsersPage/`. Styling
+uses plain CSS with a single-column phone layout, semantic table, labeled inputs,
+visible focus, and status feedback. No dependencies were added for this prototype.
+
+## Manual verification
+
+Check adding and editing, cancel without changes, duplicate/invalid emails,
+password boundaries, both delete confirmation choices, and the empty list.
+Refresh after changes and after deleting all users. Check malformed/unavailable
+storage recovery, keyboard focus, and desktop/tablet/phone layouts. No browser or
+application logs are needed for these checks.

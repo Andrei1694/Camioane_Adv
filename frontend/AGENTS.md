@@ -19,10 +19,12 @@ scoped here unless the requested feature also requires changes elsewhere.
   administrators and their management workflows.
 - Use npm. Keep `package.json` and `package-lock.json` in sync when dependencies change.
 - `package.json` and the lockfile are authoritative for installed versions.
-- Zustand, TanStack Query, TanStack Router, and TanStack Table are installed.
-  At the time of writing, the app still renders the Vite starter; stores, query
-  providers, routes, and tables have not been configured. Check the source before
-  assuming an integration exists, and update this note as integrations are added.
+- Zustand, TanStack Query, TanStack Router, and TanStack Table are installed but
+  not configured. The app renders a frontend-only Users prototype using React
+  state and a semantic table, with no routing, authentication, or API calls.
+- The Users page, create/edit form, validation, and storage helper live under
+  `src/pages/UsersPage/`. Demo email records persist under
+  `camioane.users-demo.v1`; password inputs are validated and discarded.
 - Styling currently uses plain CSS. No component library, form library, or test
   runner is configured.
 - The Express API lives in `../backend/`. Read its source and README when connecting

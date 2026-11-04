@@ -24,6 +24,10 @@ scoped here unless the requested feature also requires changes elsewhere.
   page uses a semantic table; TanStack Table remains available but unconfigured.
 - The Users page and form live under `src/pages/UsersPage/`; shared types,
   validation, API client and query client live under `src/lib/`.
+- The Files page lives under `src/pages/FilesPage/` (admin-only at `/files`) and
+  uses the real `/files` API. Uploads go through the XHR path in `src/lib/api.ts`
+  so they can report progress; keep its session, abort and 401 handling aligned
+  with `request`. `src/lib/format.ts` holds the formatting shared between pages.
 - The admin dashboard lives under `src/pages/DashboardPage/` and runs on the
   invented rows in `sampleData.ts` until fleet, booking, creative and playback
   APIs exist. Its actions change local state only. Compute figures in

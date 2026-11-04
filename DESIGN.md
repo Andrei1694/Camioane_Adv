@@ -8,12 +8,14 @@ The system follows one idea: the admin screens are tools people work in every da
 
 | What | File |
 | --- | --- |
-| Global tokens, base element styles, focus ring | `frontend/src/index.css` |
+| Global tokens (including the data and status colours), base element styles, focus ring | `frontend/src/index.css` |
 | Shell: sidebar, sheet, mobile header and navigation | `frontend/src/components/AppShell.css`, `AppShell.tsx` |
-| Buttons, forms, the Users table, page headings | `frontend/src/App.css` |
-| Dashboard tokens and the data patterns (KPIs, timeline, rows, pills, tabs, tables, dialog) | `frontend/src/pages/DashboardPage/DashboardPage.css` |
+| Buttons, forms, page headings, the Users table, and the shared primitives: `.num`, `.unit`, `.sr-only`, `.cell-sub`, `.missing`, ghost, text and icon buttons, `.empty-state` | `frontend/src/App.css` |
+| Dashboard layout tokens and the data patterns (KPIs, timeline, rows, pills, tabs, tables, review dialog) | `frontend/src/pages/DashboardPage/DashboardPage.css` |
+| Files page: files table, upload progress, preview dialog | `frontend/src/pages/FilesPage/FilesPage.css` |
 | Fonts | `frontend/src/main.tsx` (`@fontsource` imports) |
-| Number, time and date formatting | `frontend/src/pages/DashboardPage/dashboardData.ts` |
+| Counts, plurals, file sizes and local timestamps (shared) | `frontend/src/lib/format.ts` |
+| Car-hours, sample-data times and dates, waiting times | `frontend/src/pages/DashboardPage/dashboardData.ts` |
 | Brand artwork | `assets/app-icon/` |
 
 ## Principles
@@ -61,14 +63,7 @@ The system follows one idea: the admin screens are tools people work in every da
 | `--danger` | `#b42318` | Form errors, destructive text buttons |
 | `--focus` | `#245bba` | Focus ring |
 | `--navigation-backdrop` | `rgb(32 32 32 / 35%)` | Dialog and mobile-navigation backdrop |
-
-### Dashboard (`DashboardPage.css`, on `.dashboard`)
-
-These tokens are scoped to the dashboard until a second page needs them. Move them to `index.css` then.
-
-| Token | Value | Role |
-| --- | --- | --- |
-| `--data` | `#007c92` | Played bars, now-line, selected tab underline |
+| `--data` | `#007c92` | Played bars, now-line, selected tab underline, upload progress |
 | `--data-pale` | `#ddf5fa` | Scheduled bars (navy ink on it, 13.6:1) |
 | `--data-ink` | `#12263a` | Labels on pale data |
 | `--negative` | `#c4242a` | Bad news on data: undelivered content, shortfalls, failed checks (5.8:1) |
@@ -77,7 +72,16 @@ These tokens are scoped to the dashboard until a second page needs them. Move th
 | `--pill-negative-bg` / `-ink` | `#ffedea` / `#831c1e` | "Balance short", "Not enough cars" |
 | `--pill-warning-bg` / `-ink` | `#fffbeb` / `#92400e` | "Creative pending" |
 | `--pill-neutral-bg` | `#eef1f3` | Neutral states such as "Retry queued" |
-| `--rule` | `#eef1f3` | Row rules and timeline gridlines |
+| `--rule` | `#eef1f3` | Row rules, timeline gridlines, the upload progress track |
+
+The data and status colours moved here from `.dashboard` once the Files page needed `--rule` and `--data`.
+
+### Dashboard (`DashboardPage.css`, on `.dashboard`)
+
+These layout tokens are scoped to the dashboard until a second page needs them. Move them to `index.css` then.
+
+| Token | Value | Role |
+| --- | --- | --- |
 | `--gap` | `20px` | The one gap between blocks, both ways |
 | `--card-pad` | `20px` (16px under 768) | Panel padding |
 | `--radius-card` | `10px` | Panels and the KPI strip |
@@ -110,6 +114,7 @@ These tokens are scoped to the dashboard until a second page needs them. Move th
   .app-content:has(> .dashboard) { max-width: none; }
   .app-main:has(.dashboard) { padding: 24px; }
   ```
+  The Files page opts out the same way (`.app-content:has(> .files-page)`), because its five columns and row actions don't fit 760px, but it keeps the shell's default padding.
 - **Dashboard grid at 1440px:** the sheet is 1200px. Minus 2px of edges and 2 × 24px of padding, that leaves 1150px, split as 746 + 20 + 384 (`minmax(0, 1fr) 384px`, one 20px gap). Both columns end on one line: the last block in each fills the remaining height, with its content top-aligned.
 - **Breakpoints (viewport):**
 
@@ -126,6 +131,7 @@ These tokens are scoped to the dashboard until a second page needs them. Move th
 | --- | --- | --- |
 | `.timeline-frame` | ≤ 640px | The day scrolls sideways inside its frame (min 680px). Plates and the axis corner stay pinned, the route becomes a subheader, and the frame opens two hours before now. |
 | `.routes-panel` | ≤ 720px | Each route becomes two lines: the route and its booked hours, then the other figures with their labels. |
+| `.files-frame` | ≤ 760px | Each file becomes stacked lines: the name and type, the owner on its own line (so a long email never strands a separator), "uploaded · size", then the actions. The header row is visually hidden. |
 
 - The page itself never scrolls sideways.
 
@@ -147,18 +153,19 @@ These tokens are scoped to the dashboard until a second page needs them. Move th
 
 ## Components
 
-### Buttons (`App.css`, `DashboardPage.css`)
+### Buttons (`App.css`)
 
 | Kind | Class | Look | Use |
 | --- | --- | --- | --- |
 | Primary | `.primary-button` | Navy fill, white label | The screen's one main action: "Review next request", "Confirm and debit …". One per screen. |
 | Secondary | `button` | White, 1px `--control-border` | Other actions ("Request changes", "Retry") |
-| Ghost | `.ghost-button` | Secondary at 32px, 13px | Row actions in dense lists ("Review", "Approve") |
-| Text | `.text-button` | No border or fill | Lesser actions; add `.danger` for "Reject" and "Decline" |
+| Ghost | `.ghost-button` | Secondary at 32px, 13px | Row actions in dense lists ("Review", "Approve", "Preview") |
+| Text | `.text-button` | No border or fill, even when disabled | Lesser actions ("Download", "Cancel"); add `.danger` for "Reject", "Decline" and "Delete" |
 | Icon | `.icon-button` | 40px, 20px outline icon, `aria-label` required | Close |
 
 - Controls are 44px tall by default and 32px in dense dashboard rows. On a phone everything is 44px.
 - A disabled button names its reason in visible text tied with `aria-describedby`.
+- A repeated row button names its object in visually hidden text inside the label ("Download<span class="sr-only"> spot.mp4</span>"), so its pending label ("Downloading…") is still announced.
 
 ### Pills (`.pill .pill-positive|negative|warning|neutral`)
 
@@ -183,13 +190,15 @@ These tokens are scoped to the dashboard until a second page needs them. Move th
 - One card split into 3–5 cells by 1px dividers. Each cell has a 13px/500 grey label, a 28px/400 value with its unit, and a 12px note that names the baseline or window.
 - Don't repeat a figure that another block on the screen already leads with.
 
-### Tables (`.routes-table`, `.price-table`, `.users-table`)
+### Tables (`.routes-table`, `.price-table`, `.files-table`, `.users-table`)
 
 - Headers are 12px, grey, regular weight and sentence case, with no fill band. The older Users table differs: it uses 13px/500 headers over a 1px `--border` rule.
 - Rows are separated by 1px `--rule`. Don't stripe them.
 - Number columns and their headers are right-aligned in tabular figures.
 - The identity column (the route, the person) gets the most width and a grey subline.
 - A small proportional bar under a figure is 3px and grey (`.share-track`).
+- The files table puts the file name (14px/500) and its type ("MP4 video") in the identity column. The owner is an email with a grey "(you)", or a grey "Deleted user". The upload day sits over the time, and the size is right-aligned with a grey unit. Its actions are Preview (ghost), Download (text) and Delete (text, `danger`), centred on the first text line.
+- A long list pages in the API's steps (50 rows) with a footer: "1–50 of 132" and Previous and Next ghost buttons. It shows only when there is more than one page.
 
 ### Fleet timeline (`FleetTimeline.tsx`)
 
@@ -208,30 +217,39 @@ These tokens are scoped to the dashboard until a second page needs them. Move th
 - A booking that spans now is split at the line, with a 2px seam between the parts.
 - The label goes in the widest part, and only when that part covers at least 50 minutes.
 
-### Dialog (`BookingReviewDialog.tsx`)
+### Dialog (`BookingReviewDialog.tsx`, `FilePreviewDialog.tsx`)
 
 - Use a native `<dialog>` opened with `showModal()`, at most 720px wide. Esc, the close button and a backdrop click all close it, and focus returns to the opener.
-- **Order:** title and subline, then the checks (pass in ink, a failed fact in `--negative`), the schedule with every date, the price table with its total, the note field, and finally the actions with the blocked reason.
+- **Review order:** title and subline, then the checks (pass in ink, a failed fact in `--negative`), the schedule with every date, the price table with its total, the note field, and finally the actions with the blocked reason.
+- **Preview order:** the file name, a subline ("MP4 video · 48.0 MB · Wed, 4 Nov 2026, 14:30 · owner"), then a fixed-height media frame on `--frame` and a Download button. The frame keeps its size while the file loads ("Loading preview (48.0 MB)…") and the image or video keeps its own shape inside it. Videos get native controls and never autoplay. Separators in the subline sit after a non-breaking space, so a wrap never starts a line with "·".
+
+### Upload progress (`UploadProgress.tsx`)
+
+- An inner box (1px `--border`, 8px radius) under the title while an upload runs: "Uploading spot.mp4" with a Cancel text button, a 4px `--data` bar on a `--rule` track (`role="progressbar"`), then the figure: "12.4" + grey " of 48.0 MB · 26%".
+- The figure counts the file's own bytes in the unit of its size. Once every byte is sent it reads "48.0 of 48.0 MB · Checking and saving…".
+- A failure replaces the box's content with the `request-error` line and a Dismiss button, plus Retry only when retrying can help (network, conflict, server errors).
 
 ### Notices and empty states
 
 - **Sample-data notice** (`.sample-notice`): `#fffbeb` fill, 1px `#fde68a` border, 12px `#92400e` text. It is for snapshot or static data only, never a page ground.
 - **Empty state** (`.empty-state`): the block keeps its frame and heading and adds one sentence in a 1px dashed `--control-border` box with an 8px radius ("No bookings waiting for confirmation.").
-- **Outcome line** (`.dashboard-status`, `role="status"`): one grey sentence under the title saying what an action did ("Confirmed … 960 cr debited, 440 cr left.").
+- **Outcome line** (`.dashboard-status`, or `.status-message` on the Files page; `role="status"`): one grey sentence under the title saying what an action did ("Confirmed … 960 cr debited, 440 cr left.", "Uploaded spot.mp4 (48.0 MB).").
 
 ## Formatting data
 
-Use the helpers in `dashboardData.ts`; don't format inline.
+Use the helpers in `frontend/src/lib/format.ts` (shared) and `dashboardData.ts` (dashboard only); don't format inline. `dashboardData.ts` re-exports `formatCount` and `plural`.
 
 | Value | Format | Helper |
 | --- | --- | --- |
 | Credits | Whole number with a thousands separator and a grey "cr" suffix: `5,780 cr` | `formatCount` |
+| File sizes | Decimal units with a grey unit: B and KB whole (`490 B`, `812 KB`), MB and GB to one decimal (`48.0 MB`). The largest unit that keeps the value under 1,000 | `byteSize`, `byteSizeIn`, `formatByteSize` |
+| Upload timestamps | The browser's time zone, the day as `Wed, 4 Nov 2026` and the time as `14:30` | `formatLocalDay`, `formatLocalTime` |
 | Car-hours | Always one decimal: `78.0`, `35.6` | `formatHours` (from minutes), `formatHourValue` |
 | Rates | Credits per car-hour: `45 cr/car-h`, or a bare number under a header that names the unit | — |
 | Time | 24-hour clock: `14:30`; ranges with an en dash: `17:00–20:00` | `formatTime`, `formatWindow` |
 | Date | en-GB, short: `Wed 4 Nov`; with the year where the day stands alone: `Wed, 4 Nov 2026` | `formatDay`, `formatLongDay` |
 | Waiting time | `2 d 4 h`, `22 h 25 min` | `waitingFor` |
-| Counts with nouns | Singular or plural: `1 car`, `6 dates` | `plural` |
+| Counts with nouns | Singular or plural: `1 car`, `6 dates`, `132 files` | `plural` |
 | Missing value | A grey em dash, `—` (`.missing`) | — |
 
 ## States and accessibility
@@ -262,10 +280,11 @@ Use the helpers in `dashboardData.ts`; don't format inline.
 These are inconsistencies in the current code, recorded here until someone decides how to resolve them:
 
 - There are two reds: `--danger` `#b42318` (forms, `App.css`) and `--negative` `#c4242a` (data, dashboard).
-- The data, status and pill tokens are scoped to `.dashboard`. The review dialog repeats `--rule` and `--negative` because it renders outside that scope, in the top layer.
 - Older pages use a 24px `h1`; the dashboard uses 22px. The Users table's headers (13px/500 over a rule) don't match the dashboard tables'.
 - `frontend/public/favicon.svg` is still Vite's violet bolt, not the brand mark.
 - `frontend/index.html` still has the title "Users · Camioane App" and a "user management demo" description.
+- The preview dialog restates the review dialog's frame (width, padding, radius, shadow) in `FilesPage.css`. A shared dialog class would remove the copy.
+- The Users table's empty row uses the class `empty-state` on a `<td>`, so it picks up the dashed box border meant for blocks.
 
 ## Checking a UI change
 

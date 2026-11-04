@@ -17,6 +17,29 @@ export function isCoordinate(value: unknown): value is Coordinate {
     && typeof value[1] === 'number' && Number.isFinite(value[1]) && Math.abs(value[1]) <= 85.051129
 }
 
+// One draft per tab, kept until the tab closes. Tagged with the user so another account never sees it.
+const draftKey = 'camioane.route-draft.v1'
+
+export function loadDraft(userId: string): Coordinate[] {
+  try {
+    const draft: unknown = JSON.parse(sessionStorage.getItem(draftKey) ?? 'null')
+    if (typeof draft === 'object' && draft !== null && 'userId' in draft && draft.userId === userId
+      && 'waypoints' in draft && Array.isArray(draft.waypoints) && draft.waypoints.every(isCoordinate)) return draft.waypoints
+  } catch {
+    // Unreadable or blocked storage starts an empty route.
+  }
+  return []
+}
+
+export function saveDraft(userId: string, waypoints: Coordinate[]) {
+  try {
+    if (waypoints.length) sessionStorage.setItem(draftKey, JSON.stringify({ userId, waypoints }))
+    else sessionStorage.removeItem(draftKey)
+  } catch {
+    // Full or blocked storage only loses the draft; the page keeps working.
+  }
+}
+
 export function readRoute(route: Route | undefined): RouteResult | null {
   if (!route || typeof route.geometry !== 'object' || route.geometry === null
     || !Array.isArray(route.geometry.coordinates) || route.geometry.coordinates.length < 2
@@ -38,7 +61,7 @@ export function formatDuration(seconds: number) {
 }
 
 export function stopLabel(index: number, count: number) {
-  return index === 0 ? 'Start' : index === count - 1 ? 'Destination' : `Stop ${index}`
+  return index === 0 ? 'Start' : index === count - 1 ? 'Destination' : `Stop ${index + 1}`
 }
 
 export function exportRoute(route: RouteResult, waypoints: Coordinate[]) {

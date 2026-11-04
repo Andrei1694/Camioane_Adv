@@ -242,6 +242,7 @@
 
 .route-map-toolbar > div {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 

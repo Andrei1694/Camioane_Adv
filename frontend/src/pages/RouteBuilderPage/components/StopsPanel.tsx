@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import type { Coordinate } from '../route'
 import { stopLabel } from '../route'
 import StopForm from './StopForm'
@@ -6,7 +7,7 @@ import StopForm from './StopForm'
 interface StopsPanelProps {
   points: Coordinate[]
   disabled: boolean
-  onChange: (points: Coordinate[]) => void
+  onChange: (points: Coordinate[], undoable?: boolean) => void
   onFocus: (point: Coordinate) => void
 }
 
@@ -20,8 +21,17 @@ function StopRow({ point, index, count, disabled, onUpdate, onMove, onRemove, on
   onRemove: () => void
   onFocus: () => void
 }) {
-  const [editing, setEditing] = useState(false)
+  // Rows are keyed by position, so the editor tracks the coordinates it opened for.
+  const [editingPoint, setEditingPoint] = useState<string | null>(null)
+  const editButton = useRef<HTMLButtonElement>(null)
   const label = stopLabel(index, count)
+  const pointKey = point.join(',')
+  const editing = editingPoint === pointKey
+
+  function closeEditor() {
+    setEditingPoint(null)
+    editButton.current?.focus()
+  }
 
   return (
     <li className="route-stop">
@@ -33,37 +43,49 @@ function StopRow({ point, index, count, disabled, onUpdate, onMove, onRemove, on
         </button>
       </div>
       <div className="stop-row-actions">
-        <button type="button" onClick={() => setEditing(!editing)} disabled={disabled} aria-expanded={editing} aria-label={`Edit ${label.toLowerCase()}`}>Edit</button>
-        <button type="button" className="stop-move" onClick={() => onMove(-1)} disabled={disabled || index === 0} aria-label={`Move ${label.toLowerCase()} up`} title="Move up">
+        <button type="button" ref={editButton} onClick={() => setEditingPoint(editing ? null : pointKey)} disabled={disabled} aria-expanded={editing} aria-label={`Edit ${label.toLowerCase()}`}>Edit</button>
+        <button type="button" className="stop-move" data-control="up" onClick={() => onMove(-1)} disabled={disabled || index === 0} aria-label={`Move ${label.toLowerCase()} up`} title="Move up">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" /></svg>
         </button>
-        <button type="button" className="stop-move" onClick={() => onMove(1)} disabled={disabled || index === count - 1} aria-label={`Move ${label.toLowerCase()} down`} title="Move down">
+        <button type="button" className="stop-move" data-control="down" onClick={() => onMove(1)} disabled={disabled || index === count - 1} aria-label={`Move ${label.toLowerCase()} down`} title="Move down">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-6-6 6 6 6-6" /></svg>
         </button>
-        <button type="button" onClick={onRemove} disabled={disabled} aria-label={`Remove ${label.toLowerCase()}`}>Remove</button>
+        <button type="button" data-control="remove" onClick={onRemove} disabled={disabled} aria-label={`Remove ${label.toLowerCase()}`}>Remove</button>
       </div>
-      {editing && <StopForm coordinates={point} disabled={disabled} onCancel={() => setEditing(false)} onSubmit={(next) => {
+      {editing && <StopForm coordinates={point} disabled={disabled} onCancel={closeEditor} onSubmit={(next) => {
         onUpdate(next)
-        setEditing(false)
+        closeEditor()
       }} />}
     </li>
   )
 }
 
 export default function StopsPanel({ points, disabled, onChange, onFocus }: StopsPanelProps) {
+  const list = useRef<HTMLOListElement>(null)
+  const heading = useRef<HTMLHeadingElement>(null)
+
+  // Keep keyboard focus with the stop that moved, or on the row that took a removed stop's place.
+  function change(next: Coordinate[], index: number, controls: string[], undoable = false) {
+    flushSync(() => onChange(next, undoable))
+    const row = list.current?.children[index]
+    const target = controls.map((control) => row?.querySelector<HTMLButtonElement>(`[data-control="${control}"]:not(:disabled)`)).find(Boolean)
+      ?? heading.current
+    target?.focus()
+  }
+
   return (
     <section className="stops-panel" aria-labelledby="stops-heading">
       <div className="route-section-heading">
-        <h2 id="stops-heading">Route stops</h2>
+        <h2 id="stops-heading" ref={heading} tabIndex={-1}>Route stops</h2>
         <span>{points.length} {points.length === 1 ? 'point' : 'points'}</span>
       </div>
       <p className="route-help">Stops are visited in the order below.</p>
       {points.length ? (
-        <ol className="route-stops">
+        <ol className="route-stops" ref={list}>
           {points.map((point, index) => (
-            <StopRow key={`${index}:${point.join(',')}`} point={point} index={index} count={points.length} disabled={disabled}
+            <StopRow key={index} point={point} index={index} count={points.length} disabled={disabled}
               onFocus={() => onFocus(point)}
-              onRemove={() => onChange(points.filter((_, position) => position !== index))}
+              onRemove={() => change(points.filter((_, position) => position !== index), Math.min(index, points.length - 2), ['remove'], true)}
               onUpdate={(next) => onChange(points.map((current, position) => position === index ? next : current))}
               onMove={(direction) => {
                 const reordered = [...points]
@@ -72,7 +94,7 @@ export default function StopsPanel({ points, disabled, onChange, onFocus }: Stop
                 const previous = reordered[index]
                 reordered[index] = reordered[target]
                 reordered[target] = previous
-                onChange(reordered)
+                change(reordered, target, direction < 0 ? ['up', 'down'] : ['down', 'up'])
               }} />
           ))}
         </ol>

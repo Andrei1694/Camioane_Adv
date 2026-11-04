@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { createRootRoute, createRoute, createRouter, Link, Outlet, RouterProvider } from '@tanstack/react-router'
+import { Suspense, useEffect } from 'react'
+import { createRootRoute, createRoute, createRouter, lazyRouteComponent, Link, Outlet, RouterProvider } from '@tanstack/react-router'
 import { QueryClientProvider } from '@tanstack/react-query'
 import Authenticated, { HomeRedirect } from './auth/Authenticated'
 import { useCurrentUser } from './auth/currentUser'
@@ -9,6 +9,9 @@ import AppShell from './components/AppShell'
 import LoginPage from './pages/LoginPage/LoginPage'
 import UsersPage from './pages/UsersPage/UsersPage'
 import './App.css'
+
+// Reloads once when a deployment has replaced the page's chunk.
+const RouteBuilderPage = lazyRouteComponent(() => import('./pages/RouteBuilderPage/RouteBuilderPage'))
 
 function Layout() {
   const revision = useSession((state) => state.revision)
@@ -39,8 +42,13 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => <Authenticated><HomeRedirect /></Authenticated> })
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: '/login', component: LoginRoute })
 const usersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/users', component: () => <Authenticated adminOnly><UsersPage /></Authenticated> })
+const routeBuilderRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/routes',
+  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Loading route builder…</p>}><RouteBuilderPage /></Suspense></Authenticated>,
+})
 const deniedRoute = createRoute({ getParentRoute: () => rootRoute, path: '/access-denied', component: () => <Authenticated><AccessDenied /></Authenticated> })
-const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, usersRoute, deniedRoute]) })
+const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, usersRoute, routeBuilderRoute, deniedRoute]) })
 
 declare module '@tanstack/react-router' {
   interface Register {

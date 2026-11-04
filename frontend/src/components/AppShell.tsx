@@ -10,6 +10,16 @@ function SidebarContent({ user, onNavigate }: { user: User, onNavigate?: () => v
     <>
       <nav className="sidebar-nav" aria-label="Main navigation">
         <p className="sidebar-label">Workspace</p>
+        {user.role === 'ADMIN' && (
+          <Link to="/routes" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="6" cy="6" r="3" />
+              <circle cx="18" cy="18" r="3" />
+              <path d="M9 6h7a4 4 0 0 1 0 8H8a4 4 0 0 0 0 8h4M6 9v3m12 0v3" />
+            </svg>
+            Route builder
+          </Link>
+        )}
         {user.role === 'ADMIN' ? (
           <Link to="/users" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

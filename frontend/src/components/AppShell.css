@@ -3,7 +3,7 @@
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
   min-height: 100dvh;
-  background: var(--hover);
+  background: var(--frame);
 }
 
 .app-sidebar {
@@ -20,12 +20,21 @@
 .sidebar-brand {
   display: inline-flex;
   align-items: center;
+  gap: 10px;
   min-height: 44px;
   padding-inline: 12px;
   color: var(--text);
   font-size: 18px;
   font-weight: 600;
   text-decoration: none;
+}
+
+.brand-mark {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  /* The wheels are outlined in the frame colour so they part from the body. */
+  color: var(--frame);
 }
 
 .sidebar-label,
@@ -172,7 +181,7 @@
   .mobile-header {
     padding: 10px 16px;
     border-bottom: 1px solid var(--border);
-    background: var(--hover);
+    background: var(--frame);
   }
 
   .mobile-header .sidebar-brand,
@@ -198,7 +207,7 @@
     border: 0;
     border-right: 1px solid var(--border);
     color: var(--text);
-    background: var(--hover);
+    background: var(--frame);
     overflow-y: auto;
   }
 

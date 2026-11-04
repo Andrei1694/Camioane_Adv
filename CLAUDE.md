@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Camioane App is the admin side of a business that sells advertising campaigns on LED-screen trucks running predefined routes. `BUSINESS_PLAN.md` (Romanian) holds the product requirements. So far the code covers authentication, user management, and a client-side route builder. Campaigns, credits, and payments are not built yet.
+Camioane App is the admin side of a business that sells advertising campaigns on LED-screen trucks running predefined routes. `BUSINESS_PLAN.md` (Romanian) holds the product requirements. So far the code covers authentication, user management, a client-side route builder, and an admin dashboard UI that runs on sample data. Campaigns, credits, and payments are not built yet.
 
 Detailed rules live in `AGENTS.md` (root), `backend/AGENTS.md`, and `frontend/AGENTS.md`. **Read the AGENTS.md for a package before changing it.** The package READMEs document the API contract, environment variables, and setup.
 
@@ -63,6 +63,7 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - Routes are defined in code with TanStack Router in `App.tsx`. File-based routing is not used.
 - Styling is plain CSS. There is no component library.
 - TanStack Table is installed but not set up anywhere yet. The Users page uses a plain semantic `<table>`. Before using TanStack Table, check its API against the installed major version (v9).
+- The dashboard (`src/pages/DashboardPage/`, admin-only at `/dashboard`) is where `/` sends admins. The backend has no fleet, booking, creative or playback API yet, so it renders `sampleData.ts`, fixed at Wed 4 Nov 2026 14:30. `dashboardData.ts` computes every figure from those rows. Its review, approve, retry and cancel actions only change local React state. When the APIs exist, replace the sample rows with TanStack Query data and keep the computations.
 - The route builder (`src/pages/RouteBuilderPage/`, admin-only at `/routes`) is lazy-loaded. It uses MapLibre GL with the Directions plugin and a public OSRM demo endpoint, configured through `VITE_MAP_STYLE_URL` and `VITE_ROUTING_API_URL`. Routes exist only on the client: there is no save API yet, and routing doesn't account for truck-specific restrictions.
 
 When you change a backend response contract, also update its consumers in `frontend/src/lib/` and document the change in `backend/README.md`. Don't invent endpoints the backend doesn't have.

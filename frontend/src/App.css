@@ -55,7 +55,8 @@ button:hover:not(:disabled) {
 }
 
 .primary-button:hover:not(:disabled) {
-  background: #3b3b3b;
+  border-color: var(--primary-hover);
+  background: var(--primary-hover);
 }
 
 button:disabled {

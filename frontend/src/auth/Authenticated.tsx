@@ -11,7 +11,7 @@ import AppShell from '../components/AppShell'
 
 export function HomeRedirect() {
   const access = useAdminAccess()
-  return <Navigate to={access.status === 'granted' ? '/users' : '/access-denied'} replace />
+  return <Navigate to={access.status === 'granted' ? '/dashboard' : '/access-denied'} replace />
 }
 
 function VerifiedAccount({ children, user, revision, adminOnly }: {

@@ -2,7 +2,7 @@
 
 Node.js 24+ and Express API using TypeScript ES modules.
 
-For a new checkout, copy `.env.example` to `.env` and start Docker Desktop. Run these commands from `backend`:
+For a new checkout, copy `.env.example` to `.env`, configure `JWT_SECRET` as described below, and start Docker Desktop. Run these commands from `backend`:
 
 ```sh
 npm install
@@ -22,6 +22,7 @@ Available scripts (run from `backend`):
 | `npm run dev:server` | Server restart only |
 | `npm run typecheck:watch` | Continuous type checking only |
 | `npm run typecheck` | Check types once |
+| `npm test` | Run authentication integration tests against the development database |
 | `npm start` | Run the server without watching |
 | `npm run prisma:generate` | Regenerate Prisma Client after schema changes |
 | `npm run prisma:validate` | Validate the Prisma schema |
@@ -29,15 +30,62 @@ Available scripts (run from `backend`):
 | `npm run db:migrate -- --name <name>` | Create and apply a development migration |
 | `npm run db:studio` | Open Prisma Studio |
 
-`.env` configures `PORT` (defaults to `3000`) and the required `DATABASE_URL`. Existing environment variables take precedence over `.env`. Local `.env` files are excluded from Git.
+`.env` configures `PORT` (defaults to `3000`), the required `DATABASE_URL`, the required `JWT_SECRET`, and `FRONTEND_ORIGIN` (defaults to `http://localhost:5173`). Existing environment variables take precedence over `.env`. Local `.env` files are excluded from Git.
+
+Generate a random signing secret and put its output in `JWT_SECRET` in your local `.env`; never commit it:
+
+```sh
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Startup rejects missing, blank, or shorter-than-32-byte secrets. `FRONTEND_ORIGIN` must be an HTTP(S) origin without a trailing slash or path. CORS allows that origin to send JSON and Authorization headers; authentication does not use cookies.
 
 Endpoints:
 
 - `GET /` returns the API name.
 - `GET /health` returns `{ "status": "ok" }`.
+- `POST /users/register` creates an account and signs the user in.
+- `POST /users/login` verifies credentials and signs the user in.
+- `GET /users/me` returns the signed-in user and requires a bearer token.
 - Unknown routes return a JSON `404` response.
 
 The Express application is defined in `src/app.ts`; `src/server.ts` verifies the PostgreSQL connection before starting the HTTP server. If the database is unavailable, startup exits with an error. On SIGINT or SIGTERM, it stops accepting requests and disconnects Prisma.
+
+## User authentication
+
+Both registration and login accept JSON `{ "email": "driver@example.com", "password": "a long passphrase" }`. Email addresses are trimmed and lowercased. Passwords must contain 12–128 Unicode characters; spaces are preserved. The service stores salted Argon2id hashes with 19 MiB memory, two iterations, and parallelism of one. Passwords and hashes are never returned.
+
+Registration returns `201` and login returns `200`, both with this shape:
+
+```json
+{
+  "user": { "email": "driver@example.com" },
+  "accessToken": "<signed JWT>",
+  "tokenType": "Bearer",
+  "expiresIn": 3600
+}
+```
+
+Send `Authorization: Bearer <accessToken>` to `GET /users/me`; it returns `{ "user": { "email": "driver@example.com" } }`. Tokens use HS256, email as `sub`, issuer `camioane-api`, and audience `camioane-frontend`. Authentication checks the signature, required claims, one-hour lifetime, and that the user still exists. User responses have `Cache-Control: no-store`.
+
+Errors are JSON `{ "error": "message" }`: `400` for invalid input or malformed JSON, `409` for an already registered email, `401` for incorrect credentials or invalid authentication, `413` for a body over 16 KiB, `415` for unsupported encodings, and a generic `500` for unexpected failures. Unknown emails and incorrect passwords return the same login error.
+
+Registration and login share a limit of 20 requests per IP per 15 minutes, including successful and invalid requests; exceeding it returns JSON `429` and a `Retry-After` header. The limiter uses an in-memory store for the current single-process server. A multi-instance deployment needs a shared store; configure proxy trust for the actual trusted proxy topology before deploying behind one.
+
+Routes delegate to the user controller for validation and responses, and to the user service for database/password operations. Authentication middleware attaches only the public user email to response locals. The shared Prisma client handles all database access.
+
+Registration is open. This version has no email verification, roles, password reset, refresh tokens, or server-side logout. Clients sign out by discarding their token and sign in again after expiry. Other issued tokens remain usable until expiry while the user exists; changing the signing secret invalidates all existing tokens.
+
+## Tests
+
+Start the development database and apply migrations before running:
+
+```sh
+npm test
+npm run typecheck
+```
+
+Tests use Node's built-in test runner, native `fetch`, and real PostgreSQL via the configured `DATABASE_URL`. They start servers on ephemeral loopback ports, generate an ephemeral signing secret, create uniquely named fixture users, and delete only those fixtures afterward. Run against a development database, not production. Tests do not modify `.env`, reset the database, or truncate tables. `npm run typecheck` also checks test code.
 
 ## PostgreSQL with Docker
 

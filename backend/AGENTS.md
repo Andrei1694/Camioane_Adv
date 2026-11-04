@@ -3,6 +3,14 @@
 These instructions apply to `backend/` and its descendants. Keep backend work
 scoped here unless the requested feature also requires changes elsewhere.
 
+## User workflow preferences
+
+- Do not write new tests or modify existing tests unless the user explicitly
+  requests it. Feature implementation, bug fixes, and refactors do not imply a
+  request to write tests. Existing tests may still be run for verification.
+- Do not read, inspect, search, tail, or retrieve logs unless the user explicitly
+  requests it. This includes application, server, container, and system logs.
+
 ## Project context
 
 - This is the Camioane App API, built with Express 5, TypeScript ES modules,
@@ -10,8 +18,10 @@ scoped here unless the requested feature also requires changes elsewhere.
 - Use npm. Keep `package.json` and `package-lock.json` in sync when dependencies
   change; those files are authoritative for installed versions.
 - Node.js runs the `.ts` source directly. There is no compilation or build step.
-- `cors`, `express-rate-limit`, and `pino` are installed but are not currently
-  configured. Check the source before assuming middleware or logging exists.
+- CORS permits `FRONTEND_ORIGIN`; registration and login share an in-memory
+  limit of 20 requests per IP per 15 minutes. `pino` is not configured.
+- User authentication uses Argon2id password hashes and one-hour HS256 JWT
+  bearer tokens. Require a random `JWT_SECRET` of at least 32 bytes at startup.
 - The Prisma schema defines `User` with `email` as the primary key and `password`
   for a password hash. Its initial migration lives in `prisma/migrations/`.
   Hash passwords before persisting them; Prisma does not hash automatically.
@@ -32,6 +42,7 @@ Run these commands from `backend/`:
 | `npm run dev:server` | Run the server with restart watching only |
 | `npm run typecheck` | Check TypeScript once without emitting files |
 | `npm run typecheck:watch` | Check TypeScript continuously |
+| `npm test` | Run Node integration tests against the configured PostgreSQL database |
 | `npm start` | Run the server without watching or type checking |
 | `npm run prisma:validate` | Validate the Prisma schema |
 | `npm run prisma:generate` | Regenerate Prisma Client after schema changes |
@@ -41,11 +52,15 @@ Run these commands from `backend/`:
 | `docker compose down` | Stop and remove the local container while retaining its data volume |
 
 For a fresh checkout, copy `.env.example` to `.env` if it does not already exist.
+Generate a local `JWT_SECRET` using the command in `README.md` before starting
+the API; preserve all existing `.env` settings.
 Start Docker Desktop with Linux containers enabled before starting PostgreSQL.
 The Compose service runs the database only; start the API separately with npm.
 
-There are currently no build, lint, or test scripts. Do not report automated tests
-as passing when only type checking or manual checks were performed.
+There are no build or lint scripts. Tests use Node's built-in runner, native
+`fetch`, and uniquely named database users with targeted cleanup. They generate
+an ephemeral JWT secret without changing `.env`. Run them against a development
+database only; they insert and delete their own fixture users.
 
 ## Code conventions and API structure
 
@@ -59,13 +74,22 @@ as passing when only type checking or manual checks were performed.
 - Type function inputs and API boundaries; let TypeScript infer straightforward
   local values and return types. Avoid `any` and unnecessary type assertions.
 - `src/app.ts` defines and exports the Express application without listening on a
-  port. Keep route and middleware setup here or in modules imported by it.
+  port, and exports `createApp()` for isolated test servers. Keep route and
+  middleware setup here or in modules imported by it.
+- User routes live in `src/routes/user.routes.ts`, HTTP validation and responses
+  in `src/controllers/user.controller.ts`, and Prisma/password operations in
+  `src/services/user.service.ts`. Keep Express objects out of services.
+- Reuse `src/middleware/authenticate.ts` for protected routes. It verifies JWT
+  claims and checks that the user still exists. Public users contain only email;
+  never expose password hashes. Return errors as `{ "error": "message" }` through
+  the centralized error handler.
 - `src/server.ts` validates the port, verifies database connectivity, starts the
   HTTP server, and handles shutdown. Preserve startup failure handling and Prisma
   disconnection on shutdown.
 - Register new routes before the final JSON 404 handler. Keep responses JSON and
-  use appropriate HTTP status codes. Current endpoints are `GET /` (API name) and
-  `GET /health` (`{ "status": "ok" }`); the health route does not query the database.
+  use appropriate HTTP status codes. Endpoints are `GET /` (API name),
+  `GET /health` (`{ "status": "ok" }`), `POST /users/register`, `POST /users/login`,
+  and protected `GET /users/me`. The health route does not query the database.
 - Validate incoming bodies, route parameters, and query parameters at runtime.
   TypeScript annotations do not validate external input. Keep internal errors and
   credentials out of API responses and logs.
@@ -94,11 +118,65 @@ as passing when only type checking or manual checks were performed.
   deletes the volume; do not use it or Prisma reset commands as routine fixes.
   Use migrations only against the intended development database.
 
+### Synchronizing Prisma after schema changes
+
+Whenever `prisma/schema.prisma` changes, synchronize the schema, database, and
+generated client together. Run these commands from `backend/`:
+
+1. Confirm `DATABASE_URL` points to the intended development database and that
+   PostgreSQL is running (`npm run db:check`). If needed, start the local database
+   with `docker compose up --build -d --wait`.
+
+2. Format and validate the edited schema:
+
+   ```sh
+   npx prisma format
+   npm run prisma:validate
+   ```
+
+3. Create a named migration without applying it yet, then inspect its SQL under
+   `prisma/migrations/` for unintended drops, data loss, and required data backfills:
+
+   ```sh
+   npm run db:migrate -- --name describe_the_change --create-only
+   ```
+
+   If existing rows need a backfill or a staged change, adjust the new, unapplied
+   migration before proceeding. Never rewrite a migration already applied or
+   shared with others. If Prisma reports drift or requests a reset, investigate
+   and resolve it while preserving existing data; do not accept a reset as a fix.
+
+4. Apply the reviewed migration, regenerate Prisma Client explicitly, and check
+   the application; do not rely on migration commands to regenerate the client:
+
+   ```sh
+   npm run db:migrate
+   npm run prisma:generate
+   npm run typecheck
+   npx prisma migrate status
+   ```
+
+5. Run existing tests with `npm test` when the change affects user/authentication
+   behavior. Write or modify tests only if explicitly requested. Commit the schema
+   and migration files (including `migration_lock.toml`) together. Generated client
+   files remain ignored and must not be edited or committed.
+
+For a schema-only change that produces no SQL migration, still validate and
+regenerate the client, then type-check. When pulling existing migrations into a
+development checkout, run `npm run db:migrate` and `npm run prisma:generate`.
+Deployment environments apply committed migrations with `npx prisma migrate deploy`;
+they must never use `migrate dev` or create migrations. Generate the
+client separately during installation/build. `prisma generate` changes only the
+client, not the database; do not use `prisma db push` as a substitute for tracked
+migrations in this project.
+
 ## Verification
 
 - After application code, dependency, or TypeScript configuration changes, run
   `npm run typecheck`. Development mode reports type errors but does not prevent
   the server from running, so startup alone is not a type check.
+- For authentication, service, controller, middleware, or routing changes, run
+  `npm test` as well. Keep fixtures isolated and never reset or truncate tables.
 - For Prisma changes, run `npm run prisma:validate` and
   `npm run prisma:generate` before type checking. Use `npm run db:check` when
   database configuration or connectivity changes and a database is available.
@@ -107,5 +185,5 @@ as passing when only type checking or manual checks were performed.
   shutdown. Report failed checks or checks that could not run.
 - For documentation-only changes, review accuracy and check whitespace;
   application startup and database changes are unnecessary.
-- If a test runner is introduced, document its commands here and add tests for
-  meaningful behavior. Keep this file aligned with the actual project setup.
+- If test tooling changes, document its commands here. Write or modify tests only
+  when explicitly requested. Keep this file aligned with the actual project setup.

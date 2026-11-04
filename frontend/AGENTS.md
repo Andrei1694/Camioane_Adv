@@ -3,9 +3,20 @@
 These instructions apply to `frontend/` and its descendants. Keep frontend work
 scoped here unless the requested feature also requires changes elsewhere.
 
+## User workflow preferences
+
+- Do not write new tests or modify existing tests unless the user explicitly
+  requests it. Feature implementation, bug fixes, and refactors do not imply a
+  request to write tests.
+- Do not read, inspect, search, tail, or retrieve logs unless the user explicitly
+  requests it. This includes browser, application, server, container, and system
+  logs.
+
 ## Project context
 
-- This is the Camioane App browser frontend, built with React, TypeScript, and Vite.
+- This is the Camioane App admin dashboard frontend, built with React,
+  TypeScript, and Vite. Design its pages, navigation, and features for
+  administrators and their management workflows.
 - Use npm. Keep `package.json` and `package-lock.json` in sync when dependencies change.
 - `package.json` and the lockfile are authoritative for installed versions.
 - Zustand, TanStack Query, TanStack Router, and TanStack Table are installed.
@@ -51,6 +62,23 @@ the build and lint checks were run.
 - Keep effects for synchronization with external systems; derive values directly
   when they can be calculated from props or state.
 
+## Page and component structure
+
+- When building or extending a page or feature, reuse suitable existing
+  components before creating new ones.
+- Extract a UI section into a component when it is repeated within the same
+  page, or when its size or complexity makes a separate component easier to
+  understand and maintain. Give each extracted component a clear responsibility;
+  use meaningful boundaries rather than a fixed line-count limit.
+- Keep components used by only one page alongside that page, for example in
+  `src/pages/<PageName>/components/`. A component can belong here even when it is
+  rendered multiple times on that page.
+- Put components used by multiple pages in `src/components/`. Move a page-local
+  component there when another page needs it, and update its imports. Base shared
+  placement on actual reuse rather than possible future reuse.
+- Keep small, straightforward UI used only once inline in its parent. Avoid
+  splitting trivial markup into components when it adds no clarity or reuse.
+
 ## State, routing, and data
 
 - Use React state for component-local interaction and Zustand for client state
@@ -81,5 +109,6 @@ the build and lint checks were run.
   `npm run build` and `npm run lint`. Report any failures or checks not run.
 - For documentation-only changes, review the content and check whitespace;
   rebuilding the application is unnecessary.
-- If a test runner is introduced, document its commands here and add tests for
-  meaningful behavior. Keep generated output and `node_modules/` out of commits.
+- If a test runner is introduced, document its commands here. When the user
+  explicitly requests tests, cover meaningful behavior. Keep generated output
+  and `node_modules/` out of commits.

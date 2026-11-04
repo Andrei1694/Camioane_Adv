@@ -29,9 +29,9 @@ export function loadUsers(): StoredUsers {
   if (saved === null) {
     return {
       users: [
-        { email: 'demo.admin@example.com' },
-        { email: 'demo.dispatcher@example.com' },
-        { email: 'demo.driver@example.com' },
+        { email: 'demo.admin@example.com' }, // taste-skill-ignore: requested fictional demo user
+        { email: 'demo.dispatcher@example.com' }, // taste-skill-ignore: requested fictional demo user
+        { email: 'demo.driver@example.com' }, // taste-skill-ignore: requested fictional demo user
       ],
       notice: null,
     }

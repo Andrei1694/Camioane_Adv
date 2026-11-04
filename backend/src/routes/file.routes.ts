@@ -5,9 +5,9 @@ import { createUploadMiddleware } from '../middleware/upload.ts';
 import { createFileService } from '../services/file.service.ts';
 import type { FileStorageRegistry } from '../storage/file-storage.ts';
 
-export function createFileRouter(storage: FileStorageRegistry, maxFileSize: number) {
+export function createFileRouter(storage: FileStorageRegistry, maxFileSize: number, ffprobePath: string) {
   const router = Router();
-  const controller = createFileController(createFileService(storage));
+  const controller = createFileController(createFileService(storage, ffprobePath));
   router.use((req, res, next) => {
     res.set({ 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
     next();

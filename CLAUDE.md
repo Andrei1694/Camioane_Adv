@@ -17,7 +17,7 @@ Detailed rules live in `AGENTS.md` (root), `backend/AGENTS.md`, and `frontend/AG
 Use Node.js 24+ and npm. Run each command from inside its package.
 
 **backend/** (Express 5 + Prisma 7 + PostgreSQL; Node runs `.ts` directly, so there is no build step)
-- First-time setup: `npm ci` (its `postinstall` runs `prisma generate`). If `.env` is missing, copy it from `.env.example`. Startup requires a random `JWT_SECRET` of at least 32 bytes; `backend/README.md` has the command to generate one.
+- First-time setup: `npm ci` (its `postinstall` runs `prisma generate`). If `.env` is missing, copy it from `.env.example`. Startup requires a random `JWT_SECRET` of at least 32 bytes; `backend/README.md` has the command to generate one. Startup also requires FFmpeg's `ffprobe` on `PATH` or at `FFPROBE_PATH`.
 - `docker compose up --build -d --wait`: start PostgreSQL only (needs Docker Desktop with Linux containers). The API runs separately.
 - `npm run dev`: start the API watcher and `tsc --watch` together. Type errors don't stop the server, so a successful startup doesn't mean the code type-checks.
 - `npm run typecheck`: run after any code change.

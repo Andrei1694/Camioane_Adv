@@ -128,6 +128,12 @@ database only; they insert and delete their own fixture users.
   existing files. Never expose storage paths/keys or serve the root statically.
 - Uploads accept one multipart `file`, no text fields, JPEG/PNG/WebP/MP4 signatures,
   and a configurable 100 MiB default limit. Preserve streaming and bounded detection.
+- MP4 uploads are probed with `ffprobe` from a temporary copy, after storage and
+  before metadata creation; unreadable videos return 422 and their object is deleted.
+  Run FFmpeg tools only through `runMediaTool` in `src/lib/ffmpeg.ts`, with argument
+  arrays (never a shell). For untrusted input keep `-protocol_whitelist file`, a
+  forced input format, and the `file:` path prefix. Startup requires a working
+  `ffprobe` (`FFPROBE_PATH`, default `ffprobe` on `PATH`).
 - `UploadedFile.ownerId` uses SET NULL on account deletion: retain files for admins.
   Storage I/O stays outside database transactions, with compensating cleanup after
   failed metadata creation and object-first, retryable deletion.

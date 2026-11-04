@@ -91,8 +91,23 @@
   border-top: 1px solid var(--border);
 }
 
+.sidebar-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.sidebar-identity-text {
+  min-width: 0;
+}
+
+/* The sidebar is on --frame, so the initial's circle takes the sheet's white to stand apart. */
+.sidebar-identity .avatar {
+  background: var(--surface);
+}
+
 .sidebar-email {
-  margin-top: 4px;
   overflow-wrap: anywhere;
   font-size: 14px;
   font-weight: 500;
@@ -102,12 +117,21 @@
   margin-top: 4px;
 }
 
+/* Both rows line their icons up with the text above by bleeding into the account block's padding. */
+.sidebar-profile,
 .sidebar-signout {
   width: calc(100% + 24px);
   margin: 16px -12px 0;
+}
+
+.sidebar-signout {
   border-color: transparent;
   background: transparent;
   text-align: left;
+}
+
+.sidebar-profile + .sidebar-signout {
+  margin-top: 4px;
 }
 
 .app-main {

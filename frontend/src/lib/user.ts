@@ -12,10 +12,18 @@ export function isRole(value: unknown): value is Role {
   return roles.some((role) => role === value)
 }
 
+/** A profile picture as the API describes it. `url` is relative to the API and needs the bearer token. */
+export interface Avatar {
+  url: string
+  /** Changes with each upload, so it doubles as a cache key. */
+  updatedAt: string
+}
+
 export interface User {
   id: string
   email: string
   role: Role
+  avatar: Avatar | null
 }
 
 export interface Credentials {
@@ -42,4 +50,19 @@ export function getEmailError(email: string): string | undefined {
 export function getPasswordError(password: string): string | undefined {
   const length = Array.from(password).length
   if (length < 12 || length > 128) return 'Use a password with 12–128 characters.'
+}
+
+// Mirror imageUploadTypes in backend/src/lib/file-validation.ts and avatarMaxUploadBytes in
+// backend/src/lib/avatar-image.ts. The API sniffs the content and stays the authority; the
+// browser uses these for the file picker and an early check.
+export const avatarTypes = ['image/jpeg', 'image/png', 'image/webp'] as const
+export const avatarMaxBytes = 10 * 1024 * 1024
+// 10 MiB is just over 10 MB, so promising 10 MB in decimal units (as DESIGN.md writes sizes) holds.
+export const avatarMaxLabel = '10 MB'
+
+/** Rejects a picture the API would refuse before any byte is sent. A blank type is left to the API. */
+export function avatarFileError(file: File): string | undefined {
+  if (file.size === 0) return `${file.name} is empty.`
+  if (file.type && !avatarTypes.some((type) => type === file.type)) return `${file.name} is not a JPEG, PNG or WebP image.`
+  if (file.size > avatarMaxBytes) return `${file.name} is larger than ${avatarMaxLabel}.`
 }

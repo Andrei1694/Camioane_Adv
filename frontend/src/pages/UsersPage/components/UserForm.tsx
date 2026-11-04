@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { getEmailError, getPasswordError, isRole, normalizeEmail, roleLabels, roles } from '../../../lib/user'
 import type { Role, User, UserInput } from '../../../lib/user'
+import AvatarEditor from '../../../components/AvatarEditor'
 
 interface UserFormProps {
   user?: User
@@ -64,6 +65,14 @@ export default function UserForm({ user, users, isSelf, pending, error, onSave, 
   return (
     <form className="user-form" aria-labelledby={`${id}-title`} onSubmit={handleSubmit} noValidate>
       <h2 id={`${id}-title`}>{user ? 'Edit user' : 'Add user'}</h2>
+      {user && (
+        <div className="user-form-picture" role="group" aria-labelledby={`${id}-picture`}>
+          <p className="user-form-picture-label" id={`${id}-picture`}>
+            Profile picture<span className="optional-label"> (saves straight away, apart from Save)</span>
+          </p>
+          <AvatarEditor user={user} isSelf={isSelf} />
+        </div>
+      )}
       <div className="form-fields">
         <div className="form-field">
           <label htmlFor={`${id}-email`}>Email</label>

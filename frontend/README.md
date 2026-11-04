@@ -33,9 +33,10 @@ Production has no localhost fallback. For a local production preview, build with
 - `/files/:fileId/edit` opens the administrator-only video editor for one uploaded MP4.
 - `/users` requires administrator access.
 - `/routes` opens the administrator-only route builder.
+- `/profile` lets every signed-in account, whatever its role, set or remove its own profile picture.
 - `/access-denied` explains missing management access and lets Admin accounts retry their access check. Successful revalidation returns to `/users`; sign-out remains available in navigation.
 
-Signed-in views share a sidebar with role-aware navigation, the verified account email and role, and sign-out. Below 768px, navigation opens in a modal drawer with keyboard focus containment, Escape/backdrop dismissal, and focus restoration. A skip link moves keyboard users directly to the page content. Login and session-verification screens keep their standalone layout.
+Signed-in views share a sidebar with role-aware navigation, the verified account's picture, email and role, a Profile link, and sign-out. Below 768px, navigation opens in a modal drawer with keyboard focus containment, Escape/backdrop dismissal, and focus restoration. A skip link moves keyboard users directly to the page content. Login and session-verification screens keep their standalone layout.
 
 The assigned role name is separate from verified management access. After `GET /users/me` verifies an Admin account, one shared `GET /users` query checks administrator access and supplies the Users table. `/dashboard`, `/files` (and its video editor), `/users` and `/routes`, including their navigation links, require a successful access check. Non-admin accounts never request the administrator user list.
 
@@ -49,13 +50,23 @@ Email, password, or role changes revoke the affected account's existing sessions
 
 ## User management
 
-The table shows email, role, and row actions. Add/Edit uses the existing inline form. Emails are normalized and checked for duplicates; the backend remains authoritative. New passwords are required, while an empty edit password is omitted. Passwords contain 12–128 Unicode characters with spaces preserved.
+The table shows each account's picture and email, role, and row actions. Add/Edit uses the existing inline form. Emails are normalized and checked for duplicates; the backend remains authoritative. New passwords are required, while an empty edit password is omitted. Passwords contain 12–128 Unicode characters with spaces preserved.
 
 Save and Delete update the table only after server success and refresh the shared access/users query. Requests show pending feedback and disable repeated submissions. Form values remain after ordinary save failures; losing management access closes the management view. Delete asks for confirmation naming the account. Loading, empty, verification errors, invalid input, and access-denied states are explicit. Role assignment always uses the four enum names, defaults to User for new accounts, and does not filter roles by their validity; the backend resolves assignments.
 
 TanStack Query owns API data, Zustand owns session state, and TanStack Router owns navigation. The API client and shared user types live in `src/lib/`; session behavior lives in `src/auth/`. The Users page and its form remain under `src/pages/UsersPage/`. Styling stays in plain CSS.
 
 The previous `camioane.users-demo.v1` local-storage data is neither read, modified, nor imported. Demo users are not backend accounts.
+
+## Profile pictures
+
+Open **Profile** at the bottom of the sidebar, or visit `/profile`. Every role can use it. Administrators can also change anyone's picture from **Edit** on the Users page; there the picture saves on its own, straight away, apart from the form's Save.
+
+- **Upload picture** (or **Change picture**) opens a picker limited to JPEG, PNG and WebP and uploads the picked file at once with `PUT /users/:id/avatar`, showing the shared upload progress with Cancel. An empty file, another declared type, or a file over 10 MiB is refused before any byte is sent; the API still checks the content. It decodes the image, applies its orientation, crops it to a centred 512×512 square and stores it as WebP without metadata.
+- **Remove picture** asks first, then calls `DELETE /users/:id/avatar`.
+- A change rewrites the cached signed-in account and the cached user list from the API's reply (`replaceCachedUser` in `src/auth/currentUser.ts`), so the sidebar and the Users table update without a reload. Picture changes don't end any session.
+
+Every user from the API carries `avatar: { url, updatedAt } | null`. The decoder accepts only the user's own `/users/<id>/avatar` path, because the bearer token goes wherever it points. `Avatar` (`src/components/`) fetches the picture with the token, keyed on `updatedAt` so a new upload is a new request and an unchanged picture is fetched once, and shows it through an object URL. Without a picture, or while it loads or if it fails, it shows the email's first letter.
 
 ## Files
 

@@ -11,6 +11,7 @@ import CreditsPage from './pages/CreditsPage/CreditsPage'
 import DashboardPage from './pages/DashboardPage/DashboardPage'
 import FilesPage from './pages/FilesPage/FilesPage'
 import LoginPage from './pages/LoginPage/LoginPage'
+import ProfilePage from './pages/ProfilePage/ProfilePage'
 import UsersPage from './pages/UsersPage/UsersPage'
 import './App.css'
 
@@ -66,8 +67,9 @@ const routeBuilderRoute = createRoute({
   path: '/routes',
   component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Loading route builder…</p>}><RouteBuilderPage /></Suspense></Authenticated>,
 })
+const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profile', component: () => <Authenticated><ProfilePage /></Authenticated> })
 const deniedRoute = createRoute({ getParentRoute: () => rootRoute, path: '/access-denied', component: () => <Authenticated><AccessDenied /></Authenticated> })
-const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, filesRoute, videoEditorRoute, creditsRoute, usersRoute, routeBuilderRoute, deniedRoute]) })
+const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, filesRoute, videoEditorRoute, creditsRoute, usersRoute, routeBuilderRoute, profileRoute, deniedRoute]) })
 
 declare module '@tanstack/react-router' {
   interface Register {

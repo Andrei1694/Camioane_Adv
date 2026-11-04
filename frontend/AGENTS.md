@@ -119,6 +119,8 @@ the build and lint checks were run.
 
 ## UI and verification
 
+- Follow `../DESIGN.md` for tokens, type, layout, components and data
+  formatting. Update it when you add or change one.
 - Use semantic elements, labeled controls, visible keyboard focus, and layouts
   that work on narrow screens. Verify changed interactions in a browser when one
   is available.

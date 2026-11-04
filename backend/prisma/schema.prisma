@@ -51,6 +51,7 @@ model User {
   sessionVersion            Int                 @default(0)
   /// Cached sum of this user's credit ledger. Only applyCreditChange changes it.
   creditBalance             Int                 @default(0)
+  avatar                    UserAvatar?
   files                     UploadedFile[]
   creditPurchases           CreditPurchase[]    @relation("CreditPurchaseUser")
   settledCreditPurchases    CreditPurchase[]    @relation("CreditPurchaseSettler")
@@ -58,6 +59,20 @@ model User {
   createdCreditTransactions CreditTransaction[] @relation("CreditTransactionCreator")
 
   @@index([roleId])
+}
+
+/// A user's profile picture. The API re-encodes every upload, so the stored
+/// object is never the uploaded file itself.
+model UserAvatar {
+  userId          String   @id @db.Uuid
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storageProvider String
+  storageKey      String
+  mimeType        String
+  size            Int
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([storageProvider, storageKey])
 }
 
 model UploadedFile {

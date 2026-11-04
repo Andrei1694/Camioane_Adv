@@ -85,8 +85,8 @@ database only; they insert and delete their own fixture users.
   in `src/controllers/user.controller.ts`, and Prisma/password operations in
   `src/services/user.service.ts`. Keep Express objects out of services.
 - Reuse `src/middleware/authenticate.ts` for protected routes. It verifies JWT
-  claims and checks that the user and session version still match. Public users contain id, email, and role;
-  never expose password hashes. Return errors as `{ "error": "message" }` through
+  claims and checks that the user and session version still match. Public users contain id, email, role,
+  and avatar (`null` or `{ url, updatedAt }`); never expose password hashes or storage keys. Return errors as `{ "error": "message" }` through
   the centralized error handler.
 - `src/server.ts` validates the port, verifies database connectivity, starts the
   HTTP server, and handles shutdown. Preserve startup failure handling and Prisma
@@ -95,6 +95,7 @@ database only; they insert and delete their own fixture users.
   use appropriate HTTP status codes, except for streamed file downloads. Endpoints are `GET /` (API name),
   `GET /health` (`{ "status": "ok" }`), `POST /users/login`, protected
   `GET /users/me`, admin-only GET/POST `/users` and PATCH/DELETE `/users/:id`,
+  GET/PUT/DELETE `/users/:id/avatar` for the user or an active admin,
   the `/files` routes, and the `/credits` routes listed in `README.md`.
   Public registration is removed. The health route does not query the database.
 - CRUD services recheck the actor and administrator invariants in serializable
@@ -140,6 +141,24 @@ database only; they insert and delete their own fixture users.
   failed metadata creation and object-first, retryable deletion.
 - Document configuration and consistency limitations in README.md. Keep uploaded
   data ignored, preserve existing `.env`, and do not add tests unless requested.
+
+### Profile pictures
+
+- Avatar routes live in `src/routes/user.routes.ts`, behind `authenticate` and
+  `requireSelfOrAdmin`, which checks access before the multipart body is read.
+  HTTP handling is in `src/controllers/avatar.controller.ts` and storage plus
+  Prisma work in `src/services/avatar.service.ts`, which rechecks the actor in
+  each `serializable` transaction.
+- Uploads reuse `createUploadMiddleware` with `imageUploadTypes` and the
+  `renderAvatar` transform from `src/lib/avatar-image.ts`. Always re-encode
+  through it: never store or serve the uploaded bytes, which can carry EXIF GPS data.
+  It caps uploads at 10 MiB and decoding at 50 megapixels, and outputs a 512×512 WebP.
+- `UserAvatar` holds one row per user (`ON DELETE CASCADE`) with its own provider
+  and key. Storage I/O stays outside transactions: replaced objects and deleted
+  users' objects are discarded after the commit, best effort; removal deletes
+  the object first, then the row matched by key.
+- `deleteUser` returns the avatar location so the controller can discard the
+  object; keep that cleanup when changing account deletion.
 
 ### Credits
 

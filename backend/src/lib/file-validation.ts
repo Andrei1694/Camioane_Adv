@@ -4,7 +4,22 @@ import type { FileTypeResult } from 'file-type';
 import { AppError } from './app-error.ts';
 import type { FilePagination } from '../types/file.ts';
 
-const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'video/mp4']);
+/** Detected MIME types an upload route accepts, and the 415 message for anything else. */
+export interface UploadTypes {
+  types: ReadonlySet<string>;
+  message: string;
+}
+
+export const fileUploadTypes: UploadTypes = {
+  types: new Set(['image/jpeg', 'image/png', 'image/webp', 'video/mp4']),
+  message: 'Only JPEG, PNG, WebP, and MP4 files are allowed',
+};
+
+export const imageUploadTypes: UploadTypes = {
+  types: new Set(['image/jpeg', 'image/png', 'image/webp']),
+  message: 'Only JPEG, PNG, and WebP images are allowed',
+};
+
 const sampleSize = 4100;
 
 export function parseFileId(value: unknown) {
@@ -34,7 +49,7 @@ export function sanitizeFilename(value: string) {
   return Array.from(clean).slice(0, 255).join('').replace(/^[. ]+|[. ]+$/g, '') || 'file';
 }
 
-export async function inspectUpload(stream: Readable, signal: AbortSignal) {
+export async function inspectUpload(stream: Readable, signal: AbortSignal, accept: UploadTypes) {
   // Keep at most a sample plus one input chunk, then replay every byte unchanged.
   // Returning this iterator must not destroy the multipart part: Multer still
   // needs to consume the request when a file is rejected or storage fails.
@@ -63,9 +78,7 @@ export async function inspectUpload(stream: Readable, signal: AbortSignal) {
       signal.throwIfAborted();
       throw new AppError(415, 'Unsupported or unrecognized file content');
     }
-    if (!detected || !allowedTypes.has(detected.mime)) {
-      throw new AppError(415, 'Only JPEG, PNG, WebP, and MP4 files are allowed');
-    }
+    if (!detected || !accept.types.has(detected.mime)) throw new AppError(415, accept.message);
     const body = Readable.from((async function* () {
       try {
         yield* chunks;

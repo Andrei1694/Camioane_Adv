@@ -17,7 +17,7 @@ export function createApp(options: { fileStorage?: FileStorageRegistry; uploadMa
   app.disable('x-powered-by');
   app.use(cors({
     origin: authConfig.frontendOrigin,
-    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   }));
 
@@ -29,7 +29,7 @@ export function createApp(options: { fileStorage?: FileStorageRegistry; uploadMa
     res.json({ status: 'ok' });
   });
 
-  app.use('/users', createUserRouter());
+  app.use('/users', createUserRouter(fileStorage));
   app.use('/files', createFileRouter(
     fileStorage,
     options.uploadMaxFileSizeBytes ?? fileConfig.maxFileSize,

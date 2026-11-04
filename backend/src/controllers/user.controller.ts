@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { AppError } from '../lib/app-error.ts';
 import { parseCreateUser, parseCredentials, parseUpdateUser, parseUserId } from '../lib/user-validation.ts';
+import type { AvatarService } from '../services/avatar.service.ts';
 import { createUser, deleteUser, listUsers, loginUser, updateUser } from '../services/user.service.ts';
 import type { UserLocals } from '../types/user.ts';
 
@@ -32,7 +33,10 @@ export async function update(req: Request, res: UserResponse) {
   res.json({ user: await updateUser(actor(res), parseUserId(req.params.id), parseUpdateUser(req.body)) });
 }
 
-export async function remove(req: Request, res: UserResponse) {
-  await deleteUser(actor(res), parseUserId(req.params.id));
-  res.status(204).end();
+export function createRemoveUser(avatars: AvatarService) {
+  return async function remove(req: Request, res: UserResponse) {
+    const avatar = await deleteUser(actor(res), parseUserId(req.params.id));
+    await avatars.discard(avatar);
+    res.status(204).end();
+  };
 }

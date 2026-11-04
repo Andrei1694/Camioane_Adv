@@ -18,7 +18,12 @@ export async function createAuthenticationData(user: PublicUser & SessionIdentit
     .setExpirationTime(`${expiresIn}s`)
     .sign(authConfig.jwtSecret);
 
-  return { user: { id: user.id, email: user.email, role: user.role }, accessToken, tokenType: 'Bearer', expiresIn };
+  return {
+    user: { id: user.id, email: user.email, role: user.role, avatar: user.avatar },
+    accessToken,
+    tokenType: 'Bearer',
+    expiresIn,
+  };
 }
 
 export async function verifyAccessToken(token: string): Promise<SessionIdentity> {

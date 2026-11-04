@@ -24,6 +24,14 @@ scoped here unless the requested feature also requires changes elsewhere.
   page uses a semantic table; TanStack Table remains available but unconfigured.
 - The Users page and form live under `src/pages/UsersPage/`; shared types,
   validation, API client and query client live under `src/lib/`.
+- Role values are ADMIN, OPERATOR, DRIVER, and USER. Reuse the role list,
+  validation guard, and labels in `src/lib/user.ts`. Only a verified, currently
+  valid ADMIN role grants management access; preserve denial for other roles.
+  `src/auth/adminAccess.ts` owns the shared admin-access/users query and denial
+  handling. Use its context for route guards, navigation, and the Users table;
+  do not infer access from the assigned role alone. A 403 clears cached users
+  without ending the session. Recheck on navigation, focus, reconnect, or retry;
+  no polling or role-management API exists.
 - Authentication lives under `src/auth/`. Only token/expiry persist under
   `camioane.session.v1`. Always validate restored sessions with the API, cancel
   requests and clear private cache on session changes, and preserve cross-tab logout.

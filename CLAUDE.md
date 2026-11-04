@@ -2,9 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Camioane App is the admin side of a business that sells advertising campaigns on LED-screen trucks running predefined routes. `BUSINESS_PLAN.md` (Romanian) holds the product requirements. So far the code covers authentication, user management, file uploads, a browser-side video editor for uploaded MP4s, a client-side route builder, and an admin dashboard UI that runs on sample data. Campaigns, credits, and payments are not built yet.
+Camioane App is the admin side of a business that sells advertising campaigns on LED-screen trucks running predefined routes. `BUSINESS_PLAN.md` (Romanian) holds the product requirements. So far the code covers authentication, user management, file uploads, a browser-side video editor for uploaded MP4s, a client-side route builder, and an admin dashboard UI that runs on sample data. `mobile/` holds an Expo app for drivers and operators that so far only signs in. Campaigns, credits, and payments are not built yet.
 
-Detailed rules live in `AGENTS.md` (root), `backend/AGENTS.md`, and `frontend/AGENTS.md`. **Read the AGENTS.md for a package before changing it.** The package READMEs document the API contract, environment variables, and setup. `DESIGN.md` (root) holds the frontend's visual system: tokens, type, layout, components, and data formatting.
+Detailed rules live in `AGENTS.md` (root), `backend/AGENTS.md`, `frontend/AGENTS.md`, and `mobile/AGENTS.md`. **Read the AGENTS.md for a package before changing it.** The package READMEs document the API contract, environment variables, and setup. `DESIGN.md` (root) holds the visual system for the frontend and the mobile app: tokens, type, layout, components, and data formatting.
 
 ## User workflow preferences (apply everywhere)
 
@@ -30,6 +30,12 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - `npm run build` (`tsc -b` + `vite build`) and `npm run lint` (Oxlint): run both after any code change. When a browser is available, also check the changed interactions in it.
 - `VITE_API_BASE_URL` falls back to `http://localhost:3000` only in dev. Production builds need it set explicitly.
 
+**mobile/** (Expo SDK 58, React Native 0.88, and TypeScript; there is no test runner)
+- `npm start`: start Metro; open the app in Expo Go or a simulator. The backend must be running and reachable from the device.
+- `npm run typecheck` and `npm run lint` (Oxlint, silent when clean): run both after any code change. Also bundle both platforms with `npx expo export --platform android --platform ios --output-dir <tmp>`. When a device or simulator is available, check the changed interactions there.
+- Add Expo and React Native dependencies with `npx expo install` so versions match the SDK. If the Expo API is unreachable, set `EXPO_OFFLINE=1`.
+- `EXPO_PUBLIC_API_BASE_URL` falls back to Metro's host on port 3000 only in dev. Release builds need an explicit HTTPS value.
+
 ## Architecture
 
 **Backend request flow:** `src/app.ts` builds the Express app with `createApp()`, which tests also use to spin up servers. Inside `createApp()` the stack runs in this order: CORS restricted to `FRONTEND_ORIGIN`, routers, a JSON 404, then the central `error-handler.ts`. Every error is returned as `{ "error": "message" }`. To raise errors, throw `AppError` from `src/lib/app-error.ts`. The code is layered:
@@ -39,7 +45,7 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 
 `src/server.ts` runs only when the server process starts. It checks database connectivity, starts listening, and disconnects Prisma on shutdown.
 
-**Auth model (spans both packages):**
+**Auth model (spans every package):**
 - The backend issues HS256 JWTs that expire after one hour. The `sub` claim holds the immutable user UUID, and a private claim holds a `sessionVersion`.
 - On every request, `middleware/authenticate.ts` loads the user and compares that session version with the database. Changing a user's email, password, or role increments the version, which revokes all of that user's tokens.
 - Admin CRUD operations run in serializable transactions that are retried on conflict. They enforce two invariants: there must always be at least one admin, and an admin can't delete or demote themselves.
@@ -68,15 +74,23 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - The video editor (`src/pages/VideoEditorPage/`, admin-only at `/files/$fileId/edit`, opened by Edit on a video row in Files) is lazy-loaded. It cuts one MP4: `edit.ts` holds the segment model, a magnetic list of source ranges with undo history. `@xzdarcy/react-timeline-editor` draws the timeline, and the `<video>` element is the playback clock (`usePlayback.ts`), not the library's engine. The library keeps bar positions in its own state, so `EditTimeline.tsx` versions the action IDs to remount bars after a drop, and keys the Timeline on zoom because its ruler doesn't recompute tick cells. Export renders in the browser with WebCodecs through mediabunny (`renderVideo.ts`, dynamically imported), producing H.264 with AAC, or Opus if AAC can't be encoded. It then uploads the result as a new file through `POST /files`; there is no edit or replace API. With no `GET /files/:id`, `findFile.ts` checks the cached Files pages, then pages through `GET /files`. `UploadProgress` in `src/components/` is shared by Files and the editor.
 - The route builder (`src/pages/RouteBuilderPage/`, admin-only at `/routes`) is lazy-loaded. It uses MapLibre GL with the Directions plugin and a public OSRM demo endpoint, configured through `VITE_MAP_STYLE_URL` and `VITE_ROUTING_API_URL`. Routes exist only on the client: there is no save API yet, and routing doesn't account for truck-specific restrictions.
 
-When you change a backend response contract, also update its consumers in `frontend/src/lib/` and document the change in `backend/README.md`. Don't invent endpoints the backend doesn't have.
+**Mobile (`mobile/`):**
+- It is for the `DRIVER` and `OPERATOR` roles. `appRoles` in `src/lib/user.ts` decides this; other roles see an explanation and a sign-out button.
+- `src/auth/session.ts` and `src/lib/api.ts` port the web client's session store and fetch client: same runtime decoding, 15 s timeout, stale-response drop and 401 sign-out. The token and its expiry persist in `expo-secure-store` under `camioane.session.v1`, and writes are chained so they land in order.
+- Expo Router reads routes from `src/app/`. The root `_layout.tsx` holds the splash screen until fonts and the saved session load, then uses `Stack.Protected` to choose between `(app)` and `sign-in`. `(app)/_layout.tsx` checks `GET /users/me`, applies the role gate, and is keyed on `revision`.
+- TanStack Query's `focusManager` follows `AppState`, so returning to the foreground rechecks the session.
+- The home screen shows that route and shift assignments aren't available yet; there is no API for them.
+- `ios/` and `android/` are generated by `expo prebuild` or EAS, and Git ignores them.
+
+When you change a backend response contract, also update its consumers in `frontend/src/lib/` and `mobile/src/lib/` and document the change in `backend/README.md`. Don't invent endpoints the backend doesn't have.
 
 ## Conventions and gotchas
 
-- Both packages use two-space indentation, single quotes, `import type`, and relative imports only. The backend uses semicolons and explicit `.ts` extensions in imports. The frontend omits semicolons.
-- Both packages enable `erasableSyntaxOnly`, so avoid enums and parameter properties. Don't weaken compiler checks to make code compile.
+- All packages use two-space indentation, single quotes, `import type`, and relative imports only. The backend uses semicolons and explicit `.ts` extensions in imports. The frontend and mobile packages omit semicolons.
+- All packages enable `erasableSyntaxOnly`, so avoid enums and parameter properties. Don't weaken compiler checks to make code compile.
 - Put a component used by only one page in `src/pages/<Page>/components/`. Move it to `src/components/` only once a second page actually uses it.
 - Don't edit or commit `backend/src/generated/prisma/`; it's generated. After schema changes, create a named migration with `--create-only`, review the SQL, apply it, then explicitly run `prisma:generate` and `typecheck`. Never use `prisma db push`, `migrate reset`, or `docker compose down -v`, and never truncate tables. Deployments apply committed migrations with `npx prisma migrate deploy`, never `migrate dev`.
-- Never overwrite existing `.env` files. Frontend `VITE_*` values are public.
+- Never overwrite existing `.env` files. Frontend `VITE_*` and mobile `EXPO_PUBLIC_*` values are public.
 - The legacy integration test (`tests/user.integration.test.ts`) still expects the old contract: public registration, email-only users, and old JWT claims. Its failures are expected. Report them, but don't rewrite the test unless asked.
-- `mobile/` and `hardware_docs/` are empty placeholders.
+- `hardware_docs/` is an empty placeholder.
 - Commit messages use `feat:` or `fix:` followed by an imperative description. Commit lockfiles together with their manifests.

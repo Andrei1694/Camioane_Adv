@@ -1,0 +1,360 @@
+.app-main:has(.route-builder) {
+  padding: 28px 24px;
+}
+
+.app-content:has(.route-builder) {
+  max-width: 1600px;
+}
+
+.route-page-heading {
+  margin-bottom: 24px;
+}
+
+.route-workspace {
+  /* 320px planning column + 16px gutter + the remaining map width = the sheet's full inner width. */
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.route-planner,
+.route-map-panel {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.stops-panel,
+.route-summary {
+  padding: 20px;
+}
+
+.route-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.route-builder h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.route-builder h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.route-section-heading > span,
+.route-help,
+.route-draft-note,
+.route-map-hint {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.route-help {
+  margin-top: 8px;
+}
+
+.route-empty {
+  padding-block: 24px;
+  font-size: 14px;
+}
+
+.route-empty strong {
+  font-weight: 500;
+}
+
+.route-empty p {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.route-stops {
+  max-height: 340px;
+  margin: 16px -8px 20px;
+  padding: 0 8px;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-gutter: stable;
+}
+
+.route-stop {
+  padding-block: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.route-stop:first-child {
+  padding-top: 0;
+}
+
+.route-stop-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stop-number {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  height: 28px;
+  border: 1px solid var(--control-border);
+  border-radius: 50%;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stop-location {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px;
+  border-color: transparent;
+  text-align: left;
+}
+
+.stop-location strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.stop-location span {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.stop-row-actions,
+.stop-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.stop-row-actions button {
+  padding-inline: 8px;
+  border-color: transparent;
+  font-size: 13px;
+}
+
+.stop-row-actions .stop-move {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  padding: 10px;
+}
+
+.stop-move svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stop-coordinate-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stop-coordinate-fields input {
+  padding-inline: 8px;
+  font-size: 14px;
+}
+
+.stop-coordinate-fields input::placeholder {
+  color: var(--muted);
+}
+
+.stop-form-actions > button:only-child {
+  width: 100%;
+}
+
+.route-stop .stop-form {
+  margin-top: 12px;
+}
+
+.route-summary {
+  border-top: 1px solid var(--border);
+}
+
+.route-status {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.route-totals {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.route-totals > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.route-totals dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.route-totals dd {
+  margin: 0;
+  font-size: 20px;
+  text-align: right;
+}
+
+.route-error {
+  margin-top: 12px;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.route-error button {
+  margin-top: 12px;
+}
+
+.route-map-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.route-map-toolbar > div {
+  display: flex;
+  gap: 8px;
+}
+
+.route-map-toolbar button {
+  padding-inline: 10px;
+  border-color: transparent;
+}
+
+.route-map-area {
+  position: relative;
+  height: clamp(440px, 64dvh, 760px);
+  background: var(--hover);
+}
+
+.route-map {
+  width: 100%;
+  height: 100%;
+}
+
+.map-notice {
+  position: absolute;
+  z-index: 2;
+  top: 16px;
+  left: 16px;
+  max-width: min(360px, calc(100% - 80px));
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--surface);
+  font-size: 14px;
+}
+
+.map-notice button {
+  margin-top: 12px;
+}
+
+.route-map-hint {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.route-draft-note {
+  margin-top: 16px;
+}
+
+/* Global button styles must not change MapLibre's control geometry. */
+.route-map .maplibregl-ctrl-group button,
+.route-map .maplibregl-ctrl-attrib-button {
+  min-height: 0;
+  padding: 0;
+}
+
+.route-map .maplibregl-ctrl-group button {
+  width: 44px;
+  height: 44px;
+}
+
+.route-map .maplibregl-ctrl-group {
+  border: 1px solid var(--control-border);
+  box-shadow: none; /* taste-skill-ignore: removes the library's default shadow. */
+}
+
+@media (max-width: 1150px) {
+  .route-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .route-map-panel {
+    grid-row: 1;
+  }
+
+  .route-map-area {
+    height: 400px;
+  }
+
+  .route-planner {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .route-summary {
+    border-top: 0;
+    border-left: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 1000px) {
+  .route-planner {
+    display: block;
+  }
+
+  .route-summary {
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-main:has(.route-builder) {
+    padding: 24px 16px;
+  }
+
+  .route-page-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .route-map-area {
+    height: 340px;
+  }
+
+  .route-map-toolbar {
+    flex-wrap: wrap;
+  }
+}

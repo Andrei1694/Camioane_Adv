@@ -1,4 +1,4 @@
-import { formatCount, plural } from '../../lib/format'
+import { formatCount, formatDuration, plural } from '../../lib/format'
 import { asOf, campaigns, cars, clients, operatingDay, peakWindow, routes } from './sampleData'
 import type {
   Booking, BookingRequest, CancellationRequest, Car, Client, Commitment, Confirmation, Creative, CreativeStatus, FleetRoute, RouteId,
@@ -66,11 +66,7 @@ export const formatStamp = (iso: string) => `${formatDay(iso)}, ${iso.slice(11, 
 export function waitingFor(iso: string) {
   const sent = Date.parse(`${iso}:00Z`)
   const now = Date.parse(`${asOf.date}T${formatTime(asOf.time)}:00Z`)
-  const mins = Math.max(0, Math.round((now - sent) / 60000))
-  const days = Math.floor(mins / 1440)
-  const hours = Math.floor((mins % 1440) / 60)
-  if (days > 0) return `${days} d ${hours} h`
-  return hours > 0 ? `${hours} h ${mins % 60} min` : `${mins} min`
+  return formatDuration((now - sent) / 60000)
 }
 
 /** Rounds to one decimal the way formatHours does, for sums that must match what is shown. */

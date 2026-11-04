@@ -8,6 +8,11 @@ const localTime = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2
 
 export const formatCount = (value: number) => integer.format(value)
 
+const signedInteger = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0, signDisplay: 'exceptZero' })
+
+/** A change with its sign, written with a true minus: +1,000, −200. */
+export const formatSignedCount = (value: number) => signedInteger.format(value).replace('-', '\u2212')
+
 export function plural(count: number, one: string, many = `${one}s`) {
   return `${formatCount(count)} ${count === 1 ? one : many}`
 }
@@ -34,6 +39,39 @@ export function byteSize(bytes: number): { value: string, unit: ByteUnit } {
 export const formatByteSize = (bytes: number) => {
   const { value, unit } = byteSize(bytes)
   return `${value} ${unit}`
+}
+
+// Money arrives in minor units; each currency keeps its own number of decimals (EUR 2, JPY 0).
+const moneyFormats = new Map<string, { format: Intl.NumberFormat, digits: number }>()
+
+function moneyFormat(currency: string) {
+  let entry = moneyFormats.get(currency)
+  if (!entry) {
+    const digits = new Intl.NumberFormat('en-GB', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits ?? 2
+    entry = { format: new Intl.NumberFormat('en-GB', { minimumFractionDigits: digits, maximumFractionDigits: digits }), digits }
+    moneyFormats.set(currency, entry)
+  }
+  return entry
+}
+
+/** An amount from its minor units, with the currency code as its unit: 1,000.00 + EUR. */
+export function money(minor: number, currency: string) {
+  const { format, digits } = moneyFormat(currency)
+  return { value: format.format(minor / 10 ** digits), unit: currency }
+}
+
+export function formatMoney(minor: number, currency: string) {
+  const { value, unit } = money(minor, currency)
+  return `${value} ${unit}`
+}
+
+/** A wait in whole minutes: 2 d 4 h, 22 h 25 min, 5 min. */
+export function formatDuration(minutes: number) {
+  const mins = Math.max(0, Math.round(minutes))
+  const days = Math.floor(mins / 1440)
+  const hours = Math.floor((mins % 1440) / 60)
+  if (days > 0) return `${days} d ${hours} h`
+  return hours > 0 ? `${hours} h ${mins % 60} min` : `${mins} min`
 }
 
 export const formatLocalDay = (iso: string) => localDay.format(new Date(iso))

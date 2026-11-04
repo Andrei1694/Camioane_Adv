@@ -1,8 +1,10 @@
 import cors from 'cors';
 import express from 'express';
 import { authConfig } from './config/auth.ts';
+import { loadCreditConfig } from './config/credits.ts';
 import { createFileStorage, loadFileConfig } from './config/files.ts';
 import { errorHandler } from './middleware/error-handler.ts';
+import { createCreditRouter } from './routes/credit.routes.ts';
 import { createFileRouter } from './routes/file.routes.ts';
 import { createUserRouter } from './routes/user.routes.ts';
 import type { FileStorageRegistry } from './storage/file-storage.ts';
@@ -33,6 +35,7 @@ export function createApp(options: { fileStorage?: FileStorageRegistry; uploadMa
     options.uploadMaxFileSizeBytes ?? fileConfig.maxFileSize,
     fileConfig.ffprobePath,
   ));
+  app.use('/credits', createCreditRouter(loadCreditConfig()));
 
   app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });

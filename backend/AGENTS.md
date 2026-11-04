@@ -94,7 +94,8 @@ database only; they insert and delete their own fixture users.
 - Register new routes before the final JSON 404 handler. Keep responses JSON and
   use appropriate HTTP status codes, except for streamed file downloads. Endpoints are `GET /` (API name),
   `GET /health` (`{ "status": "ok" }`), `POST /users/login`, protected
-  `GET /users/me`, and admin-only GET/POST `/users` and PATCH/DELETE `/users/:id`.
+  `GET /users/me`, admin-only GET/POST `/users` and PATCH/DELETE `/users/:id`,
+  the `/files` routes, and the `/credits` routes listed in `README.md`.
   Public registration is removed. The health route does not query the database.
 - CRUD services recheck the actor and administrator invariants in serializable
   transactions with bounded conflict retries. Keep password hashing outside those
@@ -139,6 +140,24 @@ database only; they insert and delete their own fixture users.
   failed metadata creation and object-first, retryable deletion.
 - Document configuration and consistency limitations in README.md. Keep uploaded
   data ignored, preserve existing `.env`, and do not add tests unless requested.
+
+### Credits
+
+- `/credits` routes live in `src/routes/credit.routes.ts`, validation in
+  `src/lib/credit-validation.ts`, and Prisma work in `src/services/credit.service.ts`.
+  Users buy credits through `CreditPurchase` rows that an admin confirms by hand
+  until a card processor is chosen; `CreditTransaction` is the append-only ledger.
+- Only `applyCreditChange` may change `User.creditBalance`. It uses a guarded
+  increment and writes the matching ledger row; call it inside the same
+  transaction as the reason for the movement. Never edit or delete ledger rows:
+  correct mistakes with new `ADJUSTMENT` rows.
+- Run credit operations through `serializable` from `src/lib/transaction.ts` and
+  recheck the actor inside the transaction. Confirmation must stay idempotent:
+  a purchase credits its owner at most once (the unique `purchaseId` is the backstop).
+- Prices come from `CREDIT_CURRENCY` and `CREDIT_UNIT_PRICE_MINOR` and are
+  snapshotted on each purchase; never accept a price from the client.
+- The credits migration adds CHECK constraints that Prisma doesn't track; keep
+  them in future migrations. Purchases and ledger rows use SET NULL on account deletion.
 
 ## Database and configuration
 

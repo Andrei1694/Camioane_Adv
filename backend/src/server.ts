@@ -22,7 +22,9 @@ try {
   await prisma.$queryRaw`SELECT 1`;
   console.log('Connected to PostgreSQL.');
 
-  const server = app.listen(port, () => {
+  const server = app.listen(port, (error) => {
+    // Express 5 also calls this on failure; the 'error' handler below reports it.
+    if (error) return;
     console.log(`Camioane API listening on http://localhost:${port}`);
   });
 

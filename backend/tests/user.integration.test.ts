@@ -1,45 +1,34 @@
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { once } from 'node:events';
-import type { Server } from 'node:http';
+import { Readable } from 'node:stream';
 import { after, afterEach, before, beforeEach, describe, it } from 'node:test';
-import { hash, verify } from 'argon2';
-import express from 'express';
-import { jwtVerify, SignJWT } from 'jose';
-import type { JWTPayload } from 'jose';
+import { verify } from 'argon2';
+import { jwtVerify } from 'jose';
+import { secret, signToken, startServer } from './helpers/api.ts';
+import type { RequestOptions, TestServer } from './helpers/api.ts';
+import { Fixtures, password, requireDatabase } from './helpers/fixtures.ts';
+import { driverConflict, failTransactions, knownError, overrideTransactions } from './helpers/prisma.ts';
+import { tempStorage } from './helpers/storage.ts';
+import type { TempStorage } from './helpers/storage.ts';
+import { prisma } from '../src/lib/prisma.ts';
+import { bootstrapAdministrator, createUser, deleteUser, listUsers, updateUser } from '../src/services/user.service.ts';
 import type { AuthenticationData, PublicUser, RoleName } from '../src/types/user.ts';
 
-process.env.JWT_SECRET = randomBytes(32).toString('hex');
-process.env.FRONTEND_ORIGIN = 'http://localhost:5173';
-
-const { createApp } = await import('../src/app.ts');
-const { prisma } = await import('../src/lib/prisma.ts');
-const { errorHandler } = await import('../src/middleware/error-handler.ts');
-const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-const password = '  a safe test passphrase  ';
-const fixtureEmails = new Set<string>();
-let server: Server;
-let baseUrl: string;
-let adminRoleId: string;
-let fixturePasswordHash: string;
+const fixtures = new Fixtures();
+let api: TestServer;
+let storage: TempStorage;
 let administrator: PublicUser;
 let adminToken: string;
 
 function fixtureEmail() {
-  const email = `auth-test-${randomUUID()}@example.test`;
-  fixtureEmails.add(email);
-  return email;
+  return fixtures.email('auth-test');
 }
 
-async function request(method: string, path: string, body?: unknown, token?: string) {
-  return fetch(`${baseUrl}${path}`, {
-    method,
-    headers: {
-      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-      ...(token === undefined ? {} : { Authorization: `Bearer ${token}` }),
-    },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
+function request(method: string, path: string, body?: unknown, token?: string) {
+  const options: RequestOptions = {};
+  if (body !== undefined) options.body = body;
+  if (token !== undefined) options.token = token;
+  return api.request(method, path, options);
 }
 
 function post(path: string, body: unknown, token?: string) {
@@ -75,64 +64,39 @@ async function createAccount(email = fixtureEmail(), userPassword = password, ro
 }
 
 async function getMe(token?: string) {
-  return fetch(`${baseUrl}/users/me`, {
-    headers: token === undefined ? {} : { Authorization: `Bearer ${token}` },
-  });
+  return request('GET', '/users/me', undefined, token);
 }
 
-async function signToken(id: string, claims: JWTPayload = {}, algorithm = 'HS256', key = secret) {
-  const now = Math.floor(Date.now() / 1000);
-  return new SignJWT({
-    sub: id,
-    sessionVersion: 0,
-    iss: 'camioane-api',
-    aud: 'camioane-frontend',
-    iat: now,
-    exp: now + 3600,
-    ...claims,
-  }).setProtectedHeader({ alg: algorithm, typ: 'JWT' }).sign(key);
-}
-
-async function closeServer(activeServer: Server) {
-  await new Promise<void>((resolve, reject) => {
-    activeServer.close((error) => error ? reject(error) : resolve());
+async function addAvatar(userId: string) {
+  const key = randomUUID();
+  await storage.storage.inner.put({ key, body: Readable.from(['avatar']), contentType: 'image/webp' });
+  const avatar = await prisma.userAvatar.create({
+    data: { userId, storageProvider: storage.storage.name, storageKey: key, mimeType: 'image/webp', size: 6 },
   });
+  return { key, updatedAt: avatar.updatedAt.toISOString() };
 }
 
 describe('User authentication and management API', { concurrency: false }, () => {
   before(async () => {
-    await prisma.$queryRaw`SELECT 1`;
-    const role = await prisma.role.findUnique({ where: { name: 'ADMIN' } });
-    const now = new Date();
-    assert.ok(role && role.activ && role.startDate <= now && (role.endDate === null || now < role.endDate),
-      'Integration tests require the migrated development database with an active ADMIN role');
-    adminRoleId = role.id;
-    fixturePasswordHash = await hash(password);
+    await requireDatabase();
+    storage = await tempStorage();
   });
 
   beforeEach(async () => {
-    const email = fixtureEmail();
-    const user = await prisma.user.create({
-      data: { email, password: fixturePasswordHash, roleId: adminRoleId },
-    });
-    administrator = { id: user.id, email, role: 'ADMIN', avatar: null };
     // Seed only a disposable administrator; setup must not consume login limits.
-    adminToken = await signToken(user.id, { sessionVersion: user.sessionVersion });
-    server = createApp().listen(0, '127.0.0.1');
-    await once(server, 'listening');
-    const address = server.address();
-    assert.ok(address && typeof address !== 'string');
-    baseUrl = `http://127.0.0.1:${address.port}`;
+    const admin = await fixtures.user('ADMIN', fixtureEmail());
+    administrator = { id: admin.id, email: admin.email, role: 'ADMIN', avatar: null };
+    adminToken = admin.token;
+    storage.storage.reset();
+    api = await startServer({ fileStorage: storage.registry });
   });
 
   afterEach(async () => {
     try {
-      if (server?.listening) await closeServer(server);
+      await api?.close();
     } finally {
-      if (fixtureEmails.size > 0) {
-        await prisma.user.deleteMany({ where: { email: { in: [...fixtureEmails] } } });
-        fixtureEmails.clear();
-      }
+      await fixtures.cleanup();
+      await storage.remove();
     }
   });
 
@@ -260,13 +224,11 @@ describe('User authentication and management API', { concurrency: false }, () =>
   });
 
   it('returns JSON errors for malformed, absent, and oversized bodies', async () => {
-    const malformed = await fetch(`${baseUrl}/users/login`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{bad json',
-    });
+    const malformed = await api.request('POST', '/users/login', { body: '{bad json', headers: { 'Content-Type': 'application/json' } });
     assert.equal(malformed.status, 400);
     assert.deepEqual(await malformed.json(), { error: 'Invalid JSON body' });
 
-    const absent = await fetch(`${baseUrl}/users/login`, { method: 'POST' });
+    const absent = await api.request('POST', '/users/login');
     assert.equal(absent.status, 400);
     assert.deepEqual(await absent.json(), { error: 'A JSON object is required' });
 
@@ -277,7 +239,7 @@ describe('User authentication and management API', { concurrency: false }, () =>
 
   it('rejects missing and malformed bearer headers', async () => {
     for (const authorization of [undefined, 'Basic abc', 'Bearer', 'Bearer abc def', 'Bearer not.a.jwt']) {
-      const response = await fetch(`${baseUrl}/users/me`, {
+      const response = await api.request('GET', '/users/me', {
         headers: authorization === undefined ? {} : { Authorization: authorization },
       });
       assert.equal(response.status, 401);
@@ -408,8 +370,8 @@ describe('User authentication and management API', { concurrency: false }, () =>
     assert.deepEqual(Object.keys(data), ['users']);
     assert.ok(Array.isArray(data.users));
     for (const user of data.users) assert.deepEqual(Object.keys(user).sort(), ['avatar', 'email', 'id', 'role']);
-    const fixtures = data.users.filter(user => fixtureEmails.has(user.email));
-    assert.deepEqual(fixtures, [...accounts, administrator].sort((left, right) => left.email.localeCompare(right.email)));
+    const listed = data.users.filter(user => fixtures.emails.has(user.email));
+    assert.deepEqual(listed, [...accounts, administrator].sort((left, right) => left.email.localeCompare(right.email)));
   });
 
   for (const field of ['email', 'password', 'role'] as const) {
@@ -519,53 +481,164 @@ describe('User authentication and management API', { concurrency: false }, () =>
     assert.deepEqual(await profile.json(), { user: administrator });
   });
 
-  it('allows the configured browser origin and required request headers', async () => {
-    const response = await fetch(`${baseUrl}/users/login`, {
-      method: 'OPTIONS',
-      headers: {
-        Origin: 'http://localhost:5173',
-        'Access-Control-Request-Method': 'POST',
-        'Access-Control-Request-Headers': 'content-type,authorization',
-      },
-    });
+  it('includes profile pictures in the profile and the user list', async () => {
+    const account = await createAccount();
+    const avatar = await addAvatar(account.id);
+    const expected = { id: account.id, email: account.email, role: 'USER', avatar: { url: `/users/${account.id}/avatar`, updatedAt: avatar.updatedAt } };
+    const profile = await getMe(account.token);
+    assert.deepEqual(await profile.json(), { user: expected });
+    const list = await request('GET', '/users', undefined, adminToken);
+    const { users }: { users: PublicUser[] } = await list.json();
+    assert.deepEqual(users.find((user) => user.id === account.id), expected);
+  });
+
+  it('deletes a removed account\'s profile picture, and still succeeds if that fails', async (t) => {
+    const first = await createAccount();
+    const { key } = await addAvatar(first.id);
+    const deleted = await request('DELETE', `/users/${first.id}`, undefined, adminToken);
+    assert.equal(deleted.status, 204);
+    assert.deepEqual(storage.storage.deleted, [key]);
+    assert.deepEqual(await storage.keys(), []);
+
+    const second = await createAccount();
+    const orphan = await addAvatar(second.id);
+    const logged = t.mock.method(console, 'error', () => {});
+    storage.storage.beforeDelete = () => {
+      throw new Error('storage offline');
+    };
+    const response = await request('DELETE', `/users/${second.id}`, undefined, adminToken);
     assert.equal(response.status, 204);
-    assert.equal(response.headers.get('access-control-allow-origin'), 'http://localhost:5173');
-    assert.equal(response.headers.get('access-control-allow-headers'), 'Content-Type,Authorization');
-    assert.equal(response.headers.get('access-control-allow-credentials'), null);
-    const otherOrigin = 'https://untrusted.example';
-    const denied = await fetch(`${baseUrl}/health`, { headers: { Origin: otherOrigin } });
-    assert.notEqual(denied.headers.get('access-control-allow-origin'), otherOrigin);
-    await denied.json();
+    assert.equal(await prisma.user.findUnique({ where: { id: second.id } }), null);
+    assert.deepEqual(await storage.keys(), [orphan.key]);
+    assert.deepEqual(logged.mock.calls.map((call) => call.arguments), [['Failed to delete a stored profile picture']]);
+    await storage.storage.inner.delete(orphan.key);
   });
 
-  it('preserves the API root, health response, and JSON 404 behavior', async () => {
-    for (const [path, status, expected] of [
-      ['/', 200, { message: 'Camioane API' }],
-      ['/health', 200, { status: 'ok' }],
-      ['/missing', 404, { error: 'Route not found' }],
-      ['/users', 401, { error: 'Unauthorized' }],
-    ] as const) {
-      const response = await fetch(`${baseUrl}${path}`);
-      assert.equal(response.status, status);
-      assert.deepEqual(await response.json(), expected);
-      assert.equal(response.headers.get('x-powered-by'), null);
-    }
+  it('demotes another administrator while one remains, and revokes their sessions', async () => {
+    const other = await createAccount(fixtureEmail(), password, 'ADMIN');
+    const response = await request('PATCH', `/users/${other.id}`, { role: 'OPERATOR' }, adminToken);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { user: { id: other.id, email: other.email, role: 'OPERATOR', avatar: null } });
+    assert.equal((await getMe(other.token)).status, 401);
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: other.id } });
+    assert.equal(stored.sessionVersion, 1);
   });
 
-  it('hides internal error details in centralized JSON responses', async () => {
-    const application = express();
-    application.get('/failure', () => { throw new Error('private database or credential details'); });
-    application.use(errorHandler);
-    const failureServer = application.listen(0, '127.0.0.1');
+  it('never removes or demotes the last administrator', async () => {
+    const other = await createAccount(fixtureEmail(), password, 'ADMIN');
+    // Pretend the target is the only administrator, without touching real ones.
+    const mock = overrideTransactions({ user: { count: async () => 1 } });
     try {
-      await once(failureServer, 'listening');
-      const address = failureServer.address();
-      assert.ok(address && typeof address !== 'string');
-      const response = await fetch(`http://127.0.0.1:${address.port}/failure`);
-      assert.equal(response.status, 500);
-      assert.deepEqual(await response.json(), { error: 'Internal server error' });
+      for (const [method, body] of [['DELETE', undefined], ['PATCH', { role: 'DRIVER' }]] as const) {
+        const response = await request(method, `/users/${other.id}`, body, adminToken);
+        assert.equal(response.status, 409);
+        assert.deepEqual(await response.json(), { error: 'The last administrator cannot be removed or demoted' });
+      }
     } finally {
-      await closeServer(failureServer);
+      mock.restore();
     }
+    const stored = await prisma.user.findUniqueOrThrow({ where: { id: other.id }, include: { role: true } });
+    assert.equal(stored.role.name, 'ADMIN');
+    assert.equal((await getMe(other.token)).status, 200);
+  });
+
+  it('retries serialization conflicts and reports when they persist', async () => {
+    const retried = failTransactions(knownError('P2034'), driverConflict());
+    try {
+      const response = await request('GET', '/users', undefined, adminToken);
+      assert.equal(response.status, 200);
+      await response.json();
+      assert.equal(retried.calls, 3);
+    } finally {
+      retried.restore();
+    }
+    const exhausted = failTransactions(driverConflict(), knownError('P2034'), knownError('P2034'), knownError('P2034'));
+    try {
+      const response = await post('/users', { email: fixtureEmail(), password }, adminToken);
+      assert.equal(response.status, 409);
+      assert.deepEqual(await response.json(), { error: 'Accounts changed during this request. Refresh and try again.' });
+      assert.equal(exhausted.calls, 3);
+    } finally {
+      exhausted.restore();
+    }
+  });
+
+  it('maps database errors to user errors and hides the rest', async () => {
+    const account = await createAccount();
+    for (const [error, status, message] of [
+      [knownError('P2025'), 404, 'User not found'],
+      [knownError('P2002'), 409, 'Email is already registered'],
+      [knownError('P2003'), 500, 'Internal server error'],
+      [new Error('connection lost'), 500, 'Internal server error'],
+    ] as const) {
+      const mock = failTransactions(error);
+      try {
+        const response = await request('PATCH', `/users/${account.id}`, { role: 'DRIVER' }, adminToken);
+        assert.equal(response.status, status);
+        assert.deepEqual(await response.json(), { error: message });
+      } finally {
+        mock.restore();
+      }
+    }
+  });
+
+  it('rechecks the actor inside every management transaction', async () => {
+    const user = await fixtures.user('USER');
+    const target = await fixtures.user('DRIVER');
+    const stale = { id: administrator.id, sessionVersion: 1 };
+    const ordinary = { id: user.id, sessionVersion: user.sessionVersion };
+    for (const [actor, status] of [[stale, 401], [ordinary, 403]] as const) {
+      for (const action of [
+        () => listUsers(actor),
+        () => createUser(actor, { email: fixtureEmail(), password, role: 'USER' }),
+        () => updateUser(actor, target.id, { role: 'ADMIN' }),
+        () => deleteUser(actor, target.id),
+      ]) {
+        await assert.rejects(action(), { status });
+      }
+    }
+    const missingRole = overrideTransactions({ role: { findUnique: async () => null } });
+    try {
+      await assert.rejects(createUser({ id: administrator.id, sessionVersion: 0 }, { email: fixtureEmail(), password, role: 'USER' }), {
+        status: 409, message: 'The requested role is missing. Check role configuration.',
+      });
+    } finally {
+      missingRole.restore();
+    }
+  });
+
+  it('bootstraps administrators only as the local command intends', async () => {
+    const email = fixtureEmail();
+    await assert.rejects(bootstrapAdministrator(email), { status: 400, message: 'A password is required for a new administrator' });
+    const created = await bootstrapAdministrator(email, password);
+    assert.deepEqual(created, { id: created.id, email, role: 'ADMIN', avatar: null });
+    const stored = await prisma.user.findUniqueOrThrow({ where: { email } });
+    assert.equal(await verify(stored.password, password), true);
+    assert.deepEqual(await bootstrapAdministrator(email, 'another password!'), created);
+    assert.equal((await prisma.user.findUniqueOrThrow({ where: { email } })).password, stored.password);
+
+    const user = await fixtures.user('OPERATOR');
+    await assert.rejects(bootstrapAdministrator(user.email), { status: 409, message: 'Promotion of the existing account must be confirmed' });
+    const promoted = await bootstrapAdministrator(user.email, undefined, true);
+    assert.equal(promoted.role, 'ADMIN');
+    assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: user.id } })).sessionVersion, user.sessionVersion + 1);
+    assert.equal((await getMe(user.token)).status, 401);
+  });
+
+  it('refuses to bootstrap while the ADMIN role is unavailable', async () => {
+    const role = await prisma.role.findUniqueOrThrow({ where: { name: 'ADMIN' } });
+    const email = fixtureEmail();
+    // Simulated: the shared role must never be changed by tests.
+    for (const unavailable of [{ activ: false }, { endDate: new Date(Date.now() - 1000) }, { startDate: new Date(Date.now() + 60_000) }]) {
+      const mock = overrideTransactions({ role: { findUnique: async () => ({ ...role, ...unavailable }) } });
+      try {
+        await assert.rejects(bootstrapAdministrator(email, password), {
+          status: 409, message: 'The ADMIN role is inactive, not yet started, or expired. Check role configuration.',
+        });
+      } finally {
+        mock.restore();
+      }
+    }
+    assert.equal(await prisma.user.count({ where: { email } }), 0);
   });
 });

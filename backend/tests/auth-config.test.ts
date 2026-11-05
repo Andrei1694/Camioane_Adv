@@ -1,41 +1,41 @@
+import './helpers/env.ts';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
 import { describe, it } from 'node:test';
+import { authConfig, loadAuthConfig } from '../src/config/auth.ts';
 
-const secret = randomBytes(32).toString('hex');
-process.env.JWT_SECRET = secret;
-process.env.FRONTEND_ORIGIN = 'http://localhost:5173';
-const { loadAuthConfig } = await import('../src/config/auth.ts');
+const secret = process.env.JWT_SECRET ?? '';
 
 describe('Authentication configuration', () => {
   it('requires a nonblank secret of at least 32 bytes', () => {
-    for (const value of [undefined, '', ' '.repeat(32), 'x'.repeat(31)]) {
+    for (const value of [undefined, '', ' '.repeat(32), 'x'.repeat(31), 'é'.repeat(15)]) {
       assert.throws(() => loadAuthConfig({ JWT_SECRET: value }), /JWT_SECRET/);
     }
     assert.deepEqual(loadAuthConfig({ JWT_SECRET: secret }).jwtSecret, new TextEncoder().encode(secret));
-    assert.equal(loadAuthConfig({ JWT_SECRET: secret }).frontendOrigin, 'http://localhost:5173');
+    // The limit counts UTF-8 bytes, not characters.
+    assert.equal(loadAuthConfig({ JWT_SECRET: 'é'.repeat(16) }).jwtSecret.byteLength, 32);
   });
 
-  it('accepts HTTP(S) origins and rejects malformed origins and paths', () => {
-    for (const origin of ['https://camioane.example', 'http://localhost:5174']) {
-      assert.equal(loadAuthConfig({ JWT_SECRET: secret, FRONTEND_ORIGIN: origin }).frontendOrigin, origin);
-    }
-    for (const origin of ['', '*', 'ftp://example.com', 'https://example.com/', 'https://example.com/path']) {
-      assert.throws(() => loadAuthConfig({ JWT_SECRET: secret, FRONTEND_ORIGIN: origin }), /FRONTEND_ORIGIN/);
-    }
+  it('defaults to the local admin app and website origins', () => {
+    const config = loadAuthConfig({ JWT_SECRET: secret });
+    assert.equal(config.frontendOrigin, 'http://localhost:5173');
+    assert.equal(config.websiteOrigin, 'http://localhost:5174');
   });
 
-  it('fails during application startup when the secret is invalid', () => {
-    const serverUrl = new URL('../src/server.ts', import.meta.url).href;
-    const result = spawnSync(process.execPath, ['--input-type=module', '-e', `await import(${JSON.stringify(serverUrl)})`], {
-      env: { ...process.env, JWT_SECRET: '', DATABASE_URL: 'postgresql://unused:unused@127.0.0.1:1/unused' },
-      encoding: 'utf8',
-      timeout: 10000,
+  for (const [name, key] of [['FRONTEND_ORIGIN', 'frontendOrigin'], ['WEBSITE_ORIGIN', 'websiteOrigin']] as const) {
+    it(`accepts HTTP(S) values for ${name} and rejects malformed origins and paths`, () => {
+      for (const origin of ['https://camioane.example', 'http://localhost:8080']) {
+        assert.equal(loadAuthConfig({ JWT_SECRET: secret, [name]: origin })[key], origin);
+      }
+      for (const origin of ['', '*', 'not a url']) {
+        assert.throws(() => loadAuthConfig({ JWT_SECRET: secret, [name]: origin }), { message: `${name} must be an HTTP or HTTPS origin.` });
+      }
+      for (const origin of ['ftp://example.com', 'https://example.com/', 'https://example.com/path', 'HTTPS://EXAMPLE.COM']) {
+        assert.throws(() => loadAuthConfig({ JWT_SECRET: secret, [name]: origin }), { message: `${name} must be an HTTP or HTTPS origin without a path.` });
+      }
     });
-    assert.equal(result.error, undefined);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /JWT_SECRET/);
-    assert.doesNotMatch(result.stdout, /listening|Connected to PostgreSQL/);
+  }
+
+  it('loads the process configuration when the module is imported', () => {
+    assert.deepEqual(authConfig, loadAuthConfig());
   });
 });

@@ -92,7 +92,7 @@ function isPositiveInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
 }
 
-function parseProbeOutput(output: string): VideoInfo {
+export function parseProbeOutput(output: string): VideoInfo {
   let data: unknown;
   try {
     data = JSON.parse(output);

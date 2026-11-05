@@ -11,7 +11,7 @@ export default defineConfig(({ command, mode }) => {
   }
   return {
     plugins: [react()],
-    // 5173 is the admin app's port, which the backend's CORS origin expects.
+    // 5173 is the admin app's port; the backend's WEBSITE_ORIGIN allows 5174 by default.
     server: { port: 5174, strictPort: true },
     preview: { port: 5174, strictPort: true },
   }

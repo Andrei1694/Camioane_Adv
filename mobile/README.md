@@ -27,7 +27,7 @@ In development the app calls the API on the computer that runs Metro: it takes t
 
 To use another address, for example with `npx expo start --tunnel` or a remote API, copy `.env.example` to `.env.local`, set `EXPO_PUBLIC_API_BASE_URL`, and restart Metro. The value is public: Metro inlines it into the app bundle. Never put secrets in it.
 
-CORS doesn't apply here: native apps send no `Origin` header, so the backend's `FRONTEND_ORIGIN` setting only affects the web dashboard. Every protected request still needs the bearer token.
+CORS doesn't apply here: native apps send no `Origin` header, so the backend's `FRONTEND_ORIGIN` and `WEBSITE_ORIGIN` settings only affect the web dashboard and the website. Every protected request still needs the bearer token.
 
 ## Sign-in and sessions
 

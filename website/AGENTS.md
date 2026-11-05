@@ -18,10 +18,15 @@ scoped here unless the requested change also requires changes elsewhere.
   `#confirmation`, `#content`, `#contact`). It is set up like `../frontend/`
   (React, TypeScript, Vite, Oxlint, plain CSS) but is a separate package with its
   own dependencies; never import from `../frontend/`.
-- It calls no API. The call to action is a `mailto:` link built in
-  `src/lib/contact.ts` from `VITE_CONTACT_EMAIL`; `vite.config.ts` fails a build
-  without it. Do not add forms or lead capture until the backend has an endpoint
-  for them; do not invent one.
+- `src/lib/api.ts` is the typed fetch client for the backend: base URL from
+  `VITE_API_BASE_URL` (development falls back to `http://localhost:3000`), a 15 s
+  timeout, `{ error }` messages and a runtime decoder for every response. No
+  section calls it yet. Add calls only for endpoints listed in
+  `../backend/README.md`; never invent one. The backend allows this site's origin
+  through `WEBSITE_ORIGIN`.
+- The call to action is a `mailto:` link built in `src/lib/contact.ts` from
+  `VITE_CONTACT_EMAIL`; `vite.config.ts` fails a build without it. Do not add
+  forms or lead capture until the backend has an endpoint for them.
 - Copy comes from `../BUSINESS_PLAN.md`, confirmed rules only. Do not invent
   cities, fleet sizes, rates, credit prices, client names, testimonials or other
   figures. Use the trade's words from `DESIGN.md`: cars, car-hours, credits,
@@ -55,7 +60,7 @@ lint checks were run.
   checks; do not weaken compiler checks.
 - `src/sections/` holds one component per page section; `src/components/` holds
   pieces used by more than one section (`Section`, `BrandMark`); `src/lib/` holds
-  formatting, pricing and contact helpers.
+  formatting, pricing and contact helpers and the API client.
 - Tokens and primitives in `src/index.css` are copied from
   `../frontend/src/index.css` and `App.css`. When a shared token changes in
   `../DESIGN.md`, change it in `src/index.css` and in the token table of

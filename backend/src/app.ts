@@ -16,7 +16,8 @@ export function createApp(options: { fileStorage?: FileStorageRegistry; uploadMa
 
   app.disable('x-powered-by');
   app.use(cors({
-    origin: authConfig.frontendOrigin,
+    // The admin app and the public website; any other origin gets no CORS headers.
+    origin: [authConfig.frontendOrigin, authConfig.websiteOrigin],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   }));

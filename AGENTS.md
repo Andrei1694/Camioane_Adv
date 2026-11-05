@@ -5,7 +5,7 @@
 - `frontend/`: React/TypeScript/Vite dashboard. Pages: `src/pages/<PageName>/`; shared components: `src/components/`; authentication: `src/auth/`; API helpers: `src/lib/`; assets: `src/assets/` and `public/`.
 - `backend/`: Express/TypeScript API organized into routes, controllers, services, and middleware under `src/`. Prisma schema/migrations live in `prisma/`; tests in `tests/`.
 - `mobile/`: Expo (React Native) app for drivers and operators. Expo Router routes: `src/app/`; session: `src/auth/`; API client, theme and shared types: `src/lib/`; shared components: `src/components/`. Native `ios/` and `android/` folders are generated, not committed.
-- `website/`: React/TypeScript/Vite presentation site for advertisers, one static landing page. Sections: `src/sections/`; shared pieces: `src/components/`; formatting, pricing example and contact link: `src/lib/`.
+- `website/`: React/TypeScript/Vite presentation site for advertisers, one static landing page. Sections: `src/sections/`; shared pieces: `src/components/`; formatting, pricing example, contact link and API client: `src/lib/`.
 - `hardware_docs/` is a placeholder.
 - Follow directory-specific instructions in `frontend/AGENTS.md`, `backend/AGENTS.md`, `mobile/AGENTS.md`, and `website/AGENTS.md`.
 

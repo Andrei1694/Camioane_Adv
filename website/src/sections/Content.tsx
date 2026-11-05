@@ -21,8 +21,9 @@ export default function Content() {
       id="content"
       title="Your creative on screen"
       lead="The images or videos you upload go on air only once our team approves them."
+      layout="stacked"
     >
-      <ul className="points">
+      <ul className="points grid-3">
         {points.map(({ title, detail }) => (
           <li key={title}>
             <h3>{title}</h3>

@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Camioane App is the admin side of a business that sells advertising campaigns on LED-screen trucks running predefined routes. `BUSINESS_PLAN.md` (Romanian) holds the product requirements. So far the code covers authentication, user management with profile pictures, file uploads, a browser-side video editor for uploaded MP4s, a client-side route builder, and an admin dashboard UI that runs on sample data. `mobile/` holds an Expo app for drivers and operators that so far only signs in. `website/` holds the public presentation site for advertisers, a static landing page. Campaigns, credits, and payments are not built yet.
 
 
-Detailed rules live in `AGENTS.md` (root), `backend/AGENTS.md`, `frontend/AGENTS.md`, `mobile/AGENTS.md`, and `website/AGENTS.md`. **Read the AGENTS.md for a package before changing it.** The package READMEs document the API contract, environment variables, and setup. `DESIGN.md` (root) holds the visual system for the frontend, the mobile app and the website: tokens, type, layout, components, and data formatting.
+Detailed rules live in `AGENTS.md` (root), `backend/AGENTS.md`, `frontend/AGENTS.md`, `mobile/AGENTS.md`, and `website/AGENTS.md`. **Read the AGENTS.md for a package before changing it.** The package READMEs document the API contract, environment variables, and setup. `DESIGN.md` (root) holds the visual system for the frontend and the mobile app (tokens, type, layout, components, and data formatting) and the shared tokens the website copies. `website/DESIGN.md` holds the website's own layout, type sizes and components.
 
 ## User workflow preferences (apply everywhere)
 

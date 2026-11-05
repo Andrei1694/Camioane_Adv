@@ -4,10 +4,20 @@
   margin-inline: auto;
 }
 
+.nowrap {
+  white-space: nowrap;
+}
+
 /* Header and footer -------------------------------------------------------------------------- */
 
+/* Sticky, so Contact stays one click away. Flat: a 1px rule, no shadow or blur. The 72px (64px on
+   phones) matches html's scroll-padding-top in index.css. */
 .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   border-bottom: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .header-inner {
@@ -95,14 +105,14 @@
 
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
   gap: 56px;
   align-items: center;
 }
 
 .hero h1 {
   max-width: 14em;
-  font-size: 40px;
+  font-size: 48px;
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.01em;
@@ -114,6 +124,7 @@
   color: var(--muted);
   font-size: 18px;
   line-height: 1.6;
+  text-wrap: pretty;
 }
 
 .hero-lead {
@@ -129,28 +140,13 @@
 }
 
 .hero-visual {
-  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 10px;
 }
 
-.hero-mark {
-  display: grid;
-  place-items: center;
-  padding: 28px 24px;
-  color: var(--frame);
-  background: var(--frame);
-}
-
-.hero-mark-svg {
-  width: 120px;
-  height: 120px;
-}
-
 /* The example booking: a small timeline of the pricing example, drawn from lib/pricing.ts. */
 .example-booking {
-  padding: 20px 24px 24px;
-  border-top: 1px solid var(--border);
+  padding: 24px;
 }
 
 .example-head {
@@ -184,12 +180,12 @@
 .example-chart {
   display: grid;
   gap: 8px;
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 .chart-row {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-columns: 44px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
 }
@@ -201,7 +197,7 @@
 
 .chart-track {
   position: relative;
-  height: 20px;
+  height: 24px;
 }
 
 .chart-axis {
@@ -256,16 +252,29 @@
   border-top: 1px solid var(--border);
 }
 
-.section-grid {
+/* Split: the heading and lead in the left third, the content in the right two thirds. */
+.section-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: 48px;
 }
 
+/* Stacked: the heading and lead above content that spans the whole column. */
+.section-stacked {
+  display: grid;
+  gap: 40px;
+}
+
+.section-stacked .section-head {
+  max-width: 40em;
+}
+
 .section h2 {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 .section-lead {
@@ -285,12 +294,7 @@
 .term dd {
   margin-top: 4px;
   color: var(--muted);
-}
-
-.term-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 32px 40px;
+  text-wrap: pretty;
 }
 
 .term dt {
@@ -338,6 +342,27 @@
   gap: 24px;
 }
 
+/* Column grids for stacked sections: each item opens with a row rule, like the steps. No cards. */
+.grid-2,
+.grid-3 {
+  display: grid;
+  gap: 32px 40px;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid-2 > *,
+.grid-3 > * {
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
 .formula {
   padding: 16px 20px;
   border-radius: 8px;
@@ -346,6 +371,15 @@
 
 .formula p + p {
   margin-top: 8px;
+}
+
+/* The slot formula with the example's figures, under the formula it illustrates. */
+.formula-example {
+  color: var(--muted);
+}
+
+.formula-figures {
+  color: var(--text);
 }
 
 .table-frame {
@@ -409,6 +443,12 @@
   font-size: 14px;
 }
 
+/* The closing band: one step of tone in place of the section rule. */
+.section-closing {
+  border-top: 0;
+  background: var(--frame);
+}
+
 .contact-actions {
   display: flex;
   flex-wrap: wrap;
@@ -417,20 +457,21 @@
 }
 
 .contact-address {
-  color: var(--muted);
-}
-
-.contact-address span {
-  color: var(--text);
   font-weight: 500;
   overflow-wrap: anywhere;
+}
+
+.contact-status:not(:empty) {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 14px;
 }
 
 /* Breakpoints ------------------------------------------------------------------------------ */
 
 @media (max-width: 959px) {
   .hero-grid,
-  .section-grid {
+  .section-split {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -438,11 +479,22 @@
     gap: 40px;
   }
 
-  .hero-visual {
-    max-width: 520px;
+  .hero h1 {
+    font-size: 40px;
   }
 
-  .section-grid {
+  .section-split {
+    gap: 24px;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Three points don't split evenly into two columns, so they read as one. */
+  .points.grid-3 {
+    max-width: 40em;
+    grid-template-columns: minmax(0, 1fr);
     gap: 24px;
   }
 }
@@ -476,13 +528,28 @@
     padding-block: 56px;
   }
 
-  .term-list {
+  .section h2 {
+    font-size: 24px;
+  }
+
+  .section-stacked {
+    gap: 32px;
+  }
+
+  .grid-2,
+  .grid-3 {
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
   }
 
   .example-booking {
-    padding: 16px;
+    padding: 20px 16px;
+  }
+
+  /* The address takes its own line above the two buttons. It isn't focusable, so the tab order holds. */
+  .contact-address {
+    flex-basis: 100%;
+    order: -1;
   }
 
   .price-table th,

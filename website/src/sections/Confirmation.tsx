@@ -21,8 +21,13 @@ const points = [
 
 export default function Confirmation() {
   return (
-    <Section id="confirmation" title="All or nothing" lead="We confirm a campaign only when we can run all of it.">
-      <ul className="points">
+    <Section
+      id="confirmation"
+      title="All or nothing"
+      lead="We confirm a campaign only when we can run all of it."
+      layout="stacked"
+    >
+      <ul className="points grid-2">
         {points.map(({ title, detail }) => (
           <li key={title}>
             <h3>{title}</h3>

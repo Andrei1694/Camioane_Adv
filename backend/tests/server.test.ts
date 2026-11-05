@@ -66,6 +66,7 @@ describe('Server startup and shutdown', () => {
       const result = await runNode(['src/server.ts'], { env: { PORT: String(address.port) } });
       assert.equal(result.status, 1);
       assert.match(result.stderr, /^HTTP server failed: listen EADDRINUSE/);
+      assert.doesNotMatch(result.stdout, /listening/);
     } finally {
       blocker.close();
     }

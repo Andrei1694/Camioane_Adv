@@ -33,6 +33,17 @@
   box-sizing: border-box;
 }
 
+/* Anchor jumps stop below the sticky header (72px, 64px on phones; see App.css). */
+html {
+  scroll-padding-top: 72px;
+}
+
+@media (max-width: 767px) {
+  html {
+    scroll-padding-top: 64px;
+  }
+}
+
 body {
   margin: 0;
   min-width: 280px;
@@ -89,6 +100,13 @@ figure {
   transition: background-color 120ms ease, border-color 120ms ease;
 }
 
+/* A <button> in the same look as the link buttons ("Copy address"). */
+button.button {
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
 .button:hover {
   background: var(--hover);
 }
@@ -114,7 +132,8 @@ figure {
   position: fixed;
   top: 12px;
   left: 12px;
-  z-index: 1;
+  /* Above the sticky header (z-index 10). */
+  z-index: 20;
   padding: 10px 16px;
   border-radius: 6px;
   color: var(--surface);

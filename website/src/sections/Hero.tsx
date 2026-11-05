@@ -1,4 +1,3 @@
-import BrandMark from '../components/BrandMark'
 import { contactHref } from '../lib/contact'
 import ExampleBooking from './ExampleBooking'
 
@@ -18,9 +17,6 @@ export default function Hero() {
           </div>
         </div>
         <div className="hero-visual">
-          <div className="hero-mark">
-            <BrandMark className="hero-mark-svg" />
-          </div>
           <ExampleBooking />
         </div>
       </div>

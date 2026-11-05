@@ -15,8 +15,9 @@ export default function Booking() {
       id="booking"
       title="What you book"
       lead="A campaign is a set of slots on our routes. You choose the routes, the times and how many cars; we drive them."
+      layout="stacked"
     >
-      <dl className="term-list">
+      <dl className="term-list grid-3">
         {terms.map(({ term, detail }) => (
           <div key={term} className="term">
             <dt>{term}</dt>

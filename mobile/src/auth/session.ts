@@ -1,10 +1,10 @@
 import { AppState } from 'react-native'
-import * as SecureStore from 'expo-secure-store'
 import { create } from 'zustand'
 import { queryClient } from '../lib/queryClient'
+import * as storage from './storage'
 
 // Port of frontend/src/auth/session.ts. The token lives in the Keychain (iOS) or the
-// Keystore (Android) instead of localStorage, and that storage is asynchronous.
+// Keystore (Android), or sessionStorage in the browser, behind an asynchronous API.
 interface Session {
   accessToken: string
   expiresAt: number
@@ -13,14 +13,13 @@ interface Session {
 interface SessionState {
   session: Session | null
   revision: number
-  /** The saved session has been read from secure storage. */
+  /** The saved session has been read from platform storage. */
   hydrated: boolean
   notice: string
   message: string
 }
 
 const storageKey = 'camioane.session.v1'
-const storageNotice = 'Secure storage is unavailable. You may need to sign in again after closing the app.'
 const expiredMessage = 'Your session expired. Please sign in again.'
 
 function parseSession(saved: string | null): Session | null {
@@ -54,23 +53,23 @@ export function sessionSignal() {
 function persist(session: Session | null) {
   writes = writes.then(async () => {
     try {
-      if (session) await SecureStore.setItemAsync(storageKey, JSON.stringify(session))
-      else await SecureStore.deleteItemAsync(storageKey)
+      if (session) await storage.setItemAsync(storageKey, JSON.stringify(session))
+      else await storage.deleteItemAsync(storageKey)
       useSession.setState({ notice: '' })
     } catch {
-      useSession.setState({ notice: storageNotice })
+      useSession.setState({ notice: storage.storageNotice })
     }
   })
 }
 
 async function loadSession() {
   try {
-    const saved = await SecureStore.getItemAsync(storageKey)
+    const saved = await storage.getItemAsync(storageKey)
     const session = parseSession(saved)
     if (saved && !session) persist(null)
     useSession.setState({ session, hydrated: true, message: saved && !session ? expiredMessage : '' })
   } catch {
-    useSession.setState({ session: null, hydrated: true, notice: storageNotice })
+    useSession.setState({ session: null, hydrated: true, notice: storage.storageNotice })
   }
 }
 

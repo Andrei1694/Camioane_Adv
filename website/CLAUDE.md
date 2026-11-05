@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-This is `website/`, the public presentation site for advertisers: one static English landing page. The root `../CLAUDE.md` covers repo-wide rules. `AGENTS.md` in this folder holds the package's full rules; read it before changing anything. `README.md` covers setup and the env var. The shared tokens and the "Presentation site" section of `../DESIGN.md` define the visual system.
+This is `website/`, the public presentation site for advertisers: one static English landing page. The root `../CLAUDE.md` covers repo-wide rules. `AGENTS.md` in this folder holds the package's full rules; read it before changing anything. `README.md` covers setup and the env var. `DESIGN.md` in this folder defines the visual system; the shared tokens it copies come from `../DESIGN.md`.
 
 ## Commands
 
@@ -42,7 +42,8 @@ There is no test runner and there are no tests. To check a change, run lint and 
 
 ## Easy to break
 
-- When a shared token changes in `../DESIGN.md`, update `src/index.css` too, because the copy here doesn't follow automatically.
+- When a shared token changes in `../DESIGN.md`, update `src/index.css` and the token table in `DESIGN.md` too, because the copies here don't follow automatically.
+- When a size or pattern changes here, update `DESIGN.md` in the same commit.
 - Keep one primary button on the page: "Plan a campaign" in the hero. Every other call to action, including the `<button>` "Copy address", uses the plain `.button` class.
 - The header is sticky. Anything that changes its height must also change `scroll-padding-top` in `src/index.css`, and the skip link's `z-index` must stay above the header's.
 - Keep the "not a price list" labels next to the pricing example.

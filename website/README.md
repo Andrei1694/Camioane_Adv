@@ -37,4 +37,4 @@ npm run preview
 
 - The copy follows `../BUSINESS_PLAN.md`, confirmed rules only. Things the plan lists as still unknown (cities, fleet size, real rates, credit price, cancellation terms) don't appear.
 - The pricing example is the plan's §7.2 example. `src/lib/pricing.ts` holds its rows and computes every figure the page shows, in the hero and in the pricing table.
-- The visual system is the admin app's; see the "Presentation site" section of `../DESIGN.md`.
+- The visual system is the admin app's, adapted for a page people read; see `DESIGN.md` in this folder.

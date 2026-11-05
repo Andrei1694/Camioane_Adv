@@ -24,7 +24,7 @@ scoped here unless the requested change also requires changes elsewhere.
   for them; do not invent one.
 - Copy comes from `../BUSINESS_PLAN.md`, confirmed rules only. Do not invent
   cities, fleet sizes, rates, credit prices, client names, testimonials or other
-  figures. Use the trade's words from `../DESIGN.md`: cars, car-hours, credits,
+  figures. Use the trade's words from `DESIGN.md`: cars, car-hours, credits,
   slots, routes, creatives.
 - `src/lib/pricing.ts` holds the illustrative pricing example and computes every
   figure the page shows from its rows. Never type a total by hand, and keep the
@@ -58,12 +58,14 @@ lint checks were run.
   formatting, pricing and contact helpers.
 - Tokens and primitives in `src/index.css` are copied from
   `../frontend/src/index.css` and `App.css`. When a shared token changes in
-  `../DESIGN.md`, change it here too. Page layout lives in `src/App.css`.
+  `../DESIGN.md`, change it in `src/index.css` and in the token table of
+  `DESIGN.md` too. Page layout lives in `src/App.css`.
 
 ## UI and verification
 
-- Follow `../DESIGN.md`, including its "Presentation site" section. Update it
-  when you add or change a token, size or pattern here.
+- Follow `DESIGN.md` in this folder; the shared tokens come from `../DESIGN.md`.
+  Update `DESIGN.md` in the same commit when you add or change a token, size or
+  pattern here.
 - Use semantic elements, visible keyboard focus and layouts that work on narrow
   screens; the page never scrolls sideways. Keep one primary button on the page.
 - After changing code, dependencies or build configuration, run `npm run lint`

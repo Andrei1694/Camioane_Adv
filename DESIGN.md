@@ -1,6 +1,6 @@
 # Design
 
-This file describes the visual system of the Camioane App admin frontend as it is built. The mobile app (`mobile/`) and the public website (`website/`) use the same tokens and type; see [Mobile app](#mobile-app) and [Presentation site](#presentation-site) for what differs. When the code changes a token, a size or a pattern listed here, update this file in the same commit.
+This file describes the visual system of the Camioane App admin frontend as it is built. The mobile app (`mobile/`) and the public website (`website/`) use the same tokens and type; see [Mobile app](#mobile-app) for what differs in the app, and `website/DESIGN.md` for the website's own system. When the code changes a token, a size or a pattern listed here, update this file in the same commit.
 
 The system follows one idea: the admin screens are tools people work in every day. Colour belongs to the data and the one action that matters. The chrome stays quiet, and the product's own things (its cars, routes, clients, credits) carry the screen.
 
@@ -26,9 +26,7 @@ The system follows one idea: the admin screens are tools people work in every da
 | Brand artwork | `assets/app-icon/` |
 | Mobile tokens, type scale and touch sizes | `mobile/src/lib/theme.ts` |
 | Mobile buttons and screen frame | `mobile/src/components/Button.tsx`, `Screen.tsx` |
-| Website tokens, base styles and link buttons (copied from the frontend) | `website/src/index.css` |
-| Website layout: sticky header, hero, split and stacked sections, column grids, example chart, price table, contact band, footer | `website/src/App.css` |
-| Website pricing example and its computed figures | `website/src/lib/pricing.ts` |
+| Website: its layout, type, components and their sources | `website/DESIGN.md` |
 
 ## Principles
 
@@ -335,32 +333,7 @@ The driver app in `mobile/` reuses the tokens and type above, written out as Rea
 
 ## Presentation site
 
-The public website in `website/` is one English landing page for advertisers. It reuses the tokens, type, buttons, focus ring and data colours above, copied into `website/src/index.css`; when a token changes, update both files. It is read rather than worked in, so it differs in these ways:
-
-- **Frame:** no sidebar or sheet. A white page with a 72px header (64px under 768px) over a 1px `--border` rule, then sections, each opening with a 1px `--border` rule. The header is sticky: solid white, with no shadow or blur. `html` has a matching `scroll-padding-top`, so anchor jumps land below it, and the skip link sits above it. Content sits in a 1080px column with 24px gutters (16px under 768px).
-- **Section layout:** sections have 80px of vertical padding (56px under 768px) and use one of two layouts (`Section`'s `layout` prop):
-  - **Split:** the heading and its lead in the left third and the content in the right two thirds, for content that reads top to bottom (the steps, pricing). Under 960px they stack.
-  - **Stacked:** the heading and its lead on top (at most 40em wide), then content across the whole column 40px below (32px under 768px), for lists that read side by side.
-  - The page alternates the two: What you book (stacked), How a campaign runs (split), Pricing (split), All or nothing (stacked), Your creative on screen (stacked), and the contact band (stacked).
-- **Type:**
-
-| Role | Size | Weight |
-| --- | --- | --- |
-| Hero title (`h1`) | 48px (40px under 960px, 32px under 768px), line height 1.15, tracking −0.01em, balanced | 600 |
-| Section title (`h2`) | 28px (24px under 768px), line height 1.2, tracking −0.01em, balanced | 600 |
-| Lead under a title | 18px, `--muted`, line height 1.6 | 400 |
-| Body, list titles (`h3`, 16px/600), buttons | 16px, line height 1.6 | 400 / 500 |
-| Captions, table headers, chart labels | 12–14px, `--muted` | 400 |
-
-- Leads and grey list lines use `text-wrap: pretty`, so a paragraph doesn't end on one word.
-- **Buttons:** links in the admin app's button look (`.button`, `.button-primary`), 44px tall with 16px/500 labels. A `<button class="button">` ("Copy address") gets the same look. The page's one primary is "Plan a campaign" in the hero; the header's Contact and the contact band's "Email us" and "Copy address" are secondary.
-- **Navigation:** the header links to the sections as grey 16px/500 links with the hover fill. Under 768px only the Contact button stays; the sticky header keeps it on screen.
-- **Hero:** the title, lead and two buttons beside a bordered panel (10px radius, 460px wide) that holds only the example booking; the header already shows the mark. The example shows the pricing example as a small timeline: hour ticks, a "Rate" row with each band's rate centred over it, and one solid `--data` bar per car (24px tall), split with a 2px seam where the rate changes. Its title row carries the total as a 28px figure with a grey "cr". Under 960px the panel takes the column's full width.
-- **Lists:** "What you book" is a definition list in three columns (two under 960px, one under 768px). "All or nothing" is a 2 × 2 grid of points (one column under 768px), and "Your creative on screen" is three columns of points (one column, at most 40em wide, under 960px). In these grids each item opens with a 1px `--rule` line and 16px of space, with gaps of 32px down and 40px across. Steps are a numbered list with the number in a grey 32px column and `--rule` lines between steps. Points are a 16px/600 title and a grey line. No icons, cards or fills.
-- **Pricing:** the formula sits in an 8px-radius box on `--frame`. Under the slot formula, a grey "For the example below:" line works the formula with the example's figures in ink ("2 × (0.5 h × 20 + 1.0 h × 30) = 80 cr"), computed from `exampleSlot`; each band's term never wraps inside itself. The example table follows the table rules above at 16px: right-aligned tabular figures, a grey "cr" unit, `--rule` row lines and a 600-weight total row. The caption names the example, and a note under the table says the rates only show the arithmetic.
-- **Contact band:** the last section sits on `--frame` in place of its top rule, one step of tone that closes the page. It holds "Email us", the address in 500 weight, and "Copy address", which copies the address for anyone without a mail app and is hidden where the browser can't copy. A grey 14px `role="status"` line reports "Address copied." or "Couldn't copy. Select the address instead." Under 768px the address takes its own line above the two buttons.
-- **Content:** only confirmed facts from `BUSINESS_PLAN.md`. No invented cities, fleet sizes, prices, clients or testimonials; figures come from `website/src/lib/pricing.ts`.
-- **Checking a change:** run `npm run lint` and `npm run build` (with `VITE_CONTACT_EMAIL`) in `website/`, then look at the page at 1440, 768 and 390px. The page never scrolls sideways.
+The public website in `website/` has its own design file, [`website/DESIGN.md`](website/DESIGN.md). It covers the site's layout, type sizes, components and checks. The site reuses the tokens, type faces, buttons, focus ring and data colours above, copied into `website/src/index.css`. When a shared token changes here, update `website/src/index.css` and the token table in `website/DESIGN.md` too.
 
 ## Known gaps
 

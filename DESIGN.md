@@ -1,6 +1,6 @@
 # Design
 
-This file describes the visual system of the Camioane App admin frontend as it is built. The mobile app (`mobile/`) uses the same tokens and type; see [Mobile app](#mobile-app) for what differs. When the code changes a token, a size or a pattern listed here, update this file in the same commit.
+This file describes the visual system of the Camioane App admin frontend as it is built. The mobile app (`mobile/`) and the public website (`website/`) use the same tokens and type; see [Mobile app](#mobile-app) and [Presentation site](#presentation-site) for what differs. When the code changes a token, a size or a pattern listed here, update this file in the same commit.
 
 The system follows one idea: the admin screens are tools people work in every day. Colour belongs to the data and the one action that matters. The chrome stays quiet, and the product's own things (its cars, routes, clients, credits) carry the screen.
 
@@ -26,6 +26,9 @@ The system follows one idea: the admin screens are tools people work in every da
 | Brand artwork | `assets/app-icon/` |
 | Mobile tokens, type scale and touch sizes | `mobile/src/lib/theme.ts` |
 | Mobile buttons and screen frame | `mobile/src/components/Button.tsx`, `Screen.tsx` |
+| Website tokens, base styles and link buttons (copied from the frontend) | `website/src/index.css` |
+| Website layout: header, hero, sections, example chart, price table, footer | `website/src/App.css` |
+| Website pricing example and its computed figures | `website/src/lib/pricing.ts` |
 
 ## Principles
 
@@ -329,6 +332,30 @@ The driver app in `mobile/` reuses the tokens and type above, written out as Rea
 - **Components:** `Button` has the web's primary and secondary looks, with pressed in place of hover and the same disabled fill. Inputs use a 1px `--control-border`, a 6px radius, `--focus` on the border while focused, and `--danger` when invalid. The home screen's empty state is the web's dashed `.empty-state` box.
 - **Icon and splash:** from `assets/app-icon/`. The iOS icon is flattened onto white because the App Store rejects icons with transparency. Android's adaptive icon uses `android-icon.png` on white, and the splash shows the mark on white.
 - **Checking a change:** run `npm run typecheck`, `npm run lint` and `npx expo export` in `mobile/`. Look at the screen on a small phone (375pt wide) and a large one with the keyboard open, and with the largest system text size.
+
+## Presentation site
+
+The public website in `website/` is one English landing page for advertisers. It reuses the tokens, type, buttons, focus ring and data colours above, copied into `website/src/index.css`; when a token changes, update both files. It is read rather than worked in, so it differs in these ways:
+
+- **Frame:** no sidebar or sheet. A white page with a 72px header (64px under 768px) over a 1px `--border` rule, then sections, each opening with a 1px `--border` rule. Content sits in a 1080px column with 24px gutters (16px under 768px).
+- **Section layout:** the heading and its lead take the left third and the content the right two thirds. Under 960px they stack. Sections have 80px of vertical padding (56px under 768px).
+- **Type:**
+
+| Role | Size | Weight |
+| --- | --- | --- |
+| Hero title (`h1`) | 40px (32px under 768px), line height 1.15, tracking −0.01em | 600 |
+| Section title (`h2`) | 24px | 600 |
+| Lead under a title | 18px, `--muted`, line height 1.6 | 400 |
+| Body, list titles (`h3`, 16px/600), buttons | 16px, line height 1.6 | 400 / 500 |
+| Captions, table headers, chart labels | 12–14px, `--muted` | 400 |
+
+- **Buttons:** links in the admin app's button look (`.button`, `.button-primary`), 44px tall with 16px/500 labels. The page's one primary is "Plan a campaign" in the hero; the header's Contact and the contact section's "Email us" are secondary.
+- **Navigation:** the header links to the sections as grey 16px/500 links with the hover fill. Under 768px only the Contact button stays.
+- **Hero:** the title, lead and two buttons beside a bordered panel (10px radius): the 120px mark on `--frame`, then the example booking. That shows the pricing example as a small timeline: hour ticks, a "Rate" row with each band's rate centred over it, and one solid `--data` bar per car, split with a 2px seam where the rate changes. Its title row carries the total as a 28px figure with a grey "cr".
+- **Lists:** "What you book" is a two-column definition list (one column under 768px). Steps are a numbered list with the number in a grey 32px column and `--rule` lines between steps. Points are a plain list of a 16px/600 title and a grey line. No icons or cards.
+- **Pricing:** the formula sits in an 8px-radius box on `--frame`. The example table follows the table rules above at 16px: right-aligned tabular figures, a grey "cr" unit, `--rule` row lines and a 600-weight total row. The caption names the example, and a note under the table says the rates only show the arithmetic.
+- **Content:** only confirmed facts from `BUSINESS_PLAN.md`. No invented cities, fleet sizes, prices, clients or testimonials; figures come from `website/src/lib/pricing.ts`.
+- **Checking a change:** run `npm run lint` and `npm run build` (with `VITE_CONTACT_EMAIL`) in `website/`, then look at the page at 1440, 768 and 390px. The page never scrolls sideways.
 
 ## Known gaps
 

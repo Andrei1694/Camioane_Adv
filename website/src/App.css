@@ -1,0 +1,492 @@
+/* One 1080px column with 24px gutters (16px on phones). */
+.container {
+  width: min(1080px, calc(100% - 48px));
+  margin-inline: auto;
+}
+
+/* Header and footer -------------------------------------------------------------------------- */
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 72px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brand-mark {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  /* The wheels are outlined in the ground colour so they part from the body. */
+  color: var(--surface);
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-section a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 12px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav-section a:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.site-nav .button {
+  margin-left: 8px;
+}
+
+.site-footer {
+  padding-block: 32px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+
+.site-footer .brand {
+  font-size: 16px;
+}
+
+/* Hero ------------------------------------------------------------------------------------- */
+
+.hero {
+  padding-block: 80px;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+  gap: 56px;
+  align-items: center;
+}
+
+.hero h1 {
+  max-width: 14em;
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.hero-lead,
+.section-lead {
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.hero-lead {
+  max-width: 34em;
+  margin-top: 20px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.hero-visual {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.hero-mark {
+  display: grid;
+  place-items: center;
+  padding: 28px 24px;
+  color: var(--frame);
+  background: var(--frame);
+}
+
+.hero-mark-svg {
+  width: 120px;
+  height: 120px;
+}
+
+/* The example booking: a small timeline of the pricing example, drawn from lib/pricing.ts. */
+.example-booking {
+  padding: 20px 24px 24px;
+  border-top: 1px solid var(--border);
+}
+
+.example-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.example-title {
+  font-weight: 600;
+}
+
+.example-meta {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.example-total {
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.example-total .unit {
+  font-size: 16px;
+}
+
+.example-chart {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.chart-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.chart-track {
+  position: relative;
+  height: 20px;
+}
+
+.chart-axis {
+  height: 18px;
+}
+
+.chart-tick {
+  position: absolute;
+  top: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+  transform: translateX(-50%);
+}
+
+.chart-gridline {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--rule);
+}
+
+.chart-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--data);
+}
+
+.chart-rate {
+  position: absolute;
+  top: 0;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.example-caption {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Sections --------------------------------------------------------------------------------- */
+
+.section {
+  padding-block: 80px;
+  border-top: 1px solid var(--border);
+}
+
+.section-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 48px;
+}
+
+.section h2 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.section-lead {
+  margin-top: 12px;
+}
+
+.section-body {
+  line-height: 1.6;
+}
+
+.section-body h3 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.section-body li p,
+.term dd {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.term-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px 40px;
+}
+
+.term dt {
+  font-weight: 600;
+}
+
+.steps,
+.points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps {
+  counter-reset: step;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 16px;
+  padding-block: 16px;
+  border-top: 1px solid var(--rule);
+  counter-increment: step;
+}
+
+.step:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.step:last-child {
+  padding-bottom: 0;
+}
+
+.step::before {
+  content: counter(step);
+  color: var(--muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.points {
+  display: grid;
+  gap: 24px;
+}
+
+.formula {
+  padding: 16px 20px;
+  border-radius: 8px;
+  background: var(--frame);
+}
+
+.formula p + p {
+  margin-top: 8px;
+}
+
+.table-frame {
+  margin-top: 32px;
+  overflow-x: auto;
+}
+
+.price-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.price-table caption {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: left;
+}
+
+.price-table th,
+.price-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.price-table thead th {
+  padding-block: 8px;
+  border-bottom-color: var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.price-table tbody th {
+  font-weight: 400;
+}
+
+.price-table tfoot th,
+.price-table tfoot td {
+  border-bottom: 0;
+  font-weight: 600;
+}
+
+.price-table :is(th, td):first-child {
+  padding-left: 0;
+}
+
+.price-table :is(th, td):last-child {
+  padding-right: 0;
+}
+
+.price-table .numeric {
+  text-align: right;
+}
+
+.table-note {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.contact-address {
+  color: var(--muted);
+}
+
+.contact-address span {
+  color: var(--text);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* Breakpoints ------------------------------------------------------------------------------ */
+
+@media (max-width: 959px) {
+  .hero-grid,
+  .section-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero-grid {
+    gap: 40px;
+  }
+
+  .hero-visual {
+    max-width: 520px;
+  }
+
+  .section-grid {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .container {
+    width: calc(100% - 32px);
+  }
+
+  .header-inner {
+    min-height: 64px;
+  }
+
+  .nav-section {
+    display: none;
+  }
+
+  .site-nav .button {
+    margin-left: 0;
+  }
+
+  .hero {
+    padding-block: 48px 56px;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+  }
+
+  .section {
+    padding-block: 56px;
+  }
+
+  .term-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .example-booking {
+    padding: 16px;
+  }
+
+  .price-table th,
+  .price-table td {
+    padding-inline: 8px;
+  }
+}

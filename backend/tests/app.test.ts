@@ -54,19 +54,21 @@ describe('Application routes', () => {
     }
   });
 
-  it('allows the configured browser origin and required request headers', async () => {
-    const response = await api.request('OPTIONS', '/users/login', {
-      headers: {
-        Origin: 'http://localhost:5173',
-        'Access-Control-Request-Method': 'POST',
-        'Access-Control-Request-Headers': 'content-type,authorization',
-      },
-    });
-    assert.equal(response.status, 204);
-    assert.equal(response.headers.get('access-control-allow-origin'), 'http://localhost:5173');
-    assert.equal(response.headers.get('access-control-allow-headers'), 'Content-Type,Authorization');
-    assert.equal(response.headers.get('access-control-allow-methods'), 'GET,POST,PUT,PATCH,DELETE');
-    assert.equal(response.headers.get('access-control-allow-credentials'), null);
+  it('allows the admin app and website origins and the required request headers', async () => {
+    for (const origin of ['http://localhost:5173', 'http://localhost:5174']) {
+      const response = await api.request('OPTIONS', '/users/login', {
+        headers: {
+          Origin: origin,
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'content-type,authorization',
+        },
+      });
+      assert.equal(response.status, 204);
+      assert.equal(response.headers.get('access-control-allow-origin'), origin);
+      assert.equal(response.headers.get('access-control-allow-headers'), 'Content-Type,Authorization');
+      assert.equal(response.headers.get('access-control-allow-methods'), 'GET,POST,PUT,PATCH,DELETE');
+      assert.equal(response.headers.get('access-control-allow-credentials'), null);
+    }
     const otherOrigin = 'https://untrusted.example';
     const denied = await api.request('GET', '/health', { headers: { Origin: otherOrigin } });
     assert.notEqual(denied.headers.get('access-control-allow-origin'), otherOrigin);

@@ -217,13 +217,23 @@ npm run prisma:validate
 npm run db:check
 npx prisma migrate status
 npm test
+npm run test:coverage
 ```
 
-Tests use Node's runner and the migrated development PostgreSQL database, with the built-in roles present and the shared ADMIN role currently active. Each integration test seeds a uniquely named administrator and creates disposable accounts through the protected API. Cleanup removes only fixture accounts; tests do not modify shared roles or existing accounts. Run only against a development database.
+Tests use Node's runner and the migrated development PostgreSQL database, with the built-in roles present and the shared ADMIN role currently active. FFmpeg must be installed: the media and upload tests run the real `ffprobe` (and `ffmpeg -version`). Test files run one at a time. Each one seeds uniquely named accounts and removes only the accounts and rows it created; uploads go to temporary directories. Tests do not modify shared roles or existing accounts. Run only against a development database.
 
-The suite covers administrator-created accounts, password hashing and validation, UUID/session-version JWTs, login-only rate limiting, profile and management permissions for all four roles, user listing and updates, duplicate emails, session revocation, delete/recreate identity isolation, administrator self-protection, removed public registration, CORS, and JSON errors. File and profile picture checks remain manual; no automated suite covers those APIs.
+`npm run test:coverage` reports coverage of `src/` (the generated Prisma client excluded) and fails below 100% line coverage. Branch and function coverage are reported but not enforced. One test needs POSIX signals and is skipped on Windows, so the gate passes on Linux and macOS.
 
-Verify the new API manually with disposable development accounts: bootstrap and idempotency, admin/non-admin access, CRUD and duplicate emails, validation and missing IDs, password/email/role session revocation, self-protection, concurrent administrator changes, and delete/recreate identity isolation. Clean up only the accounts created for verification. Never inspect logs unless explicitly requested.
+The suite covers:
+
+- configuration, input validation, role validity, filesystem storage and the provider registry
+- ffprobe runs and probe output, profile picture re-encoding (EXIF removal included), and upload type detection
+- accounts: administrator-created users, password hashing and validation, UUID/session-version JWTs, login-only rate limiting, permissions for all four roles, listing and updates, duplicate emails, session revocation, delete/recreate isolation, administrator self-protection and last-administrator protection, removed public registration, and the bootstrap service
+- profile pictures and files: uploads of every accepted type, rejected and malformed uploads, size limits, unreadable videos, storage failures, client disconnects at each stage (with no orphaned objects), downloads, deletion and access scoping
+- credits: balances, purchases and their state rules, idempotent confirmation, payment references, adjustments within the balance limits, and the ledger
+- serialization-conflict retries, CORS, JSON errors, server startup and shutdown, `db:check`, and the interactive `admin:bootstrap`
+
+Concurrent administrator changes are still verified manually, with disposable development accounts. Clean up only the accounts created for verification. Never inspect logs unless explicitly requested.
 
 Verify role lifecycle changes in an isolated development database because modifying a shared role affects all its accounts. Check inactive, future, expired, bounded, and open-ended roles; exact start/end boundaries; login and profile availability; `403` responses for administrator operations; reactivation with an existing token; service-level enforcement; and bootstrap rejection without silently activating a role. Check migration preservation and the date-range and referenced-role deletion constraints as well.
 

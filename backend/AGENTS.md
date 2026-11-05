@@ -45,7 +45,8 @@ Run these commands from `backend/`:
 | `npm run dev:server` | Run the server with restart watching only |
 | `npm run typecheck` | Check TypeScript once without emitting files |
 | `npm run typecheck:watch` | Check TypeScript continuously |
-| `npm test` | Run Node integration tests against the configured PostgreSQL database |
+| `npm test` | Run all Node tests, one file at a time, against the configured PostgreSQL database |
+| `npm run test:coverage` | Run the same tests and fail below 100% line coverage of `src/` |
 | `npm start` | Run the server without watching or type checking |
 | `npm run prisma:validate` | Validate the Prisma schema |
 | `npm run prisma:generate` | Regenerate Prisma Client after schema changes |
@@ -64,7 +65,20 @@ The Compose service runs the database only; start the API separately with npm.
 There are no build or lint scripts. Tests use Node's built-in runner, native
 `fetch`, and uniquely named database users with targeted cleanup. They generate
 an ephemeral JWT secret without changing `.env`. Run them against a development
-database only; they insert and delete their own fixture users.
+database only; they insert and delete their own fixture users and the rows
+those users create. Uploads go to temporary directories, never `uploads/`.
+Files run one at a time (`--test-concurrency=1`) because they share the
+database. `--experimental-test-module-mocks` is needed by
+`tests/login-dummy-hash.test.ts`; keep it when running a single file.
+
+Shared helpers live in `tests/helpers/`: `env.ts` (import before `src/`),
+`api.ts` (test server, requests, tokens), `fixtures.ts` (tracked fixture rows),
+`storage.ts` (temporary storage with failure hooks), `media.ts` (images, MP4s,
+raw multipart), `prisma.ts` (`failTransactions` and `overrideTransactions` for
+conflicts and states the shared database must not be put in), and `process.ts`
+(subprocesses; keep `process.env` so their coverage is reported). Startup,
+shutdown and script tests run the entry points in child processes, with the
+`--import` preloads in `tests/fixtures/`.
 
 ## Code conventions and API structure
 
@@ -273,11 +287,12 @@ migrations in this project.
 - Verify changes to shared role validity only in an isolated development database
   so existing accounts are not affected. Cover date boundaries, admin-only denial,
   continued login/profile access, reactivation, and bootstrap rejection.
-- Integration tests cover the current authentication and user-management API.
-  They require a migrated development database with the built-in roles and a
-  currently active ADMIN role. Fixtures seed disposable administrators and use
-  the protected API for account creation; never change shared role lifecycle
-  settings or existing accounts to make tests pass. File API checks remain manual.
+- Integration tests cover the users, profile picture, file and credit APIs.
+  They require a migrated development database with the built-in roles, a
+  currently active ADMIN role, and FFmpeg. Fixtures seed disposable accounts;
+  never change shared role lifecycle settings or existing accounts to make tests
+  pass. Simulate those states with `overrideTransactions` instead.
+- Keep `npm run test:coverage` at 100% line coverage when tests are requested.
 - For documentation-only changes, review accuracy and check whitespace;
   application startup and database changes are unnecessary.
 - If test tooling changes, document its commands here. Write or modify tests only

@@ -1,19 +1,21 @@
+import './helpers/env.ts';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
 import { describe, it } from 'node:test';
+import { authConfig, loadAuthConfig } from '../src/config/auth.ts';
 
-const secret = randomBytes(32).toString('hex');
-process.env.JWT_SECRET = secret;
-process.env.FRONTEND_ORIGIN = 'http://localhost:5173';
-const { loadAuthConfig } = await import('../src/config/auth.ts');
+const secret = process.env.JWT_SECRET ?? '';
 
 describe('Authentication configuration', () => {
   it('requires a nonblank secret of at least 32 bytes', () => {
-    for (const value of [undefined, '', ' '.repeat(32), 'x'.repeat(31)]) {
+    for (const value of [undefined, '', ' '.repeat(32), 'x'.repeat(31), 'é'.repeat(15)]) {
       assert.throws(() => loadAuthConfig({ JWT_SECRET: value }), /JWT_SECRET/);
     }
     assert.deepEqual(loadAuthConfig({ JWT_SECRET: secret }).jwtSecret, new TextEncoder().encode(secret));
+    // The limit counts UTF-8 bytes, not characters.
+    assert.equal(loadAuthConfig({ JWT_SECRET: 'é'.repeat(16) }).jwtSecret.byteLength, 32);
+  });
+
+  it('defaults to the local frontend origin', () => {
     assert.equal(loadAuthConfig({ JWT_SECRET: secret }).frontendOrigin, 'http://localhost:5173');
   });
 
@@ -26,16 +28,7 @@ describe('Authentication configuration', () => {
     }
   });
 
-  it('fails during application startup when the secret is invalid', () => {
-    const serverUrl = new URL('../src/server.ts', import.meta.url).href;
-    const result = spawnSync(process.execPath, ['--input-type=module', '-e', `await import(${JSON.stringify(serverUrl)})`], {
-      env: { ...process.env, JWT_SECRET: '', DATABASE_URL: 'postgresql://unused:unused@127.0.0.1:1/unused' },
-      encoding: 'utf8',
-      timeout: 10000,
-    });
-    assert.equal(result.error, undefined);
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /JWT_SECRET/);
-    assert.doesNotMatch(result.stdout, /listening|Connected to PostgreSQL/);
+  it('loads the process configuration when the module is imported', () => {
+    assert.deepEqual(authConfig, loadAuthConfig());
   });
 });

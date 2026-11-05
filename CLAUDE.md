@@ -22,8 +22,9 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - `docker compose up --build -d --wait`: start PostgreSQL only (needs Docker Desktop with Linux containers). The API runs separately.
 - `npm run dev`: start the API watcher and `tsc --watch` together. Type errors don't stop the server, so a successful startup doesn't mean the code type-checks.
 - `npm run typecheck`: run after any code change.
-- `npm test`: run all `tests/*.test.ts` with `node:test` against the development database. PostgreSQL must be running. Each test file sets its own random `JWT_SECRET`, and the integration test creates and deletes its own uniquely named users. `tests/auth-config.test.ts` doesn't touch the database.
-- To run one test file: `node --env-file-if-exists=.env --test tests/auth-config.test.ts`. Add `--test-name-pattern="<regex>"` to filter by test name.
+- `npm test`: run all `tests/*.test.ts` with `node:test`, one file at a time, against the development database. PostgreSQL (migrated, with an active ADMIN role) must be running and FFmpeg installed. Each test file sets its own random `JWT_SECRET`; fixtures create and delete their own uniquely named users and rows, and uploads go to temporary directories. The unit files (`auth-config`, `config`, `validation`, `storage`, `media`, `app`) never query the database.
+- `npm run test:coverage`: the same run with Node's coverage report. It fails below 100% line coverage of `src/` (the generated client is excluded).
+- To run one test file: `node --env-file-if-exists=.env --test --experimental-test-module-mocks tests/auth-config.test.ts`. Add `--test-name-pattern="<regex>"` to filter by test name.
 - Prisma: `npm run prisma:validate`, `npm run prisma:generate`, `npm run db:migrate -- --name <name> --create-only` (create), `npm run db:migrate` (apply), `npm run db:check`, and `npm run admin:bootstrap` (interactive). `backend/AGENTS.md` has the full schema-change procedure.
 
 **frontend/** (React 19, Vite, and TypeScript; there is no test runner)
@@ -103,6 +104,6 @@ When you change a backend response contract, also update its consumers in `front
 - Put a component used by only one page in `src/pages/<Page>/components/`. Move it to `src/components/` only once a second page actually uses it.
 - Don't edit or commit `backend/src/generated/prisma/`; it's generated. After schema changes, create a named migration with `--create-only`, review the SQL, apply it, then explicitly run `prisma:generate` and `typecheck`. Never use `prisma db push`, `migrate reset`, or `docker compose down -v`, and never truncate tables. Deployments apply committed migrations with `npx prisma migrate deploy`, never `migrate dev`.
 - Never overwrite existing `.env` files. Frontend and website `VITE_*` and mobile `EXPO_PUBLIC_*` values are public.
-- The legacy integration test (`tests/user.integration.test.ts`) still expects the old contract: public registration, email-only users, and old JWT claims. Its failures are expected. Report them, but don't rewrite the test unless asked.
+- Backend test helpers live in `tests/helpers/` (environment, test server, fixtures, temporary storage, Prisma transaction fakes, subprocesses); MP4 samples and `--import` preloads live in `tests/fixtures/`. To reach a branch the shared database must not be put in (a single administrator, an expired ADMIN role, a storage failure), use those seams; never change shared roles or real accounts.
 - `hardware_docs/` is an empty placeholder.
 - Commit messages use `feat:` or `fix:` followed by an imperative description. Commit lockfiles together with their manifests.

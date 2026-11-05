@@ -56,7 +56,8 @@ function isWriteConflict(error: unknown) {
 // Recheck the actor inside the same serializable transaction as each write.
 // Retrying serialization conflicts prevents concurrent changes removing all admins.
 async function transaction<T>(action: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
-  for (let attempt = 0; attempt < 3; attempt++) {
+  // The third attempt returns or throws, so the loop never ends on its own.
+  for (let attempt = 0; ; attempt++) {
     try {
       return await prisma.$transaction(action, { isolationLevel: 'Serializable' });
     } catch (error) {
@@ -71,7 +72,6 @@ async function transaction<T>(action: (tx: Prisma.TransactionClient) => Promise<
       throw error;
     }
   }
-  throw new AppError(409, 'Accounts changed during this request. Refresh and try again.');
 }
 
 async function requireAdministrator(tx: Prisma.TransactionClient, actor: SessionIdentity) {

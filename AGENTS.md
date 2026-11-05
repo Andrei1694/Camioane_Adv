@@ -20,6 +20,7 @@ Use Node.js 24+ and npm inside each package.
 | `backend/` | `npm run dev` | Run API and continuous type checking |
 | `backend/` | `npm run typecheck` | Check TypeScript |
 | `backend/` | `npm test` | Run Node tests |
+| `backend/` | `npm run test:coverage` | Run Node tests with the 100% line coverage gate |
 | `frontend/` | `npm run dev` | Start Vite on port 5173 |
 | `frontend/` | `npm run build` | Type-check and produce `dist/` |
 | `frontend/` | `npm run lint` | Run Oxlint |
@@ -39,7 +40,7 @@ Use two-space indentation, single quotes, and type-only imports. Backend code us
 
 ## Testing Guidelines
 
-Backend tests use `node:test`, `node:assert/strict`, and `tests/*.test.ts`. Integration tests cover the current authentication/user-management API and require migrated development PostgreSQL, built-in roles with an active ADMIN role, and isolated fixtures. No coverage threshold or frontend, mobile or website test runner is configured. Verify frontend changes with build, lint, and browser interaction checks. Verify mobile changes with typecheck, lint, a Metro bundle (`npx expo export`), and device or simulator checks when one is available. Write or modify tests only when explicitly requested; inspect logs only when explicitly requested.
+Backend tests use `node:test`, `node:assert/strict`, and `tests/*.test.ts`, with shared helpers in `tests/helpers/`. They cover every backend module: unit tests for configuration, validation, storage and media, integration tests for the users, profile picture, file and credit APIs, and subprocess tests for startup, shutdown and the scripts. Integration tests require migrated development PostgreSQL, built-in roles with an active ADMIN role, FFmpeg, and isolated fixtures. `npm run test:coverage` enforces 100% line coverage of `backend/src/`. No frontend, mobile or website test runner is configured. Verify frontend changes with build, lint, and browser interaction checks. Verify mobile changes with typecheck, lint, a Metro bundle (`npx expo export`), and device or simulator checks when one is available. Write or modify tests only when explicitly requested; inspect logs only when explicitly requested.
 
 ## Commit & Pull Request Guidelines
 

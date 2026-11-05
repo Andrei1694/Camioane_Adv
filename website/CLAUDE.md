@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-This is `website/`, the public presentation site for advertisers: one static English landing page. The root `../CLAUDE.md` covers repo-wide rules. `AGENTS.md` in this folder holds the package's full rules; read it before changing anything. `README.md` covers setup and the env var. `DESIGN.md` in this folder defines the visual system; the shared tokens it copies come from `../DESIGN.md`.
+This is `website/`, the public presentation site for advertisers: one static English landing page. The root `../CLAUDE.md` covers repo-wide rules. `AGENTS.md` in this folder holds the package's full rules; read it before changing anything. `README.md` covers setup and the env vars. `DESIGN.md` in this folder defines the visual system; the shared tokens it copies come from `../DESIGN.md`.
 
 ## Commands
 
@@ -34,6 +34,7 @@ There is no test runner and there are no tests. To check a change, run lint and 
   - So editing the example updates the chart, the table, the captions and the totals together.
 - `src/lib/contact.ts` builds `contactHref`, a `mailto:` link with a subject, from `VITE_CONTACT_EMAIL`. The contact band also offers "Copy address" through `navigator.clipboard`, hidden where the browser has no clipboard API, because a `mailto:` link does nothing without a mail app. The variable is typed in `src/vite-env.d.ts`, and `vite.config.ts` enforces it at build time.
 - `src/lib/format.ts` copies the admin app's en-GB formats: counts, one-decimal hours, en-dash time windows and plurals.
+- `src/lib/api.ts` is a cut-down copy of the admin app's fetch client, without a session or token. `apiBase()` reads `VITE_API_BASE_URL` (typed in `src/vite-env.d.ts`) and falls back to `http://localhost:3000` only in development. `request()` adds a 15 s timeout, turns `{ error }` bodies into `ApiError`, and runs a decoder on every response. `api.health()` is the only call, and nothing on the page uses it yet. The backend's CORS allows this site through `WEBSITE_ORIGIN` (default `http://localhost:5174`).
 - Styling is plain CSS, light theme only.
   - `src/index.css` holds tokens and primitives copied from `../frontend/src/index.css` and `App.css`: `.button`, `.button-primary`, `.num`, `.unit`, `.sr-only`, `.text-link` and the skip link.
   - `src/App.css` holds the layout, the hero chart and the price table.

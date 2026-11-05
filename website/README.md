@@ -2,7 +2,7 @@
 
 The public presentation site for advertisers: one English landing page that explains what a campaign books (routes, slots, cars, dates), how a campaign runs, pricing in credits per car-hour with a worked example, the all-or-nothing confirmation, and how creatives reach the screens. Its call to action is a `mailto:` link.
 
-It is a static React, TypeScript and Vite app, set up like `../frontend/`, with plain CSS and IBM Plex Sans self-hosted through `@fontsource`. It calls no API and has no router, state or data libraries.
+It is a static React, TypeScript and Vite app, set up like `../frontend/`, with plain CSS and IBM Plex Sans self-hosted through `@fontsource`. It has no router, state or data libraries. `src/lib/api.ts` is a typed client for the backend API, but no section calls it yet, so the page works without a running API.
 
 ## Development
 
@@ -20,8 +20,11 @@ Open `http://localhost:5174`. Development and preview use port 5174 with strict 
 | Variable | Required | Use |
 | --- | --- | --- |
 | `VITE_CONTACT_EMAIL` | For builds | The address behind "Plan a campaign" and "Email us", and shown as text in the contact section. `vite build` fails when it's missing or not an address. Development falls back to `hello@example.com`. |
+| `VITE_API_BASE_URL` | For API calls | The backend's base URL, or a same-origin proxy path, for `src/lib/api.ts`. Development falls back to `http://localhost:3000`. Production has no fallback: a build without it still succeeds, but every API call fails with "The API address is not configured." |
 
-Copy `.env.example` to `.env.local` to set it, and restart Vite after changes. The value ships to the browser, like every `VITE_*` variable.
+Copy `.env.example` to `.env.local` to set them, and restart Vite after changes. The values ship to the browser, like every `VITE_*` variable.
+
+The backend allows the website's origin through its `WEBSITE_ORIGIN` setting, which defaults to `http://localhost:5174`. A deployed site needs `WEBSITE_ORIGIN` set to its real origin, or the browser blocks its API calls.
 
 ## Build and checks
 

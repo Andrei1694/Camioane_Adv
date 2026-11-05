@@ -1,4 +1,5 @@
 import Constants from 'expo-constants'
+import { Platform } from 'react-native'
 import { sessionSignal, signOut, useSession } from '../auth/session'
 import { isRole } from './user'
 import type { Credentials, User } from './user'
@@ -41,6 +42,9 @@ function decodeLogin(value: unknown) {
 
 // In development the API usually runs on the computer that serves Metro, so reuse its address.
 function developmentApiBase() {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.protocol + '//' + window.location.hostname + ':3000'
+  }
   const host = Constants.expoConfig?.hostUri?.split(':')[0]
   return host ? 'http://' + host + ':3000' : ''
 }

@@ -21,13 +21,21 @@ npm start
 
 Scan the QR code with Expo Go (Android) or the Camera app (iOS), or press `i` or `a` to open a simulator or emulator.
 
+To run the same driver app in a browser:
+
+```sh
+npm run web
+```
+
+Open `http://localhost:5173`. This uses the same port as the admin dashboard, so stop the dashboard first if it is running. The default port matches the API's `FRONTEND_ORIGIN`; if you use another browser origin, configure the backend to allow it. Browser sessions use the current tab's `sessionStorage`, survive reloads, and end when the tab closes. Native apps continue to use secure device storage.
+
 ### API address
 
 In development the app calls the API on the computer that runs Metro: it takes the host from Metro's address and uses port 3000, for example `http://192.168.1.20:3000`. The backend listens on every network interface, so this works from a phone on the same network as long as the computer's firewall lets in port 3000.
 
 To use another address, for example with `npx expo start --tunnel` or a remote API, copy `.env.example` to `.env.local`, set `EXPO_PUBLIC_API_BASE_URL`, and restart Metro. The value is public: Metro inlines it into the app bundle. Never put secrets in it.
 
-CORS doesn't apply here: native apps send no `Origin` header, so the backend's `FRONTEND_ORIGIN` setting only affects the web dashboard. Every protected request still needs the bearer token.
+CORS doesn't apply to native apps, which send no `Origin` header. The browser version does use CORS and must match the backend's `FRONTEND_ORIGIN`, which also serves the web dashboard; `WEBSITE_ORIGIN` configures the separate website's allowed origin. In browser development, the API defaults to the page's hostname on port 3000. Every protected request still needs the bearer token.
 
 ## Sign-in and sessions
 
@@ -43,6 +51,7 @@ npm run typecheck
 npm run lint
 npx expo-doctor
 npx expo export --platform android --platform ios --output-dir /tmp/camioane-export
+npx expo export --platform web --output-dir /tmp/camioane-web-export
 ```
 
 `npm run lint` prints nothing when there are no issues. The export check bundles both platforms with Metro without a device. There is no test runner yet.

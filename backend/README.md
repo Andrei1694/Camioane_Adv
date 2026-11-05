@@ -38,7 +38,8 @@ The API listens on port 3000 by default. Compose runs PostgreSQL only. `npm run 
 | `PORT` | API port, default `3000` |
 | `DATABASE_URL` | Required PostgreSQL connection URL |
 | `JWT_SECRET` | Required random signing secret, at least 32 bytes |
-| `FRONTEND_ORIGIN` | Allowed HTTP(S) origin, default `http://localhost:5173`; no path or trailing slash |
+| `FRONTEND_ORIGIN` | Admin app's HTTP(S) origin for CORS, default `http://localhost:5173`; no path or trailing slash |
+| `WEBSITE_ORIGIN` | Public website's HTTP(S) origin for CORS, default `http://localhost:5174`; no path or trailing slash |
 | `FILE_STORAGE_DRIVER` | Provider for new uploads, default `filesystem`; unknown providers fail startup |
 | `FILE_STORAGE_ROOT` | Private filesystem directory, default `./uploads`; relative to `backend/`, independent of the working directory |
 | `UPLOAD_MAX_FILE_SIZE_BYTES` | Maximum file bytes, default `104857600` (100 MiB); integer from 1 through 2147483647 |
@@ -46,9 +47,9 @@ The API listens on port 3000 by default. Compose runs PostgreSQL only. `npm run 
 | `CREDIT_CURRENCY` | Three-letter uppercase currency code for credit purchases, default `EUR` |
 | `CREDIT_UNIT_PRICE_MINOR` | Price of one credit in the currency's minor unit (cents), default `100`; integer from 1 through 21474 |
 
-Existing environment variables take precedence over `.env`. CORS allows GET, POST, PUT, PATCH, DELETE, JSON, and Authorization headers from the configured origin. Authentication uses bearer tokens, not cookies. Keep private database credentials and signing keys out of frontend `VITE_*` configuration.
+Existing environment variables take precedence over `.env`. CORS allows GET, POST, PUT, PATCH, DELETE, JSON, and Authorization headers from the two configured origins, and from no others. Authentication uses bearer tokens, not cookies. Keep private database credentials and signing keys out of frontend `VITE_*` configuration.
 
-Production must set its actual frontend origin, configure HTTPS, and supply the actual API URL when building the frontend. When serving the frontend separately, configure its host to serve `index.html` for application routes such as `/users`. Deploy committed migrations with `npx prisma migrate deploy` and generate Prisma Client during installation/build. Do not run `migrate dev` in production.
+Production must set its actual frontend and website origins, configure HTTPS, and supply the actual API URL when building the frontend and the website. When serving the frontend separately, configure its host to serve `index.html` for application routes such as `/users`. Deploy committed migrations with `npx prisma migrate deploy` and generate Prisma Client during installation/build. Do not run `migrate dev` in production.
 
 ## API
 

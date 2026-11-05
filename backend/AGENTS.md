@@ -18,7 +18,8 @@ scoped here unless the requested feature also requires changes elsewhere.
 - Use npm. Keep `package.json` and `package-lock.json` in sync when dependencies
   change; those files are authoritative for installed versions.
 - Node.js runs the `.ts` source directly. There is no compilation or build step.
-- CORS permits `FRONTEND_ORIGIN`; login has an in-memory
+- CORS permits `FRONTEND_ORIGIN` (admin app) and `WEBSITE_ORIGIN` (public
+  website); login has an in-memory
   limit of 20 requests per IP per 15 minutes. `pino` is not configured.
 - User authentication uses Argon2id password hashes and one-hour HS256 JWT
   bearer tokens. Require a random `JWT_SECRET` of at least 32 bytes at startup.

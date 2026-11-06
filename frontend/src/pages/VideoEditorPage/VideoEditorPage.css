@@ -29,15 +29,6 @@
   font-size: 13px;
 }
 
-.video-editor .status-message {
-  color: var(--muted);
-}
-
-/* The outcome line's "Files" link reads as ink, not the browser's default blue. */
-.video-editor .status-message a {
-  color: var(--text);
-}
-
 .video-editor .editor-unsupported {
   margin-top: 20px;
 }

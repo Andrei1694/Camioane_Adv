@@ -5,6 +5,7 @@ import { replaceCachedUser } from '../auth/currentUser'
 import { useSession } from '../auth/session'
 import { api, ApiError, errorMessage, isRetryableUpload } from '../lib/api'
 import { queryClient } from '../lib/queryClient'
+import { useNotify } from '../lib/useNotify'
 import { avatarFileError, avatarMaxLabel, avatarTypes } from '../lib/user'
 import type { User } from '../lib/user'
 import Avatar from './Avatar'
@@ -25,8 +26,7 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
   const revision = useSession((state) => state.revision)
   const [upload, setUpload] = useState<Upload | null>(null)
   const [removing, setRemoving] = useState(false)
-  const [message, setMessage] = useState('')
-  const [failure, setFailure] = useState('')
+  const notify = useNotify()
   const picker = useRef<HTMLInputElement>(null)
   const uploadButton = useRef<HTMLButtonElement>(null)
   const uploadAbort = useRef<AbortController | null>(null)
@@ -55,8 +55,6 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
   }
 
   async function startUpload(file: File) {
-    setMessage('')
-    setFailure('')
     const early = avatarFileError(file)
     if (early) {
       setUpload({ file, phase: 'failed', error: early, retryable: false })
@@ -77,12 +75,12 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
       await replaceCachedUser(revision, updated)
       if (!current()) return
       setUpload(null)
-      setMessage(isSelf ? 'Your profile picture is updated.' : `Updated ${owner} profile picture.`)
+      notify({ variant: 'success', message: isSelf ? 'Your profile picture is updated.' : `Updated ${owner} profile picture.` })
     } catch (error) {
       if (!current()) return
       if (controller.signal.aborted) {
         setUpload(null)
-        setMessage(`Upload of ${file.name} cancelled.`)
+        if (controller.signal.reason === 'user') notify({ variant: 'info', message: `Upload of ${file.name} cancelled.` })
       } else {
         setUpload({ file, phase: 'failed', error: errorMessage(error), retryable: isRetryableUpload(error) })
         afterFailure(error)
@@ -99,8 +97,6 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
 
   async function handleRemove() {
     if (busy || !window.confirm(`Remove ${owner} profile picture?`)) return
-    setMessage('')
-    setFailure('')
     setUpload(null)
     setRemoving(true)
     try {
@@ -108,12 +104,12 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
       if (!current()) return
       await replaceCachedUser(revision, { ...user, avatar: null })
       if (!current()) return
-      setMessage(isSelf ? 'Your profile picture is removed.' : `Removed ${owner} profile picture.`)
+      notify({ variant: 'success', message: isSelf ? 'Your profile picture is removed.' : `Removed ${owner} profile picture.` })
       // The Remove button goes away with the picture, so focus moves to the upload button.
       requestAnimationFrame(() => uploadButton.current?.focus())
     } catch (error) {
       if (!current()) return
-      setFailure(`Couldn't remove the picture. ${errorMessage(error)}`)
+      notify({ variant: 'error', message: `Couldn't remove the picture. ${errorMessage(error)}` })
       afterFailure(error)
     } finally {
       setRemoving(false)
@@ -148,12 +144,10 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
       </div>
       {upload && (
         <UploadProgress id={`${id}-upload`} upload={upload}
-          onCancel={() => uploadAbort.current?.abort()}
+          onCancel={() => uploadAbort.current?.abort('user')}
           onRetry={() => void startUpload(upload.file)}
           onDismiss={() => setUpload(null)} />
       )}
-      <p className="status-message" role="status" aria-atomic="true">{message}</p>
-      {failure && <p className="request-error" role="alert">{failure}</p>}
     </div>
   )
 }

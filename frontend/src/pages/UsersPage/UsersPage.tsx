@@ -4,6 +4,7 @@ import { useCurrentUser } from '../../auth/currentUser'
 import { handleAdminError, refreshAdminAccess, updateAdminUsers, useAdminAccess } from '../../auth/adminAccess'
 import { signOut, useSession } from '../../auth/session'
 import { api, ApiError, errorMessage } from '../../lib/api'
+import { useNotify } from '../../lib/useNotify'
 import { roleLabels } from '../../lib/user'
 import type { User, UserInput } from '../../lib/user'
 import Avatar from '../../components/Avatar'
@@ -18,8 +19,7 @@ export default function UsersPage() {
   const revision = useSession((state) => state.revision)
   const access = useAdminAccess()
   const [editor, setEditor] = useState<Editor | null>(null)
-  const [message, setMessage] = useState('')
-  const [failure, setFailure] = useState('')
+  const notify = useNotify()
   const [formFailure, setFormFailure] = useState('')
   const addButton = useRef<HTMLButtonElement>(null)
   const returnFocus = useRef<HTMLButtonElement | null>(null)
@@ -35,9 +35,7 @@ export default function UsersPage() {
 
   function openEditor(button: HTMLButtonElement, user?: User) {
     returnFocus.current = button
-    setMessage('')
     setFormFailure('')
-    setFailure('')
     setEditor({ user })
   }
 
@@ -67,7 +65,7 @@ export default function UsersPage() {
         return [...next, result].sort((a, b) => a.email.localeCompare(b.email))
       })
       if (!updated || revision !== useSession.getState().revision) return
-      setMessage(original ? 'User updated.' : 'User added.')
+      notify({ variant: 'success', message: original ? 'User updated.' : 'User added.' })
       closeEditor()
     } catch (error) {
       if (revision !== useSession.getState().revision) return
@@ -80,18 +78,16 @@ export default function UsersPage() {
 
   async function handleDelete(user: User) {
     if (busy || !window.confirm('Delete ' + user.email + '? This permanently deletes the account and ends its access.')) return
-    setFailure('')
-    setMessage('')
     try {
       await remove.mutateAsync(user.id)
       if (revision !== useSession.getState().revision) return
       const updated = await updateAdminUsers(revision, (existing) => existing.filter((item) => item.id !== user.id))
       if (!updated || revision !== useSession.getState().revision) return
-      setMessage('User deleted.')
+      notify({ variant: 'success', message: 'User deleted.' })
       requestAnimationFrame(() => addButton.current?.focus())
     } catch (error) {
       if (revision !== useSession.getState().revision) return
-      setFailure(errorMessage(error))
+      notify({ variant: 'error', message: `Couldn't delete ${user.email}. ${errorMessage(error)}` })
       if (error instanceof ApiError && error.status === 404) refreshAdminAccess(revision)
     } finally {
       remove.reset()
@@ -109,8 +105,6 @@ export default function UsersPage() {
         </div>
         <p className="page-description">Manage accounts and assign Admin, Operator, Driver, and User roles.</p>
       </header>
-      <p className="status-message" role="status" aria-atomic="true">{message}</p>
-      {failure && <p className="request-error" role="alert">{failure}</p>}
       {editor !== null && (
         <UserForm key={editor.user?.id ?? 'create'} user={editing} users={users}
           isSelf={editor.user?.id === currentUser.id} pending={save.isPending} error={formFailure}

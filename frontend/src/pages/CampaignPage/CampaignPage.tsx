@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { handleAdminError } from '../../auth/adminAccess'
 import { useSession } from '../../auth/session'
 import { api, errorMessage } from '../../lib/api'
+import { useNotify } from '../../lib/useNotify'
 import { campaignsKey } from '../../lib/campaign'
 import type { CampaignPageData, StoredCampaign } from '../../lib/campaign'
 import { plural } from '../../lib/format'
@@ -20,7 +21,7 @@ export default function CampaignPage() {
   const [offset, setOffset] = useState(0)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<{ id: string, message: string } | null>(null)
-  const [message, setMessage] = useState('')
+  const notify = useNotify()
   const createButton = useRef<HTMLButtonElement>(null)
   const editButtons = useRef(new Map<string, HTMLButtonElement>())
   const requestNumber = useRef(0)
@@ -45,7 +46,6 @@ export default function CampaignPage() {
     const request = ++requestNumber.current
     setLoadingId(id)
     setLoadError(null)
-    setMessage('')
     try {
       const campaign = await queryClient.fetchQuery({
         queryKey: [...campaignsKey(revision), 'detail', id],
@@ -63,9 +63,10 @@ export default function CampaignPage() {
     }
   }
 
-  function closeEditor(outcome: string, id = editor?.campaign?.id) {
+  function closeEditor(outcome: string, variant: 'success' | 'info', id = editor?.campaign?.id) {
     requestNumber.current++
-    flushSync(() => { setEditor(null); setLoadingId(null); setLoadError(null); setMessage(outcome) })
+    flushSync(() => { setEditor(null); setLoadingId(null); setLoadError(null) })
+    notify({ variant, message: outcome })
     const target = id ? editButtons.current.get(id) ?? createButton.current : createButton.current
     target?.focus()
   }
@@ -84,12 +85,12 @@ export default function CampaignPage() {
       }))
       flushSync(() => setOffset(0))
     }
-    closeEditor(`${campaign.name} ${editor?.campaign ? 'updated' : 'saved'} as a draft.`, editor?.campaign?.id)
+    closeEditor(`${campaign.name} ${editor?.campaign ? 'updated' : 'saved'} as a draft.`, 'success', editor?.campaign?.id)
     void queryClient.invalidateQueries({ queryKey: campaignsKey(revision) })
   }
 
   const content = editor ? <CampaignCreator key={editor.instance} initialCampaign={editor.campaign}
-    onComplete={saved} onCancel={() => closeEditor(editor.campaign ? 'Changes cancelled.' : 'Draft cancelled.')}
+    onComplete={saved} onCancel={() => closeEditor(editor.campaign ? 'Changes cancelled.' : 'Draft cancelled.', 'info')}
     reloading={loadingId !== null} reloadError={loadError?.message}
     onReload={() => { if (editor.campaign) void openEditor(editor.campaign.id) }} />
     : <section className="campaign-page campaign-list-page" aria-labelledby="campaign-heading">
@@ -99,10 +100,9 @@ export default function CampaignPage() {
           <p className="page-description">Saved drafts are shared with all administrators. Saving does not launch a campaign.</p>
         </div>
         <button ref={createButton} type="button" className="primary-button" disabled={loadingId !== null} onClick={() => {
-          setMessage(''); setLoadError(null); setEditor({ instance: ++requestNumber.current })
+          setLoadError(null); setEditor({ instance: ++requestNumber.current })
         }}>Create campaign</button>
       </header>
-      <p className="campaign-message">{message}</p>
       {list.isError && <p className="request-error" role="alert">{errorMessage(list.error)} <button type="button" onClick={() => void list.refetch()}>Retry</button></p>}
       {loadError && <p className="request-error" role="alert">{loadError.message} <button type="button" disabled={loadingId !== null} onClick={() => void openEditor(loadError.id)}>Retry opening campaign</button></p>}
       <div className="campaign-table-frame" aria-busy={list.isFetching || loadingId !== null}>
@@ -151,5 +151,5 @@ export default function CampaignPage() {
       </nav>}
     </section>
 
-  return <>{content}<p className="sr-only" role="status" aria-atomic="true">{loadingId ? 'Opening campaign…' : message}</p></>
+  return <>{content}<p className="sr-only" role="status" aria-atomic="true">{loadingId ? 'Opening campaign…' : ''}</p></>
 }

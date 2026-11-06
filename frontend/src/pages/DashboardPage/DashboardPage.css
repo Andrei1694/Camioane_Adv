@@ -49,11 +49,6 @@
   font-size: 15px;
 }
 
-.dashboard-status:not(:empty) {
-  margin-top: 6px;
-  color: var(--muted);
-}
-
 .dashboard-title-actions {
   display: flex;
   flex-wrap: wrap;

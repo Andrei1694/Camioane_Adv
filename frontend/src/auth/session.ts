@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { queryClient } from '../lib/queryClient'
+import { resetNotifications } from '../lib/notifications'
 
 interface Session {
   accessToken: string
@@ -51,6 +52,8 @@ export function sessionSignal() {
 }
 
 function replaceSession(session: Session | null, persist: boolean, message = '') {
+  const revision = useSession.getState().revision + 1
+  resetNotifications(revision)
   requests.abort()
   requests = new AbortController()
   void queryClient.cancelQueries()
@@ -65,7 +68,7 @@ function replaceSession(session: Session | null, persist: boolean, message = '')
       notice = storageNotice
     }
   }
-  useSession.setState((state) => ({ session, revision: state.revision + 1, notice, message }))
+  useSession.setState({ session, revision, notice, message })
 }
 
 export function signIn(accessToken: string, expiresIn: number) {

@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useBlocker } from '@tanstack/react-router'
 import { useSession } from '../../auth/session'
 import { api, ApiError, errorMessage, isRetryableUpload } from '../../lib/api'
+import { useNotify } from '../../lib/useNotify'
 import { acceptedFileTypes, declaredTypeError } from '../../lib/file'
 import type { StoredFile } from '../../lib/file'
 import { formatByteSize } from '../../lib/format'
@@ -21,8 +22,7 @@ export default function FilesPage() {
   const revision = useSession((state) => state.revision)
   const queryClient = useQueryClient()
   const [offset, setOffset] = useState(0)
-  const [message, setMessage] = useState('')
-  const [failure, setFailure] = useState('')
+  const notify = useNotify()
   const [upload, setUpload] = useState<Upload | null>(null)
   const [downloading, setDownloading] = useState<ReadonlySet<string>>(new Set())
   const [preview, setPreview] = useState<StoredFile | null>(null)
@@ -52,13 +52,7 @@ export default function FilesPage() {
     void queryClient.invalidateQueries({ queryKey: ['files', revision] })
   }
 
-  function clearOutcome() {
-    setMessage('')
-    setFailure('')
-  }
-
   async function startUpload(file: File) {
-    clearOutcome()
     const early = declaredTypeError(file)
     if (early) {
       setUpload({ file, phase: 'failed', error: early, retryable: false })
@@ -75,13 +69,13 @@ export default function FilesPage() {
       })
       if (revision !== useSession.getState().revision) return
       setUpload(null)
-      setMessage(`Uploaded ${stored.originalName} (${formatByteSize(stored.size)}).`)
+      notify({ variant: 'success', message: `Uploaded ${stored.originalName} (${formatByteSize(stored.size)}).` })
       setOffset(0)
     } catch (error) {
       if (revision !== useSession.getState().revision) return
       if (controller.signal.aborted) {
         setUpload(null)
-        setMessage(`Upload of ${file.name} cancelled.`)
+        if (controller.signal.reason === 'user') notify({ variant: 'info', message: `Upload of ${file.name} cancelled.` })
       } else {
         setUpload({ file, phase: 'failed', error: errorMessage(error), retryable: isRetryableUpload(error) })
       }
@@ -93,7 +87,6 @@ export default function FilesPage() {
   }
 
   async function handleDownload(file: StoredFile) {
-    clearOutcome()
     setDownloading((ids) => new Set(ids).add(file.id))
     try {
       const blob = await api.downloadFile(file)
@@ -101,7 +94,7 @@ export default function FilesPage() {
       saveBlob(blob, file.originalName)
     } catch (error) {
       if (revision !== useSession.getState().revision) return
-      setFailure(`Couldn't download ${file.originalName}. ${errorMessage(error)}`)
+      notify({ variant: 'error', message: `Couldn't download ${file.originalName}. ${errorMessage(error)}` })
       if (error instanceof ApiError && error.status === 404) refreshFiles()
     } finally {
       setDownloading((ids) => {
@@ -114,17 +107,16 @@ export default function FilesPage() {
 
   async function handleDelete(file: StoredFile) {
     if (remove.isPending || !window.confirm(`Delete ${file.originalName}? This permanently deletes the file and can't be undone.`)) return
-    clearOutcome()
     try {
       await remove.mutateAsync(file.id)
       if (revision !== useSession.getState().revision) return
       // Deleting the last row of a later page steps back to the page before it.
       if (page.data?.files.length === 1 && offset > 0) setOffset(Math.max(0, offset - pageSize))
-      setMessage(`Deleted ${file.originalName}.`)
+      notify({ variant: 'success', message: `Deleted ${file.originalName}.` })
       requestAnimationFrame(() => uploadButton.current?.focus())
     } catch (error) {
       if (revision !== useSession.getState().revision) return
-      setFailure(`Couldn't delete ${file.originalName}. ${errorMessage(error)}`)
+      notify({ variant: 'error', message: `Couldn't delete ${file.originalName}. ${errorMessage(error)}` })
     } finally {
       remove.reset()
       refreshFiles()
@@ -154,11 +146,9 @@ export default function FilesPage() {
         </div>
         <p className="page-description">Every image and video uploaded to Camioane App, newest first. Upload JPEG, PNG, WebP or MP4.</p>
       </header>
-      <p className="status-message" role="status" aria-atomic="true">{message}</p>
-      {failure && <p className="request-error" role="alert">{failure}</p>}
       {upload && (
         <UploadProgress id={uploadId} upload={upload}
-          onCancel={() => uploadAbort.current?.abort()}
+          onCancel={() => uploadAbort.current?.abort('user')}
           onRetry={() => void startUpload(upload.file)}
           onDismiss={() => setUpload(null)} />
       )}

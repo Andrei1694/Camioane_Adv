@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useNotify } from '../../lib/useNotify'
 import AttentionList from './components/AttentionList'
 import BookingReviewDialog from './components/BookingReviewDialog'
 import type { Decision } from './components/BookingReviewDialog'
@@ -20,7 +21,11 @@ export default function DashboardPage() {
     requests: bookingRequests, creatives, cancellations: cancellationRequests, confirmations, commitments,
   }, initialState)
   const [reviewId, setReviewId] = useState<string | null>(null)
-  const [message, setMessage] = useState('')
+  const notify = useNotify()
+
+  function sampleOutcome(message: string) {
+    notify({ variant: 'success', message: `Sample action: ${message}` })
+  }
 
   const days = useMemo(() => routeDays(bookings), [])
   const attention = useMemo(() => attentionItems(bookings), [])
@@ -35,12 +40,12 @@ export default function DashboardPage() {
 
   function confirm(item: RequestReview) {
     dispatch({ type: 'confirm', review: item })
-    setMessage(`Confirmed ${item.request.campaign} for ${item.client.name}. ${formatCount(item.total)} cr debited, ${formatCount(item.balance - item.total)} cr left.`)
+    sampleOutcome(`Confirmed ${item.request.campaign} for ${item.client.name}. ${formatCount(item.total)} cr debited, ${formatCount(item.balance - item.total)} cr left.`)
   }
 
   function decide(item: RequestReview, decision: Decision) {
     dispatch({ type: 'close-request', id: item.request.id })
-    setMessage(decision === 'changes'
+    sampleOutcome(decision === 'changes'
       ? `Asked ${item.client.name} to change ${item.request.campaign}. No credits were debited.`
       : `Rejected ${item.request.campaign} for ${item.client.name}. No credits were debited.`)
   }
@@ -48,20 +53,20 @@ export default function DashboardPage() {
   function judgeCreative(creative: Creative, status: CreativeStatus) {
     dispatch({ type: 'creative', id: creative.id, status })
     const unblocked = state.requests.find((request) => request.creativeId === creative.id)
-    setMessage(`${status === 'approved' ? 'Approved' : 'Rejected'} ${creative.file} for ${clientOf(creative.clientId).name}.${
+    sampleOutcome(`${status === 'approved' ? 'Approved' : 'Rejected'} ${creative.file} for ${clientOf(creative.clientId).name}.${
       unblocked && status === 'approved' ? ` ${unblocked.campaign} no longer waits on its creative.` : ''}`)
   }
 
   function judgeCancellation(request: CancellationRequest, approve: boolean) {
     dispatch({ type: 'cancellation', request, approve })
-    setMessage(approve
+    sampleOutcome(approve
       ? `Cancelled ${request.dates.length} ${routeOf(request.routeId).name} slots of ${request.campaign}. The refund waits for the refund policy.`
       : `Declined the cancellation for ${request.campaign}. Its slots stay booked.`)
   }
 
   function retry(item: Attention) {
     dispatch({ type: 'retry', bookingId: item.booking.id })
-    setMessage(`Delivery to ${item.car.plate} queued at ${formatTime(asOf.time)}.`)
+    sampleOutcome(`Delivery to ${item.car.plate} queued at ${formatTime(asOf.time)}.`)
   }
 
   const next = reviews[0]
@@ -72,7 +77,6 @@ export default function DashboardPage() {
         <div className="dashboard-title-text">
           <h1>Dashboard</h1>
           <p className="dashboard-finding">{finding(attention)}</p>
-          <p className="dashboard-status" role="status">{message}</p>
         </div>
         <div className="dashboard-title-actions">
           <p className="sample-notice">Sample data as of {formatLongDay(asOf.date)}, {formatTime(asOf.time)}</p>

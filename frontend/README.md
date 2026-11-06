@@ -48,6 +48,31 @@ Expiry or a protected API 401 clears the session and private query cache. Logout
 
 Email, password, or role changes revoke the affected account's existing sessions. Editing your own email/password signs you out with an explanation. Self-deletion and self-demotion are disabled in the UI and rejected by the backend.
 
+## Action notifications
+
+Action outcomes use the shared in-memory toast system. Toasts appear at the bottom right (across the bottom on phones), survive navigation, and clear on reload or any session change. There is no notification history or backend delivery. Dashboard toasts identify their sample actions.
+
+Components obtain a session-bound callback with `useNotify` from `src/lib/useNotify.ts`:
+
+```tsx
+const notify = useNotify()
+
+// Call after the operation succeeds, preserving existing session and access checks.
+const id = notify({ variant: 'success', message: 'User updated.' })
+notify({ variant: 'error', message: "Couldn't delete the file. Please try again." })
+notify({
+  variant: 'success',
+  message: 'Saved the edited video to Files.',
+  action: { label: 'View files', onClick: () => { void navigate({ to: '/files' }) } },
+})
+```
+
+`NotificationInput` supports `success`, `error`, `warning`, and `info`, a plain-text message, an optional duration in milliseconds (`0` means persistent), and an optional action. Actions always persist until acted on or dismissed. The callback returns an ID, or `undefined` for a stale session or empty message. `dismissNotification(id)` and `clearNotifications()` are available from `src/lib/notifications.ts`; non-component code can call `notifyForSession(input, revision)` with the revision captured when its work began. Do not capture a new revision after an asynchronous operation finishes.
+
+Three toasts display at once, with the rest queued in arrival order. Identical variant/message pairs return the existing ID without restarting its timer. Success/info last five visible seconds and warning/error eight by default. Timers pause on hover, keyboard focus, hidden tabs, and native modal dialogs; queued notifications start their timers only on display. Modal dialogs defer toast presentation and announcements until they close. Notifications announce once without moving focus.
+
+Keep validation, form submission failures, query errors, authentication notices, upload/export progress and retries, and route-builder status inline. Do not also toast those messages. Emit outcomes in action handlers, never in query-state effects or a global API interceptor. Only explicit user cancellations produce info toasts; component cleanup and stale-session requests remain silent.
+
 ## User management
 
 The table shows each account's picture and email, role, and row actions. Add/Edit uses the existing inline form. Emails are normalized and checked for duplicates; the backend remains authoritative. New passwords are required, while an empty edit password is omitted. Passwords contain 12–128 Unicode characters with spaces preserved.

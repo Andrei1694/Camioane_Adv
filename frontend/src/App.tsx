@@ -7,6 +7,7 @@ import { useAdminAccess } from './auth/adminAccess'
 import { startSessionSync, useSession } from './auth/session'
 import { queryClient } from './lib/queryClient'
 import AppShell from './components/AppShell'
+import NotificationViewport from './components/NotificationViewport'
 import CampaignPage from './pages/CampaignPage/CampaignPage'
 import CreditsPage from './pages/CreditsPage/CreditsPage'
 import DashboardPage from './pages/DashboardPage/DashboardPage'
@@ -23,7 +24,7 @@ const VideoEditorPage = lazyRouteComponent(() => import('./pages/VideoEditorPage
 function Layout() {
   const revision = useSession((state) => state.revision)
   useEffect(startSessionSync, [])
-  return <Outlet key={revision} />
+  return <><Outlet key={revision} /><NotificationViewport /></>
 }
 
 function LoginRoute() {

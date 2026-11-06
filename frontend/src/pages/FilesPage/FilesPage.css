@@ -8,11 +8,6 @@
   font-size: 14px;
 }
 
-/* The outcome line is one grey sentence under the title. */
-.files-page .status-message {
-  color: var(--muted);
-}
-
 /* Files table: dashboard table rules, with the file as the identity column ------------- */
 
 .files-page .files-frame {

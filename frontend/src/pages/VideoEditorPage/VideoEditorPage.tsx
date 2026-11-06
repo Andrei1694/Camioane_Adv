@@ -1,12 +1,12 @@
 import { useEffect, useId, useReducer, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Link, useBlocker } from '@tanstack/react-router'
+import { getRouteApi, Link, useBlocker, useNavigate } from '@tanstack/react-router'
 import type { TimelineState } from '@xzdarcy/react-timeline-editor'
 import { useSession } from '../../auth/session'
 import UploadProgress from '../../components/UploadProgress'
 import type { Upload } from '../../components/UploadProgress'
 import { api, ApiError, errorMessage } from '../../lib/api'
+import { useNotify } from '../../lib/useNotify'
 import { fileKind, fileTypeLabel } from '../../lib/file'
 import { formatByteSize } from '../../lib/format'
 import EditTimeline from './components/EditTimeline'
@@ -41,6 +41,8 @@ function editedName(originalName: string) {
 export default function VideoEditorPage() {
   const { fileId } = route.useParams()
   const revision = useSession((state) => state.revision)
+  const notify = useNotify()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const ids = useId()
   const page = useRef<HTMLElement>(null)
@@ -75,7 +77,6 @@ export default function VideoEditorPage() {
   const [selected, setSelected] = useState<string>()
   const [zoom, setZoom] = useState<number>()
   const [unplayable, setUnplayable] = useState(false)
-  const [message, setMessage] = useState<ReactNode>('')
   const [job, setJob] = useState<Job | null>(null)
   const [savedEdit, setSavedEdit] = useState<Segment[] | null>(null)
   const playback = usePlayback(timelineRef, segments)
@@ -132,14 +133,9 @@ export default function VideoEditorPage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [busy])
 
-  function clearOutcome() {
-    setMessage('')
-  }
-
   async function startExport(edit: Segment[]) {
     if (!file || !content.data || busy) return
     playback.pause()
-    clearOutcome()
     const controller = new AbortController()
     jobAbort.current = controller
     setJob({ step: 'render', render: { phase: 'rendering', progress: 0 }, edit })
@@ -157,7 +153,7 @@ export default function VideoEditorPage() {
       if (revision !== useSession.getState().revision) return
       if (controller.signal.aborted) {
         setJob(null)
-        setMessage('Export cancelled. The edit is still here.')
+        if (controller.signal.reason === 'user') notify({ variant: 'info', message: 'Export cancelled. The edit is still here.' })
       } else {
         setJob({ step: 'render', render: { phase: 'failed', error: error instanceof ExportError ? error.message : errorMessage(error) }, edit })
       }
@@ -179,12 +175,15 @@ export default function VideoEditorPage() {
       if (revision !== useSession.getState().revision) return
       setJob(null)
       setSavedEdit(edit)
-      setMessage(<>Saved {stored.originalName} ({formatByteSize(stored.size)}) to <Link to="/files">Files</Link>.</>)
+      notify({
+        variant: 'success', message: `Saved ${stored.originalName} (${formatByteSize(stored.size)}) to Files.`,
+        action: { label: 'View files', onClick: () => { void navigate({ to: '/files' }) } },
+      })
     } catch (error) {
       if (revision !== useSession.getState().revision) return
       if (controller.signal.aborted) {
         setJob(null)
-        setMessage(`Upload of ${rendered.name} cancelled. The edit is still here.`)
+        if (controller.signal.reason === 'user') notify({ variant: 'info', message: `Upload of ${rendered.name} cancelled. The edit is still here.` })
       } else {
         // Content, size and format rejections fail the same way again; only transport and server failures are worth a retry.
         const retryable = !(error instanceof ApiError) || error.status === 0 || error.status === 409 || error.status >= 500
@@ -241,16 +240,15 @@ export default function VideoEditorPage() {
     <section className="video-editor" ref={page}>
       {heading}
       <p className="editor-note" id={`${ids}-export-note`}>{exportNote}</p>
-      <p className="status-message" role="status" aria-atomic="true">{message}</p>
       {job?.step === 'render' && (
         <RenderProgress id={`${ids}-job`} name={exportName} render={job.render}
-          onCancel={() => jobAbort.current?.abort()}
+          onCancel={() => jobAbort.current?.abort('user')}
           onRetry={() => void startExport(job.edit)}
           onDismiss={() => setJob(null)} />
       )}
       {job?.step === 'upload' && (
         <UploadProgress id={`${ids}-job`} upload={job.upload}
-          onCancel={() => jobAbort.current?.abort()}
+          onCancel={() => jobAbort.current?.abort('user')}
           onRetry={() => void uploadExport(job.upload.file, job.edit)}
           onDismiss={() => setJob(null)} />
       )}

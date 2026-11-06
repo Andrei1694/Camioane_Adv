@@ -51,6 +51,18 @@ model Campaign {
   @@index([createdAt, id])
 }
 
+/// Shared saved stops; road geometry and estimates are recalculated in the browser.
+model SavedRoute {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String   @db.VarChar(200)
+  waypoints Json
+  version   Int      @default(1)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([createdAt, id])
+}
+
 enum RoleName {
   ADMIN
   OPERATOR

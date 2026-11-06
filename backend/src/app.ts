@@ -6,6 +6,7 @@ import { createFileStorage, loadFileConfig } from './config/files.ts';
 import { errorHandler } from './middleware/error-handler.ts';
 import { createCampaignRouter } from './routes/campaign.routes.ts';
 import { createCarRouter } from './routes/car.routes.ts';
+import { createRouteRouter } from './routes/route.routes.ts';
 import { createCreditRouter } from './routes/credit.routes.ts';
 import { createFileRouter } from './routes/file.routes.ts';
 import { createUserRouter } from './routes/user.routes.ts';
@@ -41,6 +42,7 @@ export function createApp(options: { fileStorage?: FileStorageRegistry; uploadMa
   app.use('/credits', createCreditRouter(loadCreditConfig()));
   app.use('/campaigns', createCampaignRouter());
   app.use('/cars', createCarRouter());
+  app.use('/routes', createRouteRouter());
 
   app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });

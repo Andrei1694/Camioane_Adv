@@ -16,7 +16,7 @@ Styling uses plain CSS, with shared primitives and page-scoped selectors. There 
 | Navigation, brand mark, account block and sheet | [AppShell.tsx](src/components/AppShell.tsx), [AppShell.css](src/components/AppShell.css) |
 | Dashboard layout, KPIs, fleet timeline, review queues | [DashboardPage](src/pages/DashboardPage/) |
 | User management and its inline form | [UsersPage](src/pages/UsersPage/) |
-| Sample car inventory and its inline form | [CarsPage](src/pages/CarsPage/) |
+| Car inventory, its inline form and delete dialog | [CarsPage](src/pages/CarsPage/) |
 | Files table and preview | [FilesPage](src/pages/FilesPage/) |
 | Credit balances, purchases and ledger | [CreditsPage](src/pages/CreditsPage/) |
 | Profile screen | [ProfilePage](src/pages/ProfilePage/) |
@@ -87,11 +87,14 @@ The root is 16px with a 1.5 line height. Most data screens explicitly use 14px t
 | Dashboard title | 22px / 600 |
 | Campaign title on phones | 22px / 600 |
 | Dialog title | 20px / 600 |
-| Dashboard, credits, campaign and route section titles | 16px / 600 |
+| Route and campaign totals | 20px / 400; campaign totals 18px at viewport widths up to 767px |
+| Campaign name on the review stage | 20px / 500 |
+| Shell product name | 18px / 600 |
 | User form and profile section titles | 18px / 600 |
+| Dashboard, credits, campaign and route section titles | 16px / 600 |
 | KPI value | 28px / 400; 24px at viewport widths up to 767px |
 | Typical data text and buttons | 14px / 400 or 500 |
-| Users table cells | 15px |
+| Users table cells and the dashboard's finding line | 15px |
 | Supporting text and dense row actions | 13px |
 | Table headers, pills and small captions | Usually 12px; Users headers are 13px / 500 |
 
@@ -124,13 +127,12 @@ Management links depend on verified administrator access. Profile is available t
 | Users, Profile and access views | Maximum 760px | Shell default |
 | Dashboard | Full available width | 24px |
 | Files, Credits and video editor | Full available width | Shell default |
-| Campaign list | Maximum 1100px | 28px 24px |
-| Cars | Maximum 1100px | 28px 24px |
+| Cars and campaign list | Maximum 1100px | 28px 24px |
 | Campaign creator and route builder | Maximum 1600px | 28px 24px |
 
 Wide pages opt in through `.app-content:has(...)` selectors in their page stylesheet. Keep their grids shrinkable with `minmax(0, 1fr)` and `min-width: 0` where needed.
 
-At viewport widths up to 767px, the sidebar becomes a header and native navigation dialog. The sheet loses its inset, border and radius. Default content padding becomes 28px 16px; the dashboard uses 20px 16px 32px, and campaigns and routes use 24px 16px. The navigation dialog is at most 320px wide, closes on navigation, backdrop click or Escape, and closes when the viewport returns to desktop width.
+At viewport widths up to 767px, the sidebar becomes a header and native navigation dialog. The sheet loses its inset, border and radius. Default content padding becomes 28px 16px; the dashboard uses 20px 16px 32px, and cars, campaigns and routes use 24px 16px. The navigation dialog is at most 320px wide, closes on navigation, backdrop click or Escape, and closes when the viewport returns to desktop width.
 
 The unsigned shell uses `.users-page`: a centred column up to 760px, 24px side gutters and 56px vertical margins. At 600px and below, its gutters become 16px and margins 28px. The login panel itself is capped at 460px.
 
@@ -155,6 +157,7 @@ These measure the component's available width, independently of the viewport.
 | Dashboard fleet timeline | Up to 640px | Timeline keeps a 680px minimum inner width and scrolls within its frame; identity and hour corner remain pinned. |
 | Dashboard routes panel | Up to 720px | Route rows wrap into labelled lines. |
 | `files`, `credits`, `campaigns` | Up to 760px | Tables become stacked rows while preserving identity, figures and actions. |
+| `cars` | Up to 759px | Filters become two columns with search spanning both; the form becomes one column. Rows stack with plate and status on the first line, muted 96px inline labels and 44px row actions. |
 | `segments` | Up to 720px | Video segments wrap into labelled fields and actions. |
 | `campaign-calendar` | Up to 640px | Monthly cell-hour labels hide; full accessible labels and selected-day detail retain the information. |
 
@@ -189,7 +192,7 @@ Dashboard lists use a title and muted metadata, with trailing figures/actions an
 
 Pills are 20px tall with 12px/500 text, 6px horizontal padding and a 4px radius. Use `.pill` with a positive, negative, warning or neutral modifier. Keep them unshrunk and unwrapped; place status beside the relevant identity rather than above a page title. Prefer one meaningful status per row.
 
-Tabs use a 2px data-coloured selected underline over a 1px border rule. They are 40px tall on desktop and 44px on phones, with horizontal overflow contained inside the tab strip. ARIA tabs need a tablist, selected state, associated panels and arrow/Home/End navigation; CSS classes alone provide none of that behavior. Campaign stages use `aria-current="step"` and are a separate progress pattern.
+Tabs use a 2px data-coloured selected underline over a 1px border rule. They are 40px tall on desktop and 44px on phones, with horizontal overflow contained inside the tab strip. ARIA tabs need a tablist, selected state, associated panels and arrow/Home/End navigation; CSS classes alone provide none of that behaviour. Campaign stages use `aria-current="step"` and are a separate progress pattern.
 
 ### Dialogs
 
@@ -197,11 +200,13 @@ Preview and review flows use native `<dialog>` with `showModal()`. The shared `.
 
 Use `.dialog-head`, a named `h2`, a close button and an optional `.dialog-sub`. Review facts use `.review-checks`: an 88px label column beside the value, stacking on phones; `.check-fail` highlights a failed fact. Place errors and blocked-action explanations near the relevant action. Existing dialogs support Escape and backdrop dismissal. Preserve focus return to the opener, or a meaningful surviving control when that opener is removed.
 
+For new destructive confirmations, follow the Cars delete dialog (`DeleteCarDialog.tsx`). The frame narrows to 480px, the title names the object (“Delete <plate>?”) and the description states the permanent effect. Cancel receives initial focus, and Escape or a backdrop click cancels while the dialog is idle. While the action runs, both buttons are disabled, the destructive label becomes “Deleting…” and dismissal is blocked. Failures stay inside the dialog; if the object has already gone, the destructive action is disabled and Cancel becomes Close. Older screens still use the browser's confirmation, as listed under [current inconsistencies](#current-inconsistencies).
+
 ### Avatars and upload progress
 
 `Avatar` supports 32px table pictures, 40px account pictures and 96px editor pictures. Images crop with `object-fit: cover`; the email initial stays underneath while an image is unavailable or loading. Protected images are fetched with the session and displayed through object URLs.
 
-`AvatarEditor` is shared by Profile and the Users edit form. Picture changes save immediately, independently of the user-details Save button. Keep that behavior clear in its helper text. Actions sit beside the 96px circle and wrap when needed; progress appears below.
+`AvatarEditor` is shared by Profile and the Users edit form. Picture changes save immediately, independently of the user-details Save button. Keep that behaviour clear in its helper text. Actions sit beside the 96px circle and wrap when needed; progress appears below.
 
 `UploadProgress` is shared by file uploads, avatar editing and video export uploads. It uses a bordered 8px-radius block and a 4px data-coloured progress bar. Bytes sent and total use the same unit. Distinguish sending from “Checking and saving…” after transfer; a full bar alone does not mean the server has completed the operation. Failures stay inline with Retry when supported and Dismiss. The bar exposes its label, value and descriptive progress text to assistive technology.
 
@@ -228,21 +233,15 @@ The main column contains the KPI strip and fleet timeline; the 384px rail holds 
 
 ### Cars
 
-The admin-only `/cars` page asks which cars are in the fleet and lets administrators update their inventory details. It keeps the existing Framed sheet shell, brand colours and Plex fonts (tasteskill seed `20261106`); plates use Plex Mono. The description explains that saved changes are shared with all administrators. Inventory comes from the Cars API; the dashboard retains its independent sample fleet.
+Cars (admin-only at `/cars`) answers which cars are in the fleet and runs on the real `/cars` API; the dashboard keeps its own sample fleet. The description says saved changes are shared with all administrators. Add car, the primary action, sits in the heading. Below it come the inline editor when open, labelled search, route and status filters, and a semantic table. The table caption holds the matching count (“3 of 12 cars”), announced politely, and a Clear filters text button. Columns are plate (mono), make/model, driver, route, status and Edit/Delete text actions named after the plate. Active, Maintenance and Inactive use the positive, warning and neutral pills. A missing driver or route prints a muted “Unassigned”. Explicit table roles keep row semantics when the rows stack.
 
-The heading holds Add car. Below it are the inline editor when open, labeled search/route/status filters, a matching count and a semantic table: license plate, make/model, driver, route, administrative status and Edit/Delete actions. Active, Maintenance and Inactive use the existing positive, warning and neutral pills. Missing assignments say Unassigned. Counts derive from the current rows; an empty fleet and no filter matches have different messages.
+The editor reuses the Users form frame and shared fields. While it is open, its Save takes the primary style and Add car and the row actions are disabled. Field errors sit beside their fields and focus moves to the first invalid one; request failures show in a focused inline alert. A pending save shows “Saving…”. A conflicting save keeps the entered values and offers Reload car, with a hint that reloading replaces them. Saving clears the filters so the record is visible, and closing returns focus to the opener, or to Add car when the opener has gone. Delete uses the confirmation dialog described under [Dialogs](#dialogs), and successful actions use success toasts.
 
-The form reuses the Users form frame and shared fields. Plate and make/model are required; driver is optional text and route offers five fixed labels or Unassigned. Plate input is trimmed and uppercased; duplicate detection ignores case, whitespace and hyphens. Limits are 32 characters for normalized plates and 200 for make/model and driver names. Errors stay beside fields and focus the first invalid control; request failures remain in a focused inline alert. The editor gets the primary Save action while Add and row actions are disabled. Pending submissions disable fields and show Saving…; only server success updates the inventory. Saving clears filters so the record is visible. Closing returns focus to the opener or Add car if the opener no longer exists.
-
-Editors keep their loaded values and version during background refreshes. A conflicting save retains the entered values and offers Reload car, with an explanation that reloading replaces them with the latest saved details. Loading, empty fleets, no filter matches, request failures and retry each have explicit states. Failed background refreshes identify the visible rows as the last loaded inventory.
-
-Delete opens a native dialog naming the plate and explaining permanent removal from the shared inventory. Cancel receives initial focus; Escape and backdrop dismissal cancel while idle. During deletion both actions are disabled, the label becomes Deleting…, and dismissal is blocked. Failures remain inside the dialog. Successful actions use shared success toasts. No browser storage is added for cars.
-
-Content is capped at 1100px. Below 760px of content width, filters wrap, the form becomes one column and table rows stack all fields, with plate and status on the first line. Actions retain 44px touch targets. The shell retains its existing 768px navigation breakpoint; phone page padding is 24px 16px.
+Loading, an empty fleet, no filter matches, request failure and retry each have their own message. A failed background refresh labels the visible rows as the last loaded inventory, and the count shows “Refreshing…” while one runs.
 
 ### Users and Profile
 
-Users has a semantic table with email/avatar, role and action columns. Add or Edit opens the form inline above the table; Add user remains visible but disabled while that form is open. Preserve focus entry into the form and return on close. Self-demotion and self-deletion are disabled with an explanation; deletion currently uses a browser confirmation. Role labels come from `src/lib/user.ts`.
+Users has a semantic table with email/avatar, role and action columns. Add or Edit opens the form inline above the table; Add user remains visible but disabled while that form is open. Preserve focus entry into the form and return on close. Self-demotion and self-deletion are disabled with an explanation; deletion still uses the browser's confirmation (see current inconsistencies). Role labels come from `src/lib/user.ts`.
 
 Profile stays in the 760px reading column and is available to every signed-in role. Its picture section uses `AvatarEditor`; the account section uses the shared facts/check layout. Editing a profile picture must update its representations across the shell and user views.
 
@@ -274,7 +273,11 @@ The route builder combines a 320px planner and flexible MapLibre map with a 16px
 
 The stop list offers labelled latitude/longitude fields and keyboard-accessible reorder, remove and show-on-map actions alongside map gestures. The toolbar provides Fit route, Reverse, Undo and Clear. Routing and map failures show local explanations and retry actions; obsolete route geometry and summary must not appear current after calculation fails.
 
-Distance and duration come from routing results. The visible limitation states that this is road routing without truck height, weight or access restrictions, traffic or breaks. Draft stops are held per signed-in user in this browser tab's session storage. Export GeoJSON keeps a copy of the calculated road geometry and stops; no server-side route-save API exists. Preserve those distinctions in the copy.
+Distance and duration come from routing results. The visible limitation states that this is road routing without truck height, weight or access restrictions, traffic or breaks.
+
+The heading holds New route, Saved routes, Export GeoJSON and the primary Save route. Save stores the name and ordered stops, shared with all administrators, and works even when routing fails. Export downloads the current calculated road geometry and stops. A bordered panel above the workspace holds the route-name field and a status line: New route, Unsaved changes, Saved, Saved route deleted, or the running action (“Saving route…”). Saved routes is a toggle (`aria-expanded`) that shows the library above that panel. The library lists name, stop count and updated day and time, with Open and Delete actions named after the route and shared pagination. The open route's row is marked with `aria-current` and the hover fill. The table frame is capped at 360px tall at every width, keeps its header row sticky and scrolls within itself. Opening a saved route recalculates the path.
+
+Discarding unsaved edits and deleting a route both ask for confirmation. A conflicting save offers Reload route, and a route deleted elsewhere offers Save as new, both inline in the save panel. Editing and map gestures are disabled while a save, open or delete is in flight. Unfinished names, stops and the saved snapshot they are compared against stay per signed-in user in this tab's session storage.
 
 ## Data formatting
 
@@ -305,10 +308,11 @@ Requirements for changes:
 
 - Preserve meaningful headings, semantic tables and labelled controls. Retain accessible names and metadata when narrowing the layout.
 - Keep the global `:focus-visible` outline: 2px `--focus`, offset 3px. Preserve the shell's Skip to content link and its focusable main target.
-- Support keyboard operation and sensible focus return. Calendars, tabs, dialogs and editing tools each need their own interaction behavior; a visual active state is insufficient.
+- Support keyboard operation and sensible focus return. Calendars, tabs, dialogs and editing tools each need their own interaction behaviour; a visual active state is insufficient.
 - Target 44px touch controls on phones. Audit icon controls separately because the shared class does not enlarge them automatically.
 - Use colour-independent status cues and verify text/background contrast. Do not treat this guide as an accessibility certification of the existing UI.
 - Keep loading and failure feedback in the relevant region. Reserve stable space where practical; show retry only where the operation supports it. Avoid duplicate live announcements or toast/inline copies.
+- Ask before leaving a page that would cancel running work. Files, `AvatarEditor` and the video editor block router navigation with `useBlocker`'s `shouldBlockFn` and enable `beforeunload` while an upload or export runs, and the video editor also while an edit is unexported; give new long-running transfers the same guard.
 - Keep empty and missing data distinct from zero. Explain a useful next action instead of adding decorative illustrations or invented data.
 - Limit motion to feedback. Existing sidebar and campaign-date colour transitions respect `prefers-reduced-motion`; apply that support to new motion too.
 
@@ -321,6 +325,8 @@ These are verified source-level differences to account for, not changes requeste
 - Users table cells are 15px, headers are 13px/500, and its separators use `--border`; newer data tables generally use 14px cells, 12px/400 headers and `--rule`.
 - The generic `.icon-button` remains 40px on phones; notifications and navigation supply larger targets separately.
 - The Users empty row applies `.empty-state` directly to a table cell, inheriting the dashed block treatment.
+- Deletion confirmation varies: Users, Files and saved routes use the browser's `window.confirm`, while Cars uses the native confirmation dialog described under [Dialogs](#dialogs).
+- Saved-routes table headers are 12px / 500, unlike the 12px / 400 of other data tables.
 - `index.html` still names “Users · Camioane App” and describes a user management demo. `public/favicon.svg` contains template artwork rather than the shell's car/screen mark.
 - There is no global skeleton system or dark theme. Do not document either as an existing capability.
 

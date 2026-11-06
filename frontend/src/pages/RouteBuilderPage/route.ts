@@ -1,6 +1,9 @@
 import type { Route } from '@maplibre/maplibre-gl-directions'
+import { isCoordinate, isSavedRoute } from '../../lib/route'
+import type { Coordinate, SavedRoute } from '../../lib/route'
 
-export type Coordinate = [longitude: number, latitude: number]
+export type { Coordinate } from '../../lib/route'
+export { isCoordinate } from '../../lib/route'
 
 export interface RouteResult {
   coordinates: Coordinate[]
@@ -11,29 +14,35 @@ export interface RouteResult {
 export const mapStyle = import.meta.env.VITE_MAP_STYLE_URL?.trim() || 'https://tiles.openfreemap.org/styles/positron'
 export const routingApi = (import.meta.env.VITE_ROUTING_API_URL?.trim() || 'https://router.project-osrm.org/route/v1').replace(/\/$/, '')
 
-export function isCoordinate(value: unknown): value is Coordinate {
-  return Array.isArray(value) && value.length === 2
-    && typeof value[0] === 'number' && Number.isFinite(value[0]) && Math.abs(value[0]) <= 180
-    && typeof value[1] === 'number' && Number.isFinite(value[1]) && Math.abs(value[1]) <= 85.051129
+export interface RouteDraft {
+  name: string
+  waypoints: Coordinate[]
+  saved: SavedRoute | null
 }
 
 // One draft per tab, kept until the tab closes. Tagged with the user so another account never sees it.
 const draftKey = 'camioane.route-draft.v1'
 
-export function loadDraft(userId: string): Coordinate[] {
+export function loadDraft(userId: string): RouteDraft {
   try {
     const draft: unknown = JSON.parse(sessionStorage.getItem(draftKey) ?? 'null')
     if (typeof draft === 'object' && draft !== null && 'userId' in draft && draft.userId === userId
-      && 'waypoints' in draft && Array.isArray(draft.waypoints) && draft.waypoints.every(isCoordinate)) return draft.waypoints
+      && 'waypoints' in draft && Array.isArray(draft.waypoints) && draft.waypoints.every(isCoordinate)) {
+      return {
+        name: 'name' in draft && typeof draft.name === 'string' ? draft.name : '',
+        waypoints: draft.waypoints,
+        saved: 'saved' in draft && isSavedRoute(draft.saved) ? draft.saved : null,
+      }
+    }
   } catch {
     // Unreadable or blocked storage starts an empty route.
   }
-  return []
+  return { name: '', waypoints: [], saved: null }
 }
 
-export function saveDraft(userId: string, waypoints: Coordinate[]) {
+export function saveDraft(userId: string, draft: RouteDraft) {
   try {
-    if (waypoints.length) sessionStorage.setItem(draftKey, JSON.stringify({ userId, waypoints }))
+    if (draft.waypoints.length || draft.name || draft.saved) sessionStorage.setItem(draftKey, JSON.stringify({ userId, ...draft }))
     else sessionStorage.removeItem(draftKey)
   } catch {
     // Full or blocked storage only loses the draft; the page keeps working.

@@ -8,6 +8,8 @@ import { isCampaignSchedule, maxCampaignNameLength } from './campaign'
 import type { CampaignInput, CampaignPageData, StoredCampaign } from './campaign'
 import { isCarRouteId, isCarStatus, maxCarPlateLength, maxCarTextLength, plateKey } from './car'
 import type { Car, CarInput } from './car'
+import { isSavedRoute } from './route'
+import type { RouteInput, RoutePageData, SavedRoute } from './route'
 
 export class ApiError extends Error {
   readonly status: number
@@ -378,7 +380,27 @@ function decodeCarResponse(value: unknown) {
   return decodeCar(value.car)
 }
 
+function decodeRoute(value: unknown): SavedRoute {
+  if (!isSavedRoute(value)) throw new ApiError(0, 'The API returned an unexpected route response.')
+  return { id: value.id, name: value.name, waypoints: value.waypoints, version: value.version, createdAt: value.createdAt, updatedAt: value.updatedAt }
+}
+
+function decodeRouteResponse(value: unknown) {
+  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  return decodeRoute(value.route)
+}
+
+function decodeRoutePage(value: unknown): RoutePageData {
+  if (!record(value) || !Array.isArray(value.routes)) throw new ApiError(0, 'The API returned an unexpected routes response.')
+  return { routes: value.routes.map(decodeRoute), total: decodeTotal(value) }
+}
+
 export const api = {
+  routes: (page: { limit: number, offset: number }, signal: AbortSignal) => request('/routes' + query(page), decodeRoutePage, { signal }),
+  route: (id: string, signal: AbortSignal) => request('/routes/' + encodeURIComponent(id), decodeRouteResponse, { signal }),
+  createRoute: (data: RouteInput) => request('/routes', decodeRouteResponse, { method: 'POST', body: data }),
+  updateRoute: (id: string, data: RouteInput & { version: number }) => request('/routes/' + encodeURIComponent(id), decodeRouteResponse, { method: 'PATCH', body: data }),
+  deleteRoute: (id: string) => request('/routes/' + encodeURIComponent(id), () => undefined, { method: 'DELETE' }),
   cars: (signal: AbortSignal) => request('/cars', (value) => {
     if (!record(value) || !Array.isArray(value.cars)) throw new ApiError(0, 'The API returned an unexpected cars response.')
     return value.cars.map(decodeCar)

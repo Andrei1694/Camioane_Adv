@@ -208,6 +208,19 @@ shutdown and script tests run the entry points in child processes, with the
   fixed `CarRoute` enum or null, with no driver-account or route-builder relation.
   `CarStatus` is administrative, not controller connectivity. Never seed demo cars.
 
+### Saved routes
+
+- `/routes` provides shared admin-only list, detail, create, full-form update and
+  permanent delete operations. Recheck session and active ADMIN access in every
+  serializable transaction. Updates atomically match/increment the loaded version;
+  stale edits return 409 and missing routes return 404.
+- `SavedRoute` stores a required trimmed name and 2–100 ordered coordinate pairs
+  as JSON. Match the frontend longitude/latitude bounds. Geometry and estimates
+  remain browser-calculated; never require a routing response to save stops.
+  Lists use limit/offset (default 50, max 100), newest creation and UUID first.
+  Other operations reject query parameters. JSON bodies are limited to 16 KiB.
+  Cars' `CarRoute` labels and campaign drafts remain independent. No demo seed.
+
 ### Campaign drafts
 
 - `/campaigns` provides shared admin-only list, detail, create and update operations.

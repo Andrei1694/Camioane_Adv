@@ -183,6 +183,42 @@ The ledger is append-only: corrections are new `ADJUSTMENT` rows. `User.creditBa
 
 Errors: `400` for invalid bodies, IDs, or query parameters; `403` for admin-only actions; `404` for missing or inaccessible purchases and users; `409` for insufficient credits, a balance over the INT4 maximum, invalid status changes, a deleted purchase owner, a reused payment reference, or repeated concurrent-write conflicts. Deleting a user sets `userId` to `null` on their purchases and ledger rows, so the financial history is kept. Their remaining balance is lost with the account.
 
+## Saved routes
+
+`/routes` stores a shared library of named, ordered stops for Route Builder.
+Every operation requires a valid session and an active ADMIN role, checked again
+inside a serializable transaction. Routes have no owner restriction and remain
+available when an administrator account is removed.
+
+| Method | Path | Result |
+| --- | --- | --- |
+| GET | `/routes?limit=50&offset=0` | `{ routes, total }`, newest creation first, UUID descending as a tie-breaker |
+| GET | `/routes/:id` | `{ route }` |
+| POST | `/routes` | `{ route }`, 201 |
+| PATCH | `/routes/:id` | `{ route }`, 200 |
+| DELETE | `/routes/:id` | Permanent deletion, 204 |
+
+Create bodies are `{ name, waypoints }`; updates require the complete form plus
+the loaded `version`. Names are trimmed, required, 1–200 characters, and cannot
+contain null characters. Duplicate names are allowed. Waypoints are 2–100 ordered
+`[longitude, latitude]` pairs of finite numbers within ±180 longitude and
+±85.051129 latitude. Repeated coordinates are allowed. Bodies have a 16 KiB limit.
+Only list accepts query parameters: `limit` is 1–100 (default 50), and `offset`
+is 0–2147483647 (default 0). Unsupported fields and query parameters return 400.
+
+Each route exposes `{ id, name, waypoints, version, createdAt, updatedAt }`.
+Updates atomically match and increment the version; stale edits return 409,
+missing UUIDs return 404, and malformed input returns 400. Private responses use
+`Cache-Control: no-store`. Geometry, distance and duration are not persisted or
+accepted from clients. The browser calculates them when a route is opened; saving
+stops works when routing is unavailable. This API does not calculate routes,
+assign cars, schedule campaigns, or change credits. Cars keep their fixed labels.
+
+Apply the committed `add_saved_routes` migration and regenerate Prisma Client
+before releasing the frontend that uses this API. Production uses
+`npx prisma migrate deploy`, not `migrate dev`. No new environment settings or
+dependencies are required.
+
 ## Cars
 
 Cars are persistent inventory shared by all currently active administrators. The

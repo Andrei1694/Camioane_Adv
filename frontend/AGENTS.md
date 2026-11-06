@@ -76,6 +76,14 @@ scoped here unless the requested feature also requires changes elsewhere.
   updates. Past Europe/Bucharest dates and hours are read-only. Saving does not
   launch campaigns or charge credits. Shared API types live in `src/lib/campaign.ts`;
   calendar and unfinished-form helpers remain page-local.
+- Route Builder at `/routes` saves shared administrator routes through `/routes`.
+  Shared types/limits/query keys live in `src/lib/route.ts`; page-local
+  `useRouteEditor` owns persistence and the independent editor snapshot.
+  Use `routesKey(revision)` and `handleAdminError`. Updates submit the loaded
+  version; conflicts keep edits until explicit reload. Names and 2–100 stops are
+  saved independently of map/routing availability; geometry is recalculated.
+  Retain legacy waypoint-only tab drafts and user isolation. Pending persistence
+  disables map gestures and edits. Cars' fixed route labels remain separate.
 - Role values are ADMIN, OPERATOR, DRIVER, and USER. Reuse the role list,
   validation guard, and labels in `src/lib/user.ts`. Only a verified, currently
   valid ADMIN role grants management access; preserve denial for other roles.

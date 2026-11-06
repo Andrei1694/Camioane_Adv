@@ -5,7 +5,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import MapLibreGlDirections, { layersFactory, utils } from '@maplibre/maplibre-gl-directions'
 import type { AnyMapLibreGlDirectionsEvent, Directions, MapLibreGlDirectionsConfiguration } from '@maplibre/maplibre-gl-directions'
 import type { Coordinate, RouteResult } from './route'
-import { isCoordinate, loadDraft, mapStyle, readRoute, routingApi, saveDraft } from './route'
+import { isCoordinate, mapStyle, readRoute, routingApi } from './route'
 
 setWorkerUrl(workerUrl)
 
@@ -33,6 +33,12 @@ function isDirections(value: unknown): value is Directions {
     && 'routes' in value && Array.isArray(value.routes) && 'waypoints' in value && Array.isArray(value.waypoints)
 }
 
+function fitPoints(map: Map | null, points: Coordinate[]) {
+  if (!map || !points.length) return
+  const bounds = points.reduce((box, point) => box.extend(point), new LngLatBounds(points[0], points[0]))
+  map.fitBounds(bounds, { padding: 48, maxZoom: 13, duration: 0 })
+}
+
 class RoadDirections extends MapLibreGlDirections {
   private readonly listener: RoutingListener
   private latestRequest = 0
@@ -43,6 +49,10 @@ class RoadDirections extends MapLibreGlDirections {
     this.listener = listener
   }
 
+  private readResponse() {
+    return readRoute(this.response?.routes[0])
+  }
+
   // A provider with regional coverage must not silently snap a stop to a distant road.
   protected override buildRequest: typeof utils.buildRequest = (configuration, points, bearings) => utils.buildRequest({
     ...configuration,
@@ -51,12 +61,15 @@ class RoadDirections extends MapLibreGlDirections {
 
   // The plugin reports every failure the same way, so read the HTTP status and OSRM code here.
   protected override async fetch({ url, payload }: utils.RequestData): Promise<Directions> {
-    const response = await fetch(`${url}?${payload}`, { signal: this.abortController?.signal })
+    const request = this.latestRequest
+    const signal = this.abortController?.signal
+    const response = await fetch(`${url}?${payload}`, { signal })
     const body: unknown = await response.json().catch((error: unknown) => {
       if (isAbort(error)) throw error
       return undefined
     })
-    if (isDirections(body)) {
+    if (signal?.aborted || request !== this.latestRequest) throw new DOMException('Route replaced', 'AbortError')
+    if (response.ok && isDirections(body)) {
       this.response = body
       return body
     }
@@ -68,6 +81,7 @@ class RoadDirections extends MapLibreGlDirections {
   // Settles once the plugin has drawn the result. A request replaced by a newer one never settles.
   protected override async fetchDirections(originalEvent: AnyMapLibreGlDirectionsEvent) {
     const request = ++this.latestRequest
+    this.response = undefined
     const routing = this.waypoints.length >= 2
     if (routing) this.listener.start()
     let error = ''
@@ -81,29 +95,28 @@ class RoadDirections extends MapLibreGlDirections {
     }
     if (request !== this.latestRequest) return
     if (error || !routing) return this.listener.end(null, error)
-    const route = readRoute(this.response?.routes[0])
+    const route = this.readResponse()
     this.listener.end(route, route ? '' : placementError)
   }
 }
 
-export default function useRouteMap(userId: string) {
+export default function useRouteMap(initialWaypoints: Coordinate[]) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<Map | null>(null)
   const directionsRef = useRef<MapLibreGlDirections | null>(null)
-  const [draft] = useState(() => loadDraft(userId))
-  const savedWaypoints = useRef<Coordinate[]>(draft)
+  const savedWaypoints = useRef<Coordinate[]>(initialWaypoints)
+  const editingLocked = useRef(false)
+  const fitOnLoad = useRef(false)
+  const hideRoute = useRef<(() => void) | null>(null)
   const [revision, setRevision] = useState(0)
   const [ready, setReady] = useState(false)
   const [busy, setBusy] = useState(false)
   const [mapError, setMapError] = useState('')
   const [routeError, setRouteError] = useState('')
-  const [waypoints, setWaypoints] = useState<Coordinate[]>(draft)
+  const [waypoints, setWaypoints] = useState<Coordinate[]>(initialWaypoints)
   const [undoPoints, setUndoPoints] = useState<Coordinate[] | null>(null)
   const [route, setRoute] = useState<RouteResult | null>(null)
   const phase: RoutePhase = mapError ? 'map-error' : !ready ? 'loading' : busy ? 'calculating' : route ? 'ready' : routeError ? 'failed' : 'idle'
-
-  // The draft outlives a remount (navigation, sign-out, reload) for this tab and user.
-  useEffect(() => saveDraft(userId, waypoints), [userId, waypoints])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -173,6 +186,7 @@ export default function useRouteMap(userId: string) {
           function showRoute(visible: boolean) {
             for (const name of routeLayers) currentMap.setLayoutProperty(`${sourceName}-${name}`, 'visibility', visible ? 'visible' : 'none')
           }
+          hideRoute.current = () => showRoute(false)
 
           directions = new RoadDirections(currentMap, {
             api: routingApi,
@@ -217,10 +231,14 @@ export default function useRouteMap(userId: string) {
           directions.on('removewaypoint', () => syncWaypoints(true))
           directions.on('movewaypoint', () => syncWaypoints())
           directions.on('setwaypoints', () => syncWaypoints())
-          directions.interactive = true
+          directions.interactive = !editingLocked.current
           setMapError('')
           setReady(true)
-          if (savedWaypoints.current.length) void directions.setWaypoints(savedWaypoints.current)
+          if (savedWaypoints.current.length) {
+            void directions.setWaypoints(savedWaypoints.current)
+            if (fitOnLoad.current) fitPoints(currentMap, savedWaypoints.current)
+          }
+          fitOnLoad.current = false
         } catch {
           setMapError('The route map could not be initialized. Retry the map.')
         }
@@ -239,6 +257,7 @@ export default function useRouteMap(userId: string) {
       clearTimeout(loadTimeout)
       resize.disconnect()
       directionsRef.current = null
+      hideRoute.current = null
       mapRef.current = null
       directions?.destroy()
       map?.remove()
@@ -246,22 +265,39 @@ export default function useRouteMap(userId: string) {
   }, [revision])
 
   // A newer change replaces a calculation in progress, so editing never has to wait.
-  function setStops(points: Coordinate[], undoable = false) {
-    if (!directionsRef.current || !points.every(isCoordinate)) return
+  function updateStops(points: Coordinate[], undoable = false) {
+    if (!points.every(isCoordinate)) return
     const previous = savedWaypoints.current
-    void directionsRef.current.setWaypoints(points)
-    if (undoable) setUndoPoints(previous)
+    // The editor remains usable before the map loads and when WebGL or tiles fail.
+    savedWaypoints.current = points.map((point) => [...point])
+    setWaypoints(savedWaypoints.current)
+    setRoute(null)
+    setRouteError('')
+    setBusy(false)
+    hideRoute.current?.()
+    if (directionsRef.current) void directionsRef.current.setWaypoints(savedWaypoints.current)
+    setUndoPoints(undoable ? previous : null)
+  }
+
+  function setStops(points: Coordinate[], undoable = false) {
+    if (!editingLocked.current) updateStops(points, undoable)
   }
 
   function fitRoute() {
-    const points = route?.coordinates ?? waypoints
-    if (!mapRef.current || !points.length) return
-    const bounds = points.reduce((box, point) => box.extend(point), new LngLatBounds(points[0], points[0]))
-    mapRef.current.fitBounds(bounds, { padding: 48, maxZoom: 13, duration: 0 })
+    fitPoints(mapRef.current, route?.coordinates ?? waypoints)
   }
 
   return {
     containerRef, phase, mapError, routeError, waypoints, route, setStops, fitRoute,
+    replaceStops: (points: Coordinate[]) => {
+      updateStops(points)
+      fitOnLoad.current = !directionsRef.current
+      if (directionsRef.current) fitPoints(mapRef.current, points)
+    },
+    lockEditing: (locked: boolean) => {
+      editingLocked.current = locked
+      if (directionsRef.current) directionsRef.current.interactive = !locked
+    },
     canUndo: undoPoints !== null,
     undo: () => {
       if (undoPoints) setStops(undoPoints)

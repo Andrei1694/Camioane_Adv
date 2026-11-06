@@ -4,6 +4,8 @@ import type { Avatar, Credentials, User, UserInput } from './user'
 import type { FilePage, StoredFile } from './file'
 import { isPurchaseStatus, isTransactionType } from './credit'
 import type { Adjustment, CreditBalance, CreditPurchase, CreditTransaction, PurchasePage, PurchaseStatus, TransactionPage } from './credit'
+import { isCampaignSchedule, maxCampaignNameLength } from './campaign'
+import type { CampaignInput, CampaignPageData, StoredCampaign } from './campaign'
 
 export class ApiError extends Error {
   readonly status: number
@@ -333,7 +335,30 @@ function decodeBlob(value: unknown) {
   return value
 }
 
+function decodeCampaign(value: unknown): StoredCampaign {
+  if (!record(value) || !isUuid(value.id) || typeof value.name !== 'string' || !value.name.trim()
+    || value.name.length > maxCampaignNameLength || !isWhole(value.version) || value.version < 1
+    || !isTimestamp(value.createdAt) || !isTimestamp(value.updatedAt) || !isCampaignSchedule(value.days)) {
+    throw new ApiError(0, 'The API returned an unexpected campaign response.')
+  }
+  return { id: value.id, name: value.name, days: value.days, version: value.version, createdAt: value.createdAt, updatedAt: value.updatedAt }
+}
+
+function decodeCampaignResponse(value: unknown) {
+  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  return decodeCampaign(value.campaign)
+}
+
+function decodeCampaignPage(value: unknown): CampaignPageData {
+  if (!record(value) || !Array.isArray(value.campaigns)) throw new ApiError(0, 'The API returned an unexpected campaigns response.')
+  return { campaigns: value.campaigns.map(decodeCampaign), total: decodeTotal(value) }
+}
+
 export const api = {
+  campaigns: (page: { limit: number, offset: number }, signal: AbortSignal) => request('/campaigns' + query(page), decodeCampaignPage, { signal }),
+  campaign: (id: string, signal: AbortSignal) => request('/campaigns/' + encodeURIComponent(id), decodeCampaignResponse, { signal }),
+  createCampaign: (data: CampaignInput) => request('/campaigns', decodeCampaignResponse, { method: 'POST', body: data }),
+  updateCampaign: (id: string, data: CampaignInput & { version: number }) => request('/campaigns/' + encodeURIComponent(id), decodeCampaignResponse, { method: 'PATCH', body: data }),
   login: (credentials: Credentials) => request('/users/login', (value) => {
     if (!record(value) || typeof value.accessToken !== 'string' || value.tokenType !== 'Bearer'
       || typeof value.expiresIn !== 'number' || !Number.isFinite(value.expiresIn) || value.expiresIn <= 0) {

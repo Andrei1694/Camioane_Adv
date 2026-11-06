@@ -7,6 +7,7 @@ import { useAdminAccess } from './auth/adminAccess'
 import { startSessionSync, useSession } from './auth/session'
 import { queryClient } from './lib/queryClient'
 import AppShell from './components/AppShell'
+import CampaignPage from './pages/CampaignPage/CampaignPage'
 import CreditsPage from './pages/CreditsPage/CreditsPage'
 import DashboardPage from './pages/DashboardPage/DashboardPage'
 import FilesPage from './pages/FilesPage/FilesPage'
@@ -39,7 +40,7 @@ function AccessDenied() {
       <h1>Administrator access required</h1>
       <p className="page-description">{user.role === 'ADMIN'
         ? 'Your administrator access is currently unavailable. Your role may be inactive, not yet active, or expired.'
-        : 'Your account does not have administrator access.'} The dashboard, files, credits, user management and the route builder require active administrator access. Contact your administrator if you need access.</p>
+        : 'Your account does not have administrator access.'} The dashboard, campaign, files, credits, user management and the route builder require active administrator access. Contact your administrator if you need access.</p>
       {user.role === 'ADMIN' && <button type="button" disabled={access.isFetching} onClick={access.retry}>
         {access.isFetching ? 'Checking…' : 'Retry access check'}
       </button>}
@@ -54,6 +55,7 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => <Authenticated><HomeRedirect /></Authenticated> })
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: '/login', component: LoginRoute })
 const dashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/dashboard', component: () => <Authenticated adminOnly><DashboardPage /></Authenticated> })
+const campaignRoute = createRoute({ getParentRoute: () => rootRoute, path: '/campaign', component: () => <Authenticated adminOnly><CampaignPage /></Authenticated> })
 const filesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/files', component: () => <Authenticated adminOnly><FilesPage /></Authenticated> })
 const videoEditorRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -69,7 +71,7 @@ const routeBuilderRoute = createRoute({
 })
 const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profile', component: () => <Authenticated><ProfilePage /></Authenticated> })
 const deniedRoute = createRoute({ getParentRoute: () => rootRoute, path: '/access-denied', component: () => <Authenticated><AccessDenied /></Authenticated> })
-const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, filesRoute, videoEditorRoute, creditsRoute, usersRoute, routeBuilderRoute, profileRoute, deniedRoute]) })
+const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, campaignRoute, filesRoute, videoEditorRoute, creditsRoute, usersRoute, routeBuilderRoute, profileRoute, deniedRoute]) })
 
 declare module '@tanstack/react-router' {
   interface Register {

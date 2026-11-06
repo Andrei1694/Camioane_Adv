@@ -1,0 +1,1061 @@
+.app-content:has(> .campaign-creator-page) {
+  max-width: 1600px;
+}
+
+.app-content:has(> .campaign-list-page) {
+  max-width: 1100px;
+}
+
+.app-main:has(.campaign-page) {
+  padding: 28px 24px;
+}
+
+.campaign-page {
+  --campaign-gap: 20px;
+  font-size: 14px;
+}
+
+.campaign-form {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.campaign-past-warning {
+  margin: 16px 0;
+  color: var(--negative);
+}
+
+.campaign-past-warning button {
+  margin-top: 8px;
+}
+
+.campaign-action-column {
+  width: 88px;
+}
+
+.campaign-table .campaign-action-cell,
+.campaign-table .campaign-action-column {
+  text-align: right;
+}
+
+.campaign-action-cell button {
+  min-height: 44px;
+}
+
+.campaign-page-heading,
+.campaign-progress,
+.campaign-section-heading,
+.campaign-calendar-heading,
+.campaign-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--campaign-gap);
+}
+
+.campaign-page-heading {
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.campaign-page-heading .pill {
+  margin-top: 4px;
+}
+
+.campaign-page-heading > div {
+  min-width: 0;
+}
+
+.campaign-page-heading > button {
+  flex: none;
+}
+
+.campaign-table-frame {
+  margin-top: 24px;
+  container: campaigns / inline-size;
+}
+
+.campaign-page .campaign-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.campaign-table caption {
+  margin-bottom: 12px;
+  color: var(--muted);
+  text-align: left;
+}
+
+.campaign-table th,
+.campaign-table td {
+  padding: 12px;
+  border-top: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+.campaign-table th:first-child,
+.campaign-table td:first-child {
+  padding-left: 0;
+}
+
+.campaign-table th:last-child,
+.campaign-table td:last-child {
+  padding-right: 0;
+}
+
+.campaign-table thead th {
+  padding-top: 0;
+  border: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.campaign-table .num {
+  text-align: right;
+}
+
+.campaign-period-column {
+  width: 205px;
+}
+
+.campaign-days-column {
+  width: 110px;
+}
+
+.campaign-hours-column {
+  width: 145px;
+}
+
+.campaign-status-column {
+  width: 80px;
+}
+
+.campaign-name-cell {
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+
+.campaign-period-cell,
+.campaign-empty-cell {
+  color: var(--muted);
+}
+
+.campaign-table .campaign-status-cell,
+.campaign-table .campaign-status-column {
+  text-align: right;
+}
+
+.campaign-mobile-label {
+  display: none;
+}
+
+.campaign-progress {
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.campaign-steps,
+.campaign-selected-dates,
+.campaign-agenda ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.campaign-steps {
+  display: flex;
+  gap: 24px;
+}
+
+.campaign-steps button {
+  display: block;
+  min-height: 56px;
+  padding: 16px 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--muted);
+  background: transparent;
+  white-space: nowrap;
+}
+
+.campaign-steps button[aria-current='step'] {
+  border-bottom-color: var(--data);
+  color: var(--text);
+}
+
+.campaign-steps button:hover {
+  color: var(--text);
+  background: transparent;
+}
+
+.campaign-check {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -2px;
+}
+
+.campaign-date-check .campaign-check {
+  margin: 0;
+}
+
+.campaign-totals {
+  display: flex;
+  flex: none;
+  gap: 28px;
+  margin: 0 0 12px;
+}
+
+.campaign-totals div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.campaign-totals dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.campaign-totals dd {
+  margin: 0;
+  font-size: 20px;
+}
+
+.campaign-workspace {
+  /* At 1440px: 1150px inner sheet = 770px calendar + 20px gap + 360px editor. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+  gap: var(--campaign-gap);
+}
+
+.campaign-calendar-panel,
+.campaign-detail {
+  min-width: 0;
+}
+
+.campaign-calendar-panel {
+  container: campaign-calendar / inline-size;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.campaign-calendar-heading {
+  padding: 12px 16px;
+  gap: 8px;
+}
+
+.campaign-page h2 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.campaign-page h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.campaign-calendar-navigation {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.campaign-calendar-navigation .icon-button {
+  width: 44px;
+  height: 44px;
+}
+
+.campaign-month-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.campaign-month-grid th {
+  height: 36px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  text-align: center;
+}
+
+.campaign-month-grid td {
+  padding: 3px;
+  border-top: 1px solid var(--rule);
+}
+
+.campaign-date {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  height: 52px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font-weight: 400;
+  text-align: left;
+  transition: background-color 120ms ease;
+}
+
+.campaign-date-number {
+  line-height: 20px;
+}
+
+.campaign-date[aria-disabled='true'] {
+  cursor: default;
+  color: var(--muted);
+}
+
+.campaign-date[aria-disabled='true']:hover {
+  background: transparent;
+}
+
+.campaign-date.outside-month .campaign-date-number {
+  color: var(--muted);
+}
+
+.campaign-date[aria-current='date'] .campaign-date-number {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-weight: 600;
+}
+
+.campaign-date.selected,
+.campaign-date.selected:hover {
+  color: var(--data-ink);
+  background: var(--data-pale);
+}
+
+.campaign-date.active {
+  border-color: var(--data);
+}
+
+.campaign-date.needs-hours {
+  border-style: dashed;
+  border-color: var(--danger);
+}
+
+.campaign-date-check {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  color: var(--data);
+  font-size: 13px;
+}
+
+.campaign-date-hours {
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.campaign-calendar-caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.campaign-calendar-caption > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.campaign-selection-key {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--data);
+  border-radius: 2px;
+  background: var(--data-pale);
+}
+
+.campaign-hours-help {
+  margin: 0;
+  padding: 0 16px 16px;
+}
+
+.campaign-hours-help > span {
+  display: none;
+}
+
+.campaign-hours-viewport {
+  /* 64px time axis + up to seven day columns, each at least 140px wide. */
+  display: grid;
+  position: relative;
+  max-height: 600px;
+  height: 65vh;
+  min-height: 320px;
+  align-content: start;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  scroll-padding-top: 84px;
+  scroll-padding-bottom: 24px;
+}
+
+.campaign-hours-corner,
+.campaign-hour-day {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  min-height: 76px;
+  border: 0;
+  border-bottom: 1px solid var(--control-border);
+  border-radius: 0;
+  background: var(--surface);
+}
+
+.campaign-hours-corner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.campaign-hour-day {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 8px;
+  border-left: 1px solid var(--rule);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.campaign-hour-day.active {
+  border-bottom: 2px solid var(--data);
+  color: var(--data-ink);
+  background: var(--data-pale);
+}
+
+.campaign-hour-day.needs-hours .campaign-hour-day-total {
+  color: var(--danger);
+}
+
+.campaign-hour-day-total {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.campaign-hours-axis,
+.campaign-hour-column {
+  position: relative;
+  height: 1536px;
+  margin-bottom: 24px;
+}
+
+.campaign-hours-axis > span {
+  position: absolute;
+  right: 10px;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+}
+
+.campaign-hours-axis > span:first-child {
+  transform: none;
+}
+
+.campaign-hour-column {
+  border-left: 1px solid var(--rule);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.campaign-hour-cell {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 64px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  cursor: crosshair;
+}
+
+.campaign-hour-cell::before,
+.campaign-hour-cell::after {
+  position: absolute;
+  inset: 25% 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  pointer-events: none;
+  content: '';
+}
+
+.campaign-hour-cell::after {
+  top: 50%;
+  bottom: auto;
+  border-bottom: 0;
+}
+
+.campaign-hour-cell:focus-visible {
+  z-index: 1;
+  outline-offset: -3px;
+}
+
+.campaign-hour-event,
+.campaign-hour-preview {
+  position: absolute;
+  z-index: 1;
+  left: 3px;
+  right: 3px;
+  display: flex;
+  align-items: flex-start;
+  min-height: 0;
+  padding: 0 4px;
+  overflow: hidden;
+  border: 1px solid var(--data);
+  border-radius: 3px;
+  color: var(--data-ink);
+  background: var(--data-pale);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 14px;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.campaign-hour-event:hover {
+  background: var(--data-pale);
+  border-color: var(--data-ink);
+}
+
+.campaign-hour-event:focus-visible {
+  z-index: 2;
+  outline-offset: -3px;
+}
+
+.campaign-hour-preview {
+  z-index: 2;
+  pointer-events: none;
+  color: var(--surface);
+  background: var(--data);
+}
+
+.campaign-hours-error {
+  margin: 0;
+  padding: 12px 16px;
+}
+
+@media (pointer: coarse) {
+  .campaign-hours-help > span {
+    display: inline;
+  }
+}
+
+.campaign-detail {
+  padding: 16px 0 0 4px;
+}
+
+.campaign-help,
+.campaign-subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.campaign-name-field,
+.campaign-day-select,
+.campaign-editor,
+.campaign-date-summary {
+  margin-top: 24px;
+}
+
+.campaign-name-field input {
+  font-size: 16px;
+}
+
+.campaign-date-summary .campaign-help,
+.campaign-subtitle,
+.campaign-editor > .campaign-help,
+.campaign-schedule-progress {
+  margin-top: 6px;
+}
+
+.campaign-selected-dates {
+  max-height: 264px;
+  margin-top: 12px;
+  overflow-y: auto;
+}
+
+.campaign-selected-dates li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.campaign-selected-dates .icon-button,
+.campaign-interval-fields .icon-button {
+  width: 44px;
+  height: 44px;
+}
+
+.campaign-interval {
+  margin-top: 16px;
+}
+
+.campaign-interval-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
+  align-items: end;
+  gap: 8px;
+}
+
+.campaign-interval-fields label {
+  font-size: 13px;
+}
+
+.campaign-interval-fields select {
+  padding-inline: 8px;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+
+.campaign-add-interval {
+  margin-top: 16px;
+}
+
+.campaign-add-interval > span {
+  margin-right: 4px;
+}
+
+.campaign-copy-hours {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+
+.campaign-copy-hours .campaign-help {
+  margin-top: 8px;
+}
+
+.campaign-day-timeline {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.campaign-day-timeline .campaign-section-heading {
+  gap: 12px;
+}
+
+.campaign-day-timeline .campaign-section-heading > span {
+  flex: none;
+  font-size: 13px;
+}
+
+.campaign-time-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.campaign-time-track {
+  position: relative;
+  height: 20px;
+  margin-top: 8px;
+  border-radius: 4px;
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.campaign-time-slot {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 3px;
+  background: var(--data);
+  border-right: 1px solid var(--surface);
+}
+
+.campaign-timeline-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.campaign-review-name {
+  margin-top: 20px;
+  overflow-wrap: anywhere;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.campaign-review-facts {
+  display: grid;
+  gap: 14px;
+  margin: 24px 0;
+}
+
+.campaign-review-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.campaign-review-facts dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.campaign-review-facts dd {
+  margin: 0;
+  text-align: right;
+}
+
+.campaign-edit-dates {
+  margin: 12px 0 0 -12px;
+}
+
+.campaign-agenda {
+  margin-top: 28px;
+}
+
+.campaign-agenda .campaign-section-heading {
+  display: block;
+}
+
+.campaign-agenda ul {
+  margin-top: 12px;
+}
+
+.campaign-agenda li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 14px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.campaign-agenda-date {
+  font-weight: 500;
+}
+
+.campaign-agenda-intervals {
+  display: flex;
+  grid-row: 2;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  min-width: 0;
+  color: var(--muted);
+}
+
+.campaign-agenda-total {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 85px;
+  text-align: right;
+}
+
+.campaign-agenda li button,
+.campaign-agenda-readonly {
+  grid-column: 2;
+  grid-row: 2;
+  text-align: right;
+}
+
+.campaign-hour-column.read-only .campaign-hour-cell {
+  cursor: default;
+}
+
+.campaign-message {
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.campaign-message:empty {
+  margin: 0;
+}
+
+.campaign-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.campaign-footer > p {
+  max-width: 360px;
+}
+
+.campaign-actions {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+
+@media (max-width: 1279px) {
+  .campaign-progress {
+    flex-wrap: wrap;
+    gap: 8px 20px;
+  }
+
+  .campaign-totals {
+    gap: 20px;
+  }
+
+  .campaign-date-hours {
+    display: none;
+  }
+}
+
+@media (max-width: 1099px) {
+  .campaign-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .campaign-detail {
+    padding: 0;
+  }
+
+  .campaign-date-hours {
+    display: block;
+  }
+
+  .campaign-selected-dates {
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-main:has(.campaign-page) {
+    padding: 24px 16px;
+  }
+
+  .campaign-page-heading {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .campaign-page-heading h1 {
+    font-size: 22px;
+  }
+
+  .campaign-page-heading .pill {
+    margin: 0;
+  }
+
+  .campaign-progress {
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  .campaign-steps {
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .campaign-steps button {
+    min-height: 48px;
+    padding-block: 12px;
+    font-size: 14px;
+  }
+
+  .campaign-totals {
+    justify-content: space-between;
+    margin: 14px 0;
+  }
+
+  .campaign-totals div {
+    gap: 8px;
+  }
+
+  .campaign-totals dd {
+    font-size: 18px;
+  }
+
+  .campaign-calendar-heading {
+    padding: 8px;
+  }
+
+  .campaign-calendar-navigation {
+    gap: 0;
+  }
+
+  .campaign-calendar-navigation .text-button {
+    padding-inline: 8px;
+  }
+
+  .campaign-month-grid td {
+    padding: 2px 1px;
+  }
+
+  .campaign-date {
+    height: 48px;
+    min-height: 44px;
+    padding: 10px 5px;
+  }
+
+  .campaign-date-check {
+    top: 4px;
+    right: 3px;
+    font-size: 12px;
+  }
+
+  .campaign-date-hours {
+    display: none;
+  }
+
+  .campaign-calendar-caption {
+    padding: 12px 8px;
+    gap: 8px;
+  }
+
+  .campaign-day-timeline {
+    padding: 16px 12px;
+  }
+
+  .campaign-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .campaign-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .campaign-actions button,
+  .campaign-page-heading > button {
+    min-height: 44px;
+  }
+
+  .campaign-actions .primary-button {
+    flex: 1;
+  }
+
+}
+
+@container campaigns (max-width: 760px) {
+  .campaign-table,
+  .campaign-table tbody,
+  .campaign-table caption {
+    display: block;
+  }
+
+  .campaign-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .campaign-table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    padding: 16px 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .campaign-table th,
+  .campaign-table td {
+    padding: 0;
+    border: 0;
+  }
+
+  .campaign-table .campaign-name-cell {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .campaign-table .campaign-status-cell {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .campaign-table .campaign-action-cell {
+    grid-column: 1 / -1;
+    text-align: right;
+  }
+
+  .campaign-table .campaign-period-cell,
+  .campaign-table .campaign-empty-cell {
+    grid-column: 1 / -1;
+  }
+
+  .campaign-period-cell .cell-sub {
+    display: inline;
+    margin: 0;
+    font-size: inherit;
+  }
+
+  .campaign-table .campaign-days-cell {
+    text-align: left;
+  }
+
+  .campaign-days-cell,
+  .campaign-hours-cell,
+  .campaign-period-cell {
+    font-size: 13px;
+  }
+
+  .campaign-mobile-label {
+    display: inline;
+    color: var(--muted);
+    font-variant-numeric: normal;
+  }
+}
+
+@container campaign-calendar (max-width: 640px) {
+  .campaign-date-hours {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campaign-date {
+    transition: none;
+  }
+}

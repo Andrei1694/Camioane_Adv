@@ -45,6 +45,14 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
           </Link>
         )}
         {canManage && (
+          <Link to="/campaign" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="m5 9 15-5v16L5 15V9ZM5 9H3v6h2m2 .67V21h4v-4" />
+            </svg>
+            Campaign
+          </Link>
+        )}
+        {canManage && (
           <Link to="/routes" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle cx="6" cy="6" r="3" />

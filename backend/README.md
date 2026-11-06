@@ -84,6 +84,11 @@ Public users are `{ id, email, role, avatar }`, where `id` is an immutable UUID,
 | `GET /campaigns/:id` | Admin | `{ campaign }` |
 | `POST /campaigns` | Admin | `{ name?, days }`; `201 { campaign }` |
 | `PATCH /campaigns/:id` | Admin | `{ name?, days, version }`; `{ campaign }` with the next version |
+| `GET /cars` | Admin | `{ cars }`; complete shared inventory, ordered by normalized plate then ID |
+| `GET /cars/:id` | Admin | `{ car }` |
+| `POST /cars` | Admin | Full car input; `201 { car }` |
+| `PATCH /cars/:id` | Admin | Full car input plus `version`; `{ car }` with the next version |
+| `DELETE /cars/:id` | Admin | `204`, permanent deletion |
 
 Public registration is removed: `POST /users/register` returns the standard JSON 404. Unknown routes also return JSON 404.
 
@@ -177,6 +182,46 @@ Public purchases are `{ id, userId, credits, unitPriceMinor, amountMinor, curren
 The ledger is append-only: corrections are new `ADJUSTMENT` rows. `User.creditBalance` caches the ledger total. It only changes through a guarded increment that can't go below zero, together with the matching ledger row. Every credit operation runs in a serializable transaction that rechecks the session and administrator validity. Lists use the same `limit`/`offset` rules as files, newest first. A non-admin who passes another user's `userId` gets `403`, and another user's purchase IDs return `404`.
 
 Errors: `400` for invalid bodies, IDs, or query parameters; `403` for admin-only actions; `404` for missing or inaccessible purchases and users; `409` for insufficient credits, a balance over the INT4 maximum, invalid status changes, a deleted purchase owner, a reused payment reference, or repeated concurrent-write conflicts. Deleting a user sets `userId` to `null` on their purchases and ledger rows, so the financial history is kept. Their remaining balance is lost with the account.
+
+## Cars
+
+Cars are persistent inventory shared by all currently active administrators. The
+API starts with an empty inventory; the frontend's former fictional records are
+not imported. The dashboard continues to use its own independent sample fleet.
+
+Create and update accept the complete object `{ plate, makeModel, driverName,
+routeId, status }`; updates also require the loaded positive integer `version`.
+All five input properties are required. An unassigned driver is `""`, and an
+unassigned route is `null`. Route values are `centru`, `nord`, `vest`, `est`, and
+`sud`; they are fixed labels, independent of the route builder. Driver names are
+free text, with no user-account relation. Status is `active`, `maintenance`, or
+`inactive`, and describes administrative availability rather than live connectivity.
+
+The API trims all text and uppercases plates. Plates require a nonempty key after
+removing whitespace and hyphens and are limited to 32 UTF-16 code units after
+normalization. Make/model is required and limited to 200; optional driver names
+are limited to 200. Null characters are rejected. Plate uniqueness ignores case,
+whitespace, and hyphens, including during concurrent requests. A database unique
+constraint protects the private `plateKey`, which never appears in responses.
+
+Responses expose `{ id, plate, makeModel, driverName, routeId, status, version,
+createdAt, updatedAt }`. IDs are immutable database-generated UUIDs. Versions
+start at 1 and increase once per update. Updates match the submitted version
+atomically; outdated versions return `409`, and clients must explicitly reload
+before editing the latest version. Deletion permanently removes the UUID and
+does not require a version. Missing records return `404`; duplicate plates return
+`409`. Invalid IDs, fields, enum values, versions, or query parameters return
+`400`. Updates accept versions below 2147483647. JSON bodies are limited to 16 KiB.
+
+Lists are unpaginated, sorted by ascending normalized plate then ID, and support
+no query parameters. The frontend filters the full inventory locally. Every route
+requires a valid session and active administrator role, rechecked inside a
+serializable transaction with bounded conflict retries. Responses use
+`Cache-Control: no-store`; errors follow `{ error: message }`.
+
+The additive `add_cars` migration adds the table, route/status enums and unique
+plate-key index without changing existing records. Apply committed migrations
+before starting code that uses Cars and regenerate Prisma Client separately.
 
 ## Campaign drafts
 

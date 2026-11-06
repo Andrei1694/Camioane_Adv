@@ -10,6 +10,35 @@ datasource db {
   provider = "postgresql"
 }
 
+enum CarStatus {
+  active
+  maintenance
+  inactive
+}
+
+enum CarRoute {
+  centru
+  nord
+  vest
+  est
+  sud
+}
+
+/// Shared administrative inventory; route values are labels, not saved map routes.
+model Car {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plate      String    @db.VarChar(32)
+  /// Canonical uniqueness key: uppercase, without whitespace or hyphens.
+  plateKey   String    @unique @db.VarChar(32)
+  makeModel  String    @db.VarChar(200)
+  driverName String    @default("") @db.VarChar(200)
+  routeId    CarRoute?
+  status     CarStatus @default(active)
+  version    Int       @default(1)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(3)
+}
+
 /// Saved campaign drafts. Schedule dates and minutes are Europe/Bucharest wall-clock values.
 model Campaign {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid

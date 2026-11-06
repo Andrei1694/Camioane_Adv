@@ -32,6 +32,7 @@ Production has no localhost fallback. For a local production preview, build with
 - `/files` lists, uploads, previews, downloads and deletes uploaded images and videos; it requires administrator access.
 - `/files/:fileId/edit` opens the administrator-only video editor for one uploaded MP4.
 - `/users` requires administrator access.
+- `/cars` manages persistent fleet inventory and requires administrator access.
 - `/routes` opens the administrator-only route builder.
 - `/profile` lets every signed-in account, whatever its role, set or remove its own profile picture.
 - `/access-denied` explains missing management access and lets Admin accounts retry their access check. Successful revalidation returns to `/users`; sign-out remains available in navigation.
@@ -72,6 +73,35 @@ notify({
 Three toasts display at once, with the rest queued in arrival order. Identical variant/message pairs return the existing ID without restarting its timer. Success/info last five visible seconds and warning/error eight by default. Timers pause on hover, keyboard focus, hidden tabs, and native modal dialogs; queued notifications start their timers only on display. Modal dialogs defer toast presentation and announcements until they close. Notifications announce once without moving focus.
 
 Keep validation, form submission failures, query errors, authentication notices, upload/export progress and retries, and route-builder status inline. Do not also toast those messages. Emit outcomes in action handlers, never in query-state effects or a global API interceptor. Only explicit user cancellations produce info toasts; component cleanup and stale-session requests remain silent.
+
+## Cars
+
+Open **Cars** in the sidebar as an administrator to manage the shared inventory
+through `/cars`. The page loads the full fleet and filters it locally by plate,
+make/model, driver name, route and administrative status. Data survives navigation
+and reloads. The inventory starts empty; fictional sample cars are not imported,
+and the dashboard retains its independent sample fleet.
+
+Plate and make/model are required. Driver names are optional text; routes are
+Centru, Nord, Vest, Est, Sud or Unassigned, independent of the route builder.
+Status is Active, Maintenance or Inactive, not controller connectivity. Plates
+are trimmed and uppercased, with duplicates detected without case, whitespace or
+hyphens. Limits are 32 characters for normalized plates and 200 for make/model
+and driver names; the backend enforces these rules and database uniqueness.
+
+The editor retains its loaded snapshot and version even when the list refreshes.
+An outdated save shows a conflict and keeps entered values. **Reload car**
+explicitly replaces them with the latest saved details. Ordinary failures remain
+inline, and a deleted record explains why it can no longer be saved. Save and
+Delete show pending feedback and disable repeated submission. Delete names the
+plate in a native dialog, permanently removes the record, and blocks dismissal
+while the request is pending. Successful saves clear filters and restore focus.
+
+Loading, empty results, connection errors and Retry are explicit. Shared API
+types/limits live in `src/lib/car.ts`, and session-scoped queries start with
+`carsKey(revision)`. The existing API client handles cancellation and session
+expiry; car queries and mutations send access-denied responses through the shared
+admin-access handler. Cars use no browser persistence or polling.
 
 ## User management
 

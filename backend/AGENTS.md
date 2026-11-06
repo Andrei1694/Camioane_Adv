@@ -111,7 +111,7 @@ shutdown and script tests run the entry points in child processes, with the
   `GET /health` (`{ "status": "ok" }`), `POST /users/login`, protected
   `GET /users/me`, admin-only GET/POST `/users` and PATCH/DELETE `/users/:id`,
   GET/PUT/DELETE `/users/:id/avatar` for the user or an active admin,
-  the `/files`, `/credits`, and admin-only `/campaigns` routes listed in `README.md`.
+  the `/files`, `/credits`, and admin-only `/campaigns` and `/cars` routes listed in `README.md`.
   Public registration is removed. The health route does not query the database.
 - CRUD services recheck the actor and administrator invariants in serializable
   transactions with bounded conflict retries. Keep password hashing outside those
@@ -192,6 +192,21 @@ shutdown and script tests run the entry points in child processes, with the
   snapshotted on each purchase; never accept a price from the client.
 - The credits migration adds CHECK constraints that Prisma doesn't track; keep
   them in future migrations. Purchases and ledger rows use SET NULL on account deletion.
+
+### Cars
+
+- `/cars` provides shared admin-only list, detail, create, full-form update and
+  permanent delete operations. Recheck the session and active administrator role
+  inside `serializable` transactions for every operation.
+- `Car.plateKey` is private and unique; derive it from the uppercase plate without
+  whitespace or hyphens. Plate edits never change the UUID. Runtime validation
+  and database uniqueness both apply; duplicate plates return 409.
+- Updates require the loaded version, atomically match it and increment it once.
+  Stale edits return 409; missing cars return 404. Lists return the complete fleet
+  ordered by plate key and ID; no query parameters are supported.
+- Driver names are optional text represented by an empty string. Routes are the
+  fixed `CarRoute` enum or null, with no driver-account or route-builder relation.
+  `CarStatus` is administrative, not controller connectivity. Never seed demo cars.
 
 ### Campaign drafts
 

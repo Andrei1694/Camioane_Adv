@@ -6,6 +6,8 @@ import { isPurchaseStatus, isTransactionType } from './credit'
 import type { Adjustment, CreditBalance, CreditPurchase, CreditTransaction, PurchasePage, PurchaseStatus, TransactionPage } from './credit'
 import { isCampaignSchedule, maxCampaignNameLength } from './campaign'
 import type { CampaignInput, CampaignPageData, StoredCampaign } from './campaign'
+import { isCarRouteId, isCarStatus, maxCarPlateLength, maxCarTextLength, plateKey } from './car'
+import type { Car, CarInput } from './car'
 
 export class ApiError extends Error {
   readonly status: number
@@ -354,7 +356,37 @@ function decodeCampaignPage(value: unknown): CampaignPageData {
   return { campaigns: value.campaigns.map(decodeCampaign), total: decodeTotal(value) }
 }
 
+function decodeCar(value: unknown): Car {
+  if (!record(value) || !isUuid(value.id)
+    || typeof value.plate !== 'string' || !plateKey(value.plate) || value.plate.length > maxCarPlateLength
+    || typeof value.makeModel !== 'string' || !value.makeModel.trim() || value.makeModel.length > maxCarTextLength
+    || typeof value.driverName !== 'string' || value.driverName.length > maxCarTextLength
+    || (value.routeId !== null && !isCarRouteId(value.routeId)) || !isCarStatus(value.status)
+    || !isWhole(value.version) || value.version < 1 || value.version > 2147483647
+    || !isTimestamp(value.createdAt) || !isTimestamp(value.updatedAt)) {
+    throw new ApiError(0, 'The API returned an unexpected car response.')
+  }
+  return {
+    id: value.id, plate: value.plate, makeModel: value.makeModel, driverName: value.driverName,
+    routeId: value.routeId, status: value.status, version: value.version,
+    createdAt: value.createdAt, updatedAt: value.updatedAt,
+  }
+}
+
+function decodeCarResponse(value: unknown) {
+  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  return decodeCar(value.car)
+}
+
 export const api = {
+  cars: (signal: AbortSignal) => request('/cars', (value) => {
+    if (!record(value) || !Array.isArray(value.cars)) throw new ApiError(0, 'The API returned an unexpected cars response.')
+    return value.cars.map(decodeCar)
+  }, { signal }),
+  car: (id: string, signal: AbortSignal) => request('/cars/' + encodeURIComponent(id), decodeCarResponse, { signal }),
+  createCar: (data: CarInput) => request('/cars', decodeCarResponse, { method: 'POST', body: data }),
+  updateCar: (id: string, data: CarInput & { version: number }) => request('/cars/' + encodeURIComponent(id), decodeCarResponse, { method: 'PATCH', body: data }),
+  deleteCar: (id: string) => request('/cars/' + encodeURIComponent(id), () => undefined, { method: 'DELETE' }),
   campaigns: (page: { limit: number, offset: number }, signal: AbortSignal) => request('/campaigns' + query(page), decodeCampaignPage, { signal }),
   campaign: (id: string, signal: AbortSignal) => request('/campaigns/' + encodeURIComponent(id), decodeCampaignResponse, { signal }),
   createCampaign: (data: CampaignInput) => request('/campaigns', decodeCampaignResponse, { method: 'POST', body: data }),

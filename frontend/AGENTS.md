@@ -24,6 +24,18 @@ scoped here unless the requested feature also requires changes elsewhere.
   page uses a semantic table; TanStack Table remains available but unconfigured.
 - The Users page and form live under `src/pages/UsersPage/`; shared types,
   validation, API client and query client live under `src/lib/`.
+- Cars live under `src/pages/CarsPage/` (admin-only at `/cars`) and use the real
+  `/cars` API. Shared types, limits, normalization and query keys live in
+  `src/lib/car.ts`; validation, search and status presentation remain page-local.
+  Keep every car query under `carsKey(revision)` and route 403s through
+  `handleAdminError`. Editors own a separate snapshot and submit its version;
+  conflicts retain entered values until an explicit Reload car replaces them.
+  Saves clear filters and deletion uses a native confirmation dialog. Pending
+  submissions disable repeated actions and dialog dismissal. Driver names remain
+  optional text and routes are five fixed labels, independent of the route builder.
+  The complete inventory is filtered locally, IDs survive plate changes, and
+  status is administrative rather than connectivity. The dashboard still uses
+  its separate sample fleet; never seed fictional cars into the database.
 - The Files page lives under `src/pages/FilesPage/` (admin-only at `/files`) and
   uses the real `/files` API. Uploads go through the XHR path in `src/lib/api.ts`
   so they can report progress; keep its session, abort and 401 handling aligned
@@ -155,8 +167,10 @@ the build and lint checks were run.
 
 ## UI and verification
 
-- Follow `../DESIGN.md` for tokens, type, layout, components and data
-  formatting. Update it when you add or change one.
+- Follow [DESIGN.md](DESIGN.md) for frontend tokens, type, layout, components and
+  data formatting. Update it when you add or change one. Keep
+  [../DESIGN.md](../DESIGN.md) as the shared brand and cross-platform design
+  reference, and update it when shared rules change.
 - Use semantic elements, labeled controls, visible keyboard focus, and layouts
   that work on narrow screens. Verify changed interactions in a browser when one
   is available.

@@ -29,10 +29,10 @@ export function isCoordinate(value: unknown): value is Coordinate {
 
 export function routeInputError(input: RouteInput) {
   if (!input.name.trim() || input.name.trim().length > maxRouteNameLength || input.name.includes('\0')) {
-    return 'Enter a route name with 1–200 characters and no null characters.'
+    return 'Introdu un nume de traseu de 1–200 de caractere, fără caractere nule.'
   }
   if (input.waypoints.length < 2 || input.waypoints.length > maxRouteStops || !input.waypoints.every(isCoordinate)) {
-    return 'A saved route needs 2–100 valid stops.'
+    return 'Un traseu salvat trebuie să aibă 2–100 de opriri valide.'
   }
   return ''
 }

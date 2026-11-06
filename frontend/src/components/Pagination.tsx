@@ -14,14 +14,14 @@ export default function Pagination({ offset, pageSize, total, label, onPage }: {
     <nav className="pagination" aria-label={label}>
       <p className="num">
         {formatCount(Math.min(offset + 1, total))}–{formatCount(Math.min(offset + pageSize, total))}
-        <span className="unit"> of {formatCount(total)}</span>
+        <span className="unit"> din {formatCount(total)}</span>
       </p>
       <div className="pagination-buttons">
         <button type="button" className="ghost-button" disabled={offset === 0} onClick={() => onPage(Math.max(0, offset - pageSize))}>
-          Previous<span className="sr-only"> page</span>
+          Înapoi<span className="sr-only"> la pagina anterioară</span>
         </button>
         <button type="button" className="ghost-button" disabled={offset + pageSize >= total} onClick={() => onPage(offset + pageSize)}>
-          Next<span className="sr-only"> page</span>
+          Înainte<span className="sr-only"> la pagina următoare</span>
         </button>
       </div>
     </nav>

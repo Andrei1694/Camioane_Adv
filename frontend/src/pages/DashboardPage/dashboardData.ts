@@ -23,19 +23,19 @@ const campaignById = new Map(campaigns.map((campaign) => [campaign.id, campaign]
 
 export function routeOf(id: RouteId): FleetRoute {
   const route = routeById.get(id)
-  if (!route) throw new Error(`Unknown route ${id}`)
+  if (!route) throw new Error(`Traseu necunoscut ${id}`)
   return route
 }
 
 export function clientOf(id: string): Client {
   const client = clientById.get(id)
-  if (!client) throw new Error(`Unknown client ${id}`)
+  if (!client) throw new Error(`Client necunoscut ${id}`)
   return client
 }
 
 export function campaignOf(booking: Booking) {
   const campaign = campaignById.get(booking.campaignId)
-  if (!campaign) throw new Error(`Unknown campaign ${booking.campaignId}`)
+  if (!campaign) throw new Error(`Campanie necunoscută ${booking.campaignId}`)
   return { ...campaign, client: clientOf(campaign.clientId) }
 }
 
@@ -44,9 +44,9 @@ export function campaignOf(booking: Booking) {
 // Counts and plurals are shared with other pages; re-exported so dashboard imports stay in one place.
 export { formatCount, plural }
 
-const oneDecimal = new Intl.NumberFormat('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-const dayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
-const longDayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+const oneDecimal = new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+const dayFormat = new Intl.DateTimeFormat('ro-RO', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
+const longDayFormat = new Intl.DateTimeFormat('ro-RO', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
 
 /** Car-hours from minutes, to one decimal, the way the screen shows them. */
 export const formatHours = (mins: number) => oneDecimal.format(mins / 60)
@@ -172,19 +172,19 @@ export function attentionItems(bookings: Booking[], now = asOf.time): Attention[
     .sort((a, b) => a.start - b.start)
     .map((item) => {
       const car = cars.find((candidate) => candidate.plate === item.plate)
-      if (!car) throw new Error(`Unknown car ${item.plate}`)
+      if (!car) throw new Error(`Mașină necunoscută ${item.plate}`)
       const reason = item.delivery === 'offline' && car.offlineSince !== undefined
-        ? `Controller offline since ${formatTime(car.offlineSince)}`
-        : `Transfer failed at ${item.failedAt === undefined ? '—' : formatTime(item.failedAt)}`
+        ? `Controler deconectat din ${formatTime(car.offlineSince)}`
+        : `Transfer eșuat la ${item.failedAt === undefined ? '—' : formatTime(item.failedAt)}`
       return { car, booking: item, reason }
     })
 }
 
 export function finding(items: Attention[]) {
-  if (items.length === 0) return 'Every screen with a booking later today has its content.'
+  if (items.length === 0) return 'Fiecare ecran cu o rezervare pentru mai târziu astăzi are conținutul necesar.'
   const first = items[0]
-  const subject = items.length === 1 ? "1 screen hasn't" : `${formatCount(items.length)} screens haven't`
-  return `${subject} received tonight's content. First affected slot: ${routeOf(first.car.routeId).name} at ${formatTime(first.booking.start)}.`
+  const subject = `${plural(items.length, 'ecran', 'ecrane')} ${items.length === 1 ? 'nu a' : 'nu au'}`
+  return `${subject} primit conținutul pentru această seară. Primul interval afectat: ${routeOf(first.car.routeId).name} la ${formatTime(first.booking.start)}.`
 }
 
 export interface Kpis {
@@ -321,15 +321,15 @@ export function reviewRequest(request: BookingRequest, state: DashboardState): R
   const blockers: string[] = []
   let status: RequestStatus = 'ready'
   if (creative?.status !== 'approved') {
-    blockers.push(creative?.status === 'rejected' ? 'The creative was rejected.' : 'The creative is waiting for review.')
+    blockers.push(creative?.status === 'rejected' ? 'Materialul publicitar a fost respins.' : 'Materialul publicitar așteaptă verificarea.')
     status = 'creative'
   }
   if (balance < total) {
-    blockers.push(`The balance is short by ${formatCount(total - balance)} cr.`)
+    blockers.push(`Soldului îi lipsesc ${formatCount(total - balance)} cr.`)
     status = 'balance'
   }
   if (gaps.length > 0) {
-    blockers.push(`${plural(gaps.length, 'slot')} without enough free cars.`)
+    blockers.push(`${plural(gaps.length, 'interval', 'intervale')} fără suficiente mașini disponibile.`)
     status = 'conflict'
   }
   return {
@@ -340,9 +340,9 @@ export function reviewRequest(request: BookingRequest, state: DashboardState): R
 
 /** One line on what a request asks for: its routes and how many dates. */
 export function requestSummary(request: BookingRequest) {
-  const names = [...new Set(request.entries.map((entry) => routeOf(entry.routeId).name))].join(' and ')
+  const names = [...new Set(request.entries.map((entry) => routeOf(entry.routeId).name))].join(' și ')
   const dates = new Set(request.entries.flatMap(instanceDates))
-  return `${names} · ${plural(dates.size, 'date')}`
+  return `${names} · ${plural(dates.size, 'zi', 'zile')}`
 }
 
 /** The credits a cancellation request puts back on the table, priced like the original booking. */

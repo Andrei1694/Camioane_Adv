@@ -6,7 +6,7 @@ import { useSession } from '../../../auth/session'
 import { api, ApiError, errorMessage } from '../../../lib/api'
 import { maxCampaignNameLength } from '../../../lib/campaign'
 import type { CampaignInput, StoredCampaign } from '../../../lib/campaign'
-import { plural } from '../../../lib/format'
+import { formatCount, plural } from '../../../lib/format'
 import CampaignCalendar from './CampaignCalendar'
 import CampaignHoursCalendar from './CampaignHoursCalendar'
 import CampaignReview from './CampaignReview'
@@ -25,7 +25,7 @@ interface CampaignCreatorProps {
 }
 
 type Step = 0 | 1 | 2
-const stepLabels = ['Dates', 'Working hours', 'Review'] as const
+const stepLabels = ['Zile', 'Ore de funcționare', 'Verifică'] as const
 
 function focusControl(id: string) {
   document.getElementById(id)?.focus()
@@ -58,7 +58,7 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
   const activeDay = days.find((day) => day.date === activeDate) ?? days[0]
   const totalMinutes = scheduleMinutes(days)
   const missingDays = days.filter((day) => !dayIsComplete(day)).length
-  const campaignName = name.trim() || 'Untitled campaign'
+  const campaignName = name.trim() || 'Campanie fără nume'
   const copyDayCount = days.filter((day) => day.date !== activeDay?.date && day.date >= today).length
 
   function blocked() { return saving.current || reloading }
@@ -89,7 +89,7 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
     setDays(next)
     setActiveDate(alreadySelected ? next[0]?.date ?? '' : date)
     setDateError('')
-    setMessage(`${formatDay(date)} ${alreadySelected ? 'removed' : 'selected'}. ${plural(next.length, 'day')} selected.`)
+    setMessage(`${formatDay(date)} ${alreadySelected ? 'eliminată' : 'selectată'}. ${plural(next.length, 'zi selectată', 'zile selectate')}.`)
   }
 
   function goToStep(next: Step) {
@@ -101,7 +101,7 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
       flushSync(() => {
         setToday(currentToday)
         setStep(0)
-        setDateError(invalidPast ? initialCampaign ? 'Restore the saved past schedule before continuing.' : 'Remove past dates before continuing.' : 'Select at least one campaign date.')
+        setDateError(invalidPast ? initialCampaign ? 'Restabilește programul salvat pentru zilele trecute înainte de a continua.' : 'Elimină zilele trecute înainte de a continua.' : 'Selectează cel puțin o zi pentru campanie.')
       })
       focusControl('campaign-date-error')
       return false
@@ -114,7 +114,7 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
           setShowErrors(true)
           setActiveDate(invalid.date)
           setMonth(monthOf(invalid.date))
-          setMessage(`Complete working hours for ${formatDay(invalid.date)} before reviewing.`)
+          setMessage(`Completează orele de funcționare pentru ${formatDay(invalid.date)} înainte de verificare.`)
         })
         const errors = intervalErrors(invalid.intervals)
         const first = invalid.intervals.find((interval) => errors.has(interval.id))
@@ -152,23 +152,23 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
     const remaining = activeDay.intervals.filter((interval) => interval.id !== id)
     flushSync(() => {
       setDays((previous) => previous.map((day) => day.date === activeDay.date ? { ...day, intervals: remaining } : day))
-      setMessage('Interval removed.')
+      setMessage('Intervalul a fost eliminat.')
     })
     focusControl(remaining.length ? `interval-${remaining[remaining.length - 1].id}-start` : 'campaign-add-interval')
   }
 
   function createCalendarInterval(date: string, start: number, end: number) {
-    if (blocked()) return 'Wait for the current request to finish.'
-    if (readOnly(date)) return 'Past dates and hours are read-only.'
+    if (blocked()) return 'Așteaptă finalizarea cererii în curs.'
+    if (readOnly(date)) return 'Zilele și orele trecute pot fi doar consultate.'
     const day = days.find((value) => value.date === date)
-    if (!day) return 'Choose a selected campaign day.'
+    if (!day) return 'Alege o zi selectată pentru campanie.'
     const interval = { id: crypto.randomUUID(), start, end }
     const error = intervalErrors([...day.intervals, interval]).get(interval.id)
     if (error) return error.message
     setDays((previous) => previous.map((value) => value.date === date
       ? { ...value, intervals: [...value.intervals, interval] } : value))
     setActiveDate(date)
-    setMessage(`${formatTime(start)}–${formatTime(end)} added to ${formatDay(date)}.`)
+    setMessage(`${formatTime(start)}–${formatTime(end)} adăugat la ${formatDay(date)}.`)
     return null
   }
 
@@ -184,7 +184,7 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
     const count = days.filter((day) => day.date !== activeDay.date && day.date >= currentToday).length
     setDays((previous) => previous.map((day) => day.date === activeDay.date || day.date < currentToday ? day
       : { ...day, intervals: activeDay.intervals.map((interval) => ({ ...interval, id: crypto.randomUUID() })) }))
-    setMessage(`Hours from ${formatDay(activeDay.date)} applied to ${plural(count, 'other editable day')}.`)
+    setMessage(`Orele din ${formatDay(activeDay.date)} au fost aplicate la ${plural(count, 'altă zi editabilă', 'alte zile editabile')}.`)
   }
 
   function editDay(date: string) {
@@ -201,7 +201,7 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
     flushSync(() => {
       setToday(currentToday); setDays(next); setDateError(''); setStep(0)
       setActiveDate(next[0]?.date ?? ''); setMonth(monthOf(next[0]?.date ?? currentToday))
-      setMessage('Saved past dates and hours restored. Changes to today and future days were kept.')
+      setMessage('Zilele și orele trecute au fost restabilite din versiunea salvată. Modificările pentru astăzi și zilele viitoare au fost păstrate.')
     })
     focusControl('campaign-stage-heading')
   }
@@ -224,29 +224,29 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
 
   return <section className="campaign-page campaign-creator-page" aria-labelledby="campaign-heading">
     <header className="campaign-page-heading">
-      <div><h1 id="campaign-heading">{initialCampaign ? 'Edit campaign' : 'Campaign creator'}</h1><p className="page-description">Choose the days. Set the hours. Review your schedule.</p></div>
-      <span className="pill pill-neutral">{initialCampaign ? 'Draft' : 'Unsaved draft'}</span>
+      <div><h1 id="campaign-heading">{initialCampaign ? 'Editează campania' : 'Creare campanie'}</h1><p className="page-description">Alege zilele. Stabilește orele. Verifică programul.</p></div>
+      <span className="pill pill-neutral">{initialCampaign ? 'Schiță' : 'Schiță nesalvată'}</span>
     </header>
 
-    <fieldset className="campaign-form" disabled={busy} aria-label={initialCampaign ? 'Edit campaign' : 'Create campaign'} aria-busy={busy}>
+    <fieldset className="campaign-form" disabled={busy} aria-label={initialCampaign ? 'Editează campania' : 'Creează o campanie'} aria-busy={busy}>
       <div className="campaign-progress">
-        <nav aria-label="Campaign steps"><ol className="campaign-steps">
+        <nav aria-label="Etapele campaniei"><ol className="campaign-steps">
           {stepLabels.map((label, index) => <li key={label}>
             <button type="button" aria-current={step === index ? 'step' : undefined} onClick={() => goToStep(index as Step)}>
               {index < step && <svg className="campaign-check" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7" /></svg>}{label}
             </button>
           </li>)}
         </ol></nav>
-        <dl className="campaign-totals" aria-label="Draft totals">
-          <div><dt>Selected days</dt><dd className="num">{days.length}</dd></div>
-          <div><dt>Scheduled hours</dt><dd className="num">{formatHours(totalMinutes)}</dd></div>
+        <dl className="campaign-totals" aria-label="Totaluri pentru schiță">
+          <div><dt>Zile selectate</dt><dd className="num">{formatCount(days.length)}</dd></div>
+          <div><dt>Ore programate</dt><dd className="num">{formatHours(totalMinutes)}</dd></div>
         </dl>
       </div>
 
-      {initialCampaign && days.some((day) => day.date < today) && <p className="campaign-help">Past dates and hours are read-only. You can still rename this campaign.</p>}
+      {initialCampaign && days.some((day) => day.date < today) && <p className="campaign-help">Zilele și orele trecute pot fi doar consultate. Poți redenumi în continuare campania.</p>}
       {pastChanged && <div className="campaign-past-warning" role="alert">
-        <p>A date became past while editing. Restore its saved schedule before saving; changes to today and future days will be kept.</p>
-        <button type="button" onClick={restorePastSchedule}>Restore saved past schedule</button>
+        <p>O zi a trecut în timpul editării. Restabilește programul ei salvat înainte de a salva; modificările pentru astăzi și zilele viitoare vor fi păstrate.</p>
+        <button type="button" onClick={restorePastSchedule}>Restabilește programul trecut salvat</button>
       </div>}
 
       <div className="campaign-workspace">
@@ -259,18 +259,18 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
           </>}
         </div>
         <div className="campaign-detail">
-          <h2 id="campaign-stage-heading" tabIndex={-1}>{step === 0 ? 'Campaign dates' : step === 1 ? 'Set the daily schedule' : 'Review your campaign'}</h2>
+          <h2 id="campaign-stage-heading" tabIndex={-1}>{step === 0 ? 'Zilele campaniei' : step === 1 ? 'Stabilește programul zilnic' : 'Verifică-ți campania'}</h2>
           {step === 0 ? <>
             <div className="form-field campaign-name-field">
-              <label htmlFor="campaign-name">Campaign name <span className="optional-label">(optional)</span></label>
+              <label htmlFor="campaign-name">Numele campaniei <span className="optional-label">(opțional)</span></label>
               <input id="campaign-name" autoComplete="off" maxLength={maxCampaignNameLength} value={name} onChange={(event) => setName(event.target.value)} />
             </div>
             <div className="campaign-date-summary">
-              <h3>{days.length ? plural(days.length, 'day selected', 'days selected') : 'No dates selected'}</h3>
-              <p className="campaign-help">{days.length ? 'Selected dates can be consecutive or spread across months.' : 'Select the days your campaign will run. You can set different hours for each day.'}</p>
+              <h3>{days.length ? plural(days.length, 'zi selectată', 'zile selectate') : 'Nicio zi selectată'}</h3>
+              <p className="campaign-help">{days.length ? 'Zilele selectate pot fi consecutive sau din luni diferite.' : 'Selectează zilele în care va rula campania. Poți stabili ore diferite pentru fiecare zi.'}</p>
               {days.length > 0 && <ul className="campaign-selected-dates">{days.map((day) => <li key={day.date}>
                 <span>{formatDay(day.date)}</span>
-                <button type="button" className="icon-button" disabled={!!initialCampaign && day.date < today} aria-label={`Remove ${formatDay(day.date)}`} onClick={() => {
+                <button type="button" className="icon-button" disabled={!!initialCampaign && day.date < today} aria-label={`Elimină ${formatDay(day.date)}`} onClick={() => {
                   flushSync(() => chooseDate(day.date))
                   focusControl('campaign-name')
                 }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M7 17 17 7" /></svg></button>
@@ -278,11 +278,11 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
             </div>
             {dateError && <p id="campaign-date-error" className="field-error" role="alert" tabIndex={-1}>{dateError}</p>}
           </> : step === 1 && activeDay ? <>
-            <p className="campaign-help campaign-schedule-progress">{missingDays ? `${plural(missingDays, 'day')} still ${missingDays === 1 ? 'needs' : 'need'} hours.` : 'Every selected day has working hours.'}</p>
+            <p className="campaign-help campaign-schedule-progress">{missingDays ? `Lipsesc orele pentru ${plural(missingDays, 'zi', 'zile')}.` : 'Fiecare zi selectată are ore de funcționare.'}</p>
             <div className="form-field campaign-day-select">
-              <label htmlFor="campaign-edit-day">Day to edit</label>
+              <label htmlFor="campaign-edit-day">Zi de editat</label>
               <select id="campaign-edit-day" value={activeDay.date} onChange={(event) => { setActiveDate(event.target.value); setMonth(monthOf(event.target.value)) }}>
-                {days.map((day) => <option key={day.date} value={day.date}>{formatDay(day.date)}{dayIsComplete(day) ? '' : ' · Hours needed'}</option>)}
+                {days.map((day) => <option key={day.date} value={day.date}>{formatDay(day.date)}{dayIsComplete(day) ? '' : ' · Lipsesc orele'}</option>)}
               </select>
             </div>
             <IntervalEditor key={activeDay.date} day={activeDay} copyDayCount={copyDayCount} readOnly={activeDay.date < today} showErrors={showErrors}
@@ -290,12 +290,12 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
           </> : <>
             <p className="campaign-review-name">{campaignName}</p>
             <dl className="campaign-review-facts">
-              <div><dt>First date</dt><dd>{days[0] ? formatDay(days[0].date) : '—'}</dd></div>
-              <div><dt>Last date</dt><dd>{days.length ? formatDay(days[days.length - 1].date) : '—'}</dd></div>
-              <div><dt>Time zone</dt><dd>Europe/Bucharest</dd></div>
+              <div><dt>Prima zi</dt><dd>{days[0] ? formatDay(days[0].date) : '—'}</dd></div>
+              <div><dt>Ultima zi</dt><dd>{days.length ? formatDay(days[days.length - 1].date) : '—'}</dd></div>
+              <div><dt>Fus orar</dt><dd>Europe/Bucharest</dd></div>
             </dl>
-            <p className="campaign-help">Check every date and interval in the schedule below before finishing your draft.</p>
-            <button type="button" className="text-button campaign-edit-dates" onClick={() => goToStep(0)}>Edit name or dates</button>
+            <p className="campaign-help">Verifică fiecare zi și interval din programul de mai jos înainte de a finaliza schița.</p>
+            <button type="button" className="text-button campaign-edit-dates" onClick={() => goToStep(0)}>Editează numele sau zilele</button>
             <CampaignReview days={days} onEdit={editDay} readOnlyBefore={today} />
           </>}
         </div>
@@ -304,16 +304,16 @@ export default function CampaignCreator({ initialCampaign, onComplete, onCancel,
       <p className="campaign-message" role="status" aria-atomic="true">{message}</p>
       {save.isError && <div id="campaign-save-error" className="request-error" role="alert" tabIndex={-1}>
         <p>{errorMessage(save.error)}</p>
-        {conflict && initialCampaign && <button type="button" onClick={onReload}>Discard edits and reload latest campaign</button>}
+        {conflict && initialCampaign && <button type="button" onClick={onReload}>Renunță la modificări și reîncarcă ultima versiune a campaniei</button>}
       </div>}
       {reloadError && <p className="request-error" role="alert">{reloadError}</p>}
       <footer className="campaign-footer">
-        <p className="campaign-help">Save stores this draft for all administrators. It does not launch the campaign. Unsaved changes are lost when you leave.</p>
+        <p className="campaign-help">Salvarea face schița disponibilă tuturor administratorilor. Nu lansează campania. Modificările nesalvate se pierd la ieșire.</p>
         <div className="campaign-actions">
-          <button type="button" onClick={onCancel}>Cancel</button>
-          {step > 0 && <button type="button" onClick={() => goToStep(step === 2 ? 1 : 0)}>Back</button>}
+          <button type="button" onClick={onCancel}>Anulează</button>
+          {step > 0 && <button type="button" onClick={() => goToStep(step === 2 ? 1 : 0)}>Înapoi</button>}
           <button type="button" className="primary-button" onClick={() => step === 2 ? void finishDraft() : goToStep(step === 0 ? 1 : 2)}>
-            {reloading ? 'Reloading…' : save.isPending ? 'Saving…' : step === 0 ? 'Set working hours' : step === 1 ? 'Review campaign' : initialCampaign ? 'Save changes' : 'Save draft'}
+            {reloading ? 'Se reîncarcă…' : save.isPending ? 'Se salvează…' : step === 0 ? 'Stabilește orele' : step === 1 ? 'Verifică campania' : initialCampaign ? 'Salvează modificările' : 'Salvează schița'}
             {step !== 2 && <span aria-hidden="true"> →</span>}
           </button>
         </div>

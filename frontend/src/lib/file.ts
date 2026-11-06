@@ -20,10 +20,10 @@ export interface FilePage {
 export const acceptedFileTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'] as const
 
 const typeLabels: Record<string, string> = {
-  'image/jpeg': 'JPEG image',
-  'image/png': 'PNG image',
-  'image/webp': 'WebP image',
-  'video/mp4': 'MP4 video',
+  'image/jpeg': 'Imagine JPEG',
+  'image/png': 'Imagine PNG',
+  'image/webp': 'Imagine WebP',
+  'video/mp4': 'Video MP4',
 }
 
 export function fileTypeLabel(mimeType: string) {
@@ -41,8 +41,8 @@ export function fileKind(mimeType: string): 'image' | 'video' | 'other' {
  * the API answers only after the whole body arrives. A blank type is left to the API.
  */
 export function declaredTypeError(file: File): string | undefined {
-  if (file.size === 0) return `${file.name} is empty.`
+  if (file.size === 0) return `${file.name} este gol.`
   if (file.type && !acceptedFileTypes.some((type) => type === file.type)) {
-    return `${file.name} is not a JPEG, PNG, WebP or MP4 file.`
+    return `${file.name} nu este un fișier JPEG, PNG, WebP sau MP4.`
   }
 }

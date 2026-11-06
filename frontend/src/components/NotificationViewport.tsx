@@ -4,7 +4,7 @@ import type { AppNotification, NotificationVariant } from '../lib/notifications'
 import './NotificationViewport.css'
 
 const labels: Record<NotificationVariant, string> = {
-  success: 'Success', error: 'Error', warning: 'Warning', info: 'Information',
+  success: 'Succes', error: 'Eroare', warning: 'Avertisment', info: 'Informație',
 }
 
 function presentationBlocked() {
@@ -62,7 +62,7 @@ function NotificationToast({ notification, blocked, onDismiss }: {
         onClick={() => runNotificationAction(notification.id)}>{notification.action.label}</button>}
     </div>
     <button type="button" className="icon-button notification-dismiss" data-notification-dismiss
-      aria-label={`Dismiss notification: ${notification.message}`} onClick={() => onDismiss(notification.id)}>
+      aria-label={`Închide notificarea: ${notification.message}`} onClick={() => onDismiss(notification.id)}>
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M6 18 18 6" /></svg>
     </button>
   </li>
@@ -121,7 +121,7 @@ export default function NotificationViewport() {
   }
 
   return <>
-    <section ref={viewport} className="notification-viewport" aria-label="Notifications" hidden={blocked || notifications.length === 0}
+    <section ref={viewport} className="notification-viewport" aria-label="Notificări" hidden={blocked || notifications.length === 0}
       onFocusCapture={(event) => {
         if (event.relatedTarget instanceof HTMLElement && !event.currentTarget.contains(event.relatedTarget)) {
           returnFocus.current = event.relatedTarget

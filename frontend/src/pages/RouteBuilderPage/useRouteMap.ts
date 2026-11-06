@@ -14,8 +14,8 @@ const routeLayers = ['snapline', 'routeline', 'routeline-casing', 'alt-routeline
 
 export type RoutePhase = 'loading' | 'map-error' | 'idle' | 'calculating' | 'ready' | 'failed'
 
-const placementError = 'No route could be calculated. Move your stops closer to a road or retry.'
-const unavailableError = 'The routing service is unavailable right now. Retry in a moment.'
+const placementError = 'Traseul nu a putut fi calculat. Mută opririle mai aproape de un drum sau reîncearcă.'
+const unavailableError = 'Serviciul de calcul al traseelor nu este disponibil momentan. Reîncearcă în câteva clipe.'
 
 class RoutingError extends Error {}
 
@@ -74,7 +74,7 @@ class RoadDirections extends MapLibreGlDirections {
       return body
     }
     const code = typeof body === 'object' && body !== null && 'code' in body ? body.code : undefined
-    throw new RoutingError(response.status === 429 ? 'The routing service is busy. Wait a moment, then retry.'
+    throw new RoutingError(response.status === 429 ? 'Serviciul de calcul al traseelor este ocupat. Așteaptă puțin, apoi reîncearcă.'
       : code === 'NoSegment' || code === 'NoRoute' ? placementError : unavailableError)
   }
 
@@ -89,8 +89,8 @@ class RoadDirections extends MapLibreGlDirections {
       await super.fetchDirections(originalEvent)
     } catch (cause) {
       error = cause instanceof RoutingError ? cause.message
-        : isAbort(cause) ? 'The routing service took too long to respond. Retry in a moment.'
-          : cause instanceof TypeError ? 'The routing service could not be reached. Check your connection and retry.'
+        : isAbort(cause) ? 'Serviciul de calcul al traseelor nu a răspuns la timp. Reîncearcă în câteva clipe.'
+          : cause instanceof TypeError ? 'Serviciul de calcul al traseelor nu a putut fi contactat. Verifică conexiunea și reîncearcă.'
             : unavailableError
     }
     if (request !== this.latestRequest) return
@@ -125,7 +125,7 @@ export default function useRouteMap(initialWaypoints: Coordinate[]) {
     let directions: MapLibreGlDirections | undefined
     let loaded = false
     const loadTimeout = setTimeout(() => {
-      if (!lifetime.signal.aborted && !loaded) setMapError('The map is taking too long to load. Check your connection and retry.')
+      if (!lifetime.signal.aborted && !loaded) setMapError('Încărcarea hărții durează prea mult. Verifică conexiunea și reîncearcă.')
     }, 20_000)
 
     try {
@@ -137,15 +137,29 @@ export default function useRouteMap(initialWaypoints: Coordinate[]) {
         maxZoom: 18,
         renderWorldCopies: false,
         attributionControl: { compact: true },
+        locale: {
+          'Map.Title': 'Hartă',
+          'Marker.Title': 'Marcaj pe hartă',
+          'Popup.Close': 'Închide fereastra',
+          'LogoControl.Title': 'Sigla MapLibre',
+          'AttributionControl.ToggleAttribution': 'Arată sau ascunde atribuirea',
+          'AttributionControl.MapFeedback': 'Feedback despre hartă',
+          'NavigationControl.ZoomIn': 'Mărește',
+          'NavigationControl.ZoomOut': 'Micșorează',
+          'NavigationControl.ResetBearing': 'Trage pentru a roti harta, clic pentru a orienta spre nord',
+          'CooperativeGesturesHandler.WindowsHelpText': 'Folosește Ctrl și rotița pentru a mări sau micșora harta',
+          'CooperativeGesturesHandler.MacHelpText': 'Folosește ⌘ și derularea pentru a mări sau micșora harta',
+          'CooperativeGesturesHandler.MobileHelpText': 'Folosește două degete pentru a deplasa harta',
+        },
       })
       const currentMap = map
       mapRef.current = map
       map.addControl(new NavigationControl({ showCompass: false }), 'top-right')
       map.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left')
-      map.getCanvas().setAttribute('aria-label', 'Route map. Use the stop form to enter coordinates with a keyboard.')
+      map.getCanvas().setAttribute('aria-label', 'Harta traseului. Folosește formularul de oprire pentru a introduce coordonate de la tastatură.')
       map.on('error', () => {
         // After load, a failed tile leaves the map usable, so only a failure before load blocks it.
-        if (!lifetime.signal.aborted && !loaded) setMapError('Some map data could not be loaded. Check your connection or retry the map.')
+        if (!lifetime.signal.aborted && !loaded) setMapError('Unele date ale hărții nu au putut fi încărcate. Verifică conexiunea sau reîncarcă harta.')
       })
       map.on('load', () => {
         if (lifetime.signal.aborted) return
@@ -240,13 +254,13 @@ export default function useRouteMap(initialWaypoints: Coordinate[]) {
           }
           fitOnLoad.current = false
         } catch {
-          setMapError('The route map could not be initialized. Retry the map.')
+          setMapError('Harta traseului nu a putut fi inițializată. Reîncarcă harta.')
         }
       })
     } catch {
       clearTimeout(loadTimeout)
       queueMicrotask(() => {
-        if (!lifetime.signal.aborted) setMapError('The map could not start. Check that WebGL is available in your browser, then retry.')
+        if (!lifetime.signal.aborted) setMapError('Harta nu a putut porni. Verifică dacă WebGL este disponibil în browser, apoi reîncearcă.')
       })
     }
 

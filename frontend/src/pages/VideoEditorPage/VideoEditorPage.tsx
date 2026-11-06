@@ -35,7 +35,7 @@ const canEncode = typeof VideoEncoder === 'function'
 
 function editedName(originalName: string) {
   const base = originalName.replace(/\.[^.]+$/, '') || originalName
-  return `${base} (edited).mp4`
+  return `${base} (editat).mp4`
 }
 
 export default function VideoEditorPage() {
@@ -61,7 +61,7 @@ export default function VideoEditorPage() {
   const content = useQuery({
     queryKey: ['file-content', revision, fileId],
     queryFn: ({ signal }) => {
-      if (!file) throw new ApiError(404, 'File not found')
+      if (!file) throw new ApiError(404, 'Fișierul nu a fost găsit')
       return api.downloadFile(file, signal)
     },
     enabled: isVideo,
@@ -92,8 +92,8 @@ export default function VideoEditorPage() {
 
   useBlocker({
     shouldBlockFn: () => !window.confirm(busy
-      ? 'An export is still running. Leave this page and cancel it?'
-      : "This edit hasn't been exported. Leave this page and discard it?"),
+      ? 'Exportul este în curs. Părăsești pagina și îl anulezi?'
+      : "Această editare nu a fost exportată. Părăsești pagina și renunți la ea?"),
     enableBeforeUnload: busy || dirty,
     disabled: !busy && !dirty,
   })
@@ -153,7 +153,7 @@ export default function VideoEditorPage() {
       if (revision !== useSession.getState().revision) return
       if (controller.signal.aborted) {
         setJob(null)
-        if (controller.signal.reason === 'user') notify({ variant: 'info', message: 'Export cancelled. The edit is still here.' })
+        if (controller.signal.reason === 'user') notify({ variant: 'info', message: 'Exportul a fost anulat. Editarea este păstrată.' })
       } else {
         setJob({ step: 'render', render: { phase: 'failed', error: error instanceof ExportError ? error.message : errorMessage(error) }, edit })
       }
@@ -176,14 +176,14 @@ export default function VideoEditorPage() {
       setJob(null)
       setSavedEdit(edit)
       notify({
-        variant: 'success', message: `Saved ${stored.originalName} (${formatByteSize(stored.size)}) to Files.`,
-        action: { label: 'View files', onClick: () => { void navigate({ to: '/files' }) } },
+        variant: 'success', message: `Salvat ${stored.originalName} (${formatByteSize(stored.size)}) în Fișiere.`,
+        action: { label: 'Vezi fișierele', onClick: () => { void navigate({ to: '/files' }) } },
       })
     } catch (error) {
       if (revision !== useSession.getState().revision) return
       if (controller.signal.aborted) {
         setJob(null)
-        if (controller.signal.reason === 'user') notify({ variant: 'info', message: `Upload of ${rendered.name} cancelled. The edit is still here.` })
+        if (controller.signal.reason === 'user') notify({ variant: 'info', message: `Încărcarea fișierului ${rendered.name} a fost anulată. Editarea este păstrată.` })
       } else {
         // Content, size and format rejections fail the same way again; only transport and server failures are worth a retry.
         const retryable = !(error instanceof ApiError) || error.status === 0 || error.status === 409 || error.status >= 500
@@ -198,13 +198,13 @@ export default function VideoEditorPage() {
 
   const heading = (
     <header>
-      <p className="editor-back"><Link to="/files">Files</Link></p>
+      <p className="editor-back"><Link to="/files">Fișiere</Link></p>
       <div className="page-heading">
-        <h1>Edit video</h1>
+        <h1>Editează videoclipul</h1>
         {isVideo && (
           <button type="button" className="primary-button" disabled={!ready || unchanged || busy || !canEncode}
             aria-describedby={busy ? `${ids}-job` : `${ids}-export-note`} onClick={() => void startExport(segments)}>
-            Export to Files
+            Exportă în Fișiere
           </button>
         )}
       </div>
@@ -212,7 +212,7 @@ export default function VideoEditorPage() {
         {file ? <>
           <span className="editor-file-name">{file.originalName}</span>{' · '}{fileTypeLabel(file.mimeType)}{' · '}
           <span className="num">{formatByteSize(file.size)}</span>
-        </> : meta.isError ? 'File unavailable' : 'Loading file…'}
+        </> : meta.isError ? 'Fișierul nu este disponibil' : 'Se încarcă fișierul…'}
       </p>
     </header>
   )
@@ -224,17 +224,17 @@ export default function VideoEditorPage() {
         {heading}
         {meta.isError ? (
           <div className="request-error" role="alert">
-            <p>{notFound ? "This file isn't in Files any more, or the link is wrong." : `Couldn't load this file. ${errorMessage(meta.error)}`}</p>
-            {!notFound && <button type="button" disabled={meta.isFetching} onClick={() => void meta.refetch()}>{meta.isFetching ? 'Retrying…' : 'Retry'}</button>}
+            <p>{notFound ? "Fișierul nu mai apare în Fișiere sau linkul este incorect." : `Acest fișier nu a putut fi încărcat. ${errorMessage(meta.error)}`}</p>
+            {!notFound && <button type="button" disabled={meta.isFetching} onClick={() => void meta.refetch()}>{meta.isFetching ? 'Se reîncearcă…' : 'Reîncearcă'}</button>}
           </div>
-        ) : <p className="empty-state editor-unsupported">Only MP4 videos can be edited. <Link to="/files">Back to Files</Link></p>}
+        ) : <p className="empty-state editor-unsupported">Pot fi editate doar videoclipuri MP4. <Link to="/files">Înapoi la Fișiere</Link></p>}
       </section>
     )
   }
 
-  const exportNote = !canEncode ? "This browser can't export video. Use a recent Chrome, Edge or Safari."
-    : unchanged ? 'Trim, split or delete part of the video to export an edited copy.'
-    : 'Export renders the edit in this browser and saves it to Files as a new MP4. The original stays as it is.'
+  const exportNote = !canEncode ? "Acest browser nu poate exporta videoclipuri. Folosește o versiune recentă de Chrome, Edge sau Safari."
+    : unchanged ? 'Scurtează, împarte sau șterge o parte din videoclip pentru a exporta o copie editată.'
+    : 'Exportul procesează editarea în acest browser și o salvează în Fișiere ca MP4 nou. Originalul rămâne neschimbat.'
 
   return (
     <section className="video-editor" ref={page}>
@@ -256,15 +256,15 @@ export default function VideoEditorPage() {
       <div className="editor-preview">
         {content.isError ? (
           <div className="request-error" role="alert">
-            <p>Couldn't load the video. {errorMessage(content.error)}</p>
+            <p>Videoclipul nu a putut fi încărcat. {errorMessage(content.error)}</p>
             <button type="button" disabled={content.isFetching} onClick={() => void content.refetch()}>
-              {content.isFetching ? 'Retrying…' : 'Retry'}
+              {content.isFetching ? 'Se reîncearcă…' : 'Reîncearcă'}
             </button>
           </div>
         )
-          : !content.data ? <p className="preview-note" role="status">{file ? `Loading video (${formatByteSize(file.size)})…` : 'Loading video…'}</p>
-          : unplayable ? <p className="preview-note" role="alert">This browser can't play this video, so it can't be edited here.</p>
-          : <video ref={videoRef} playsInline preload="auto" aria-label={`Preview of the edit of ${file?.originalName ?? 'the video'}`}
+          : !content.data ? <p className="preview-note" role="status">{file ? `Se încarcă videoclipul (${formatByteSize(file.size)})…` : 'Se încarcă videoclipul…'}</p>
+          : unplayable ? <p className="preview-note" role="alert">Acest browser nu poate reda videoclipul, deci acesta nu poate fi editat aici.</p>
+          : <video ref={videoRef} playsInline preload="auto" aria-label={`Previzualizarea editării pentru ${file?.originalName ?? 'videoclip'}`}
             onError={() => setUnplayable(true)}
             onLoadedMetadata={(event) => {
               const length = event.currentTarget.duration
@@ -280,22 +280,22 @@ export default function VideoEditorPage() {
 
       {/* The timeline's playhead is pointer-only; this slider moves it from the keyboard and on touch. */}
       <input className="editor-scrubber" type="range" min={0} max={total} step={0.1} value={Math.min(playback.time, total)}
-        disabled={!ready} aria-label="Playhead" aria-valuetext={`${formatTimecode(Math.min(playback.time, total))} of ${formatTimecode(total)}`}
+        disabled={!ready} aria-label="Poziția de redare" aria-valuetext={`${formatTimecode(Math.min(playback.time, total))} din ${formatTimecode(total)}`}
         onChange={(event) => playback.seek(Number(event.currentTarget.value))} />
 
       <div className="editor-toolbar">
         <div className="toolbar-group">
           <button type="button" className="ghost-button play-button" disabled={!ready} onClick={playback.playing ? playback.pause : playback.play}>
-            {playback.playing ? 'Pause' : 'Play'}
+            {playback.playing ? 'Pauză' : 'Redă'}
           </button>
           <p className="timecode num">
-            {formatTimecode(Math.min(playback.time, total))}<span className="unit"> of {formatTimecode(total)}</span>
+            {formatTimecode(Math.min(playback.time, total))}<span className="unit"> din {formatTimecode(total)}</span>
           </p>
         </div>
         <div className="toolbar-group">
           <button type="button" className="ghost-button" disabled={!ready || busy || !canSplit(segments, playback.time)}
             aria-describedby={`${ids}-hint`} onClick={() => change((current) => split(current, playback.time))}>
-            Split at playhead
+            Împarte la poziția de redare
           </button>
           <button type="button" className="ghost-button" disabled={!selectedSegment || segments.length === 1 || busy}
             aria-describedby={`${ids}-hint`} onClick={() => {
@@ -303,27 +303,27 @@ export default function VideoEditorPage() {
               change((current) => remove(current, selectedSegment.id))
               setSelected(undefined)
             }}>
-            Delete segment
+            Șterge segmentul
           </button>
         </div>
         <div className="toolbar-group">
-          <button type="button" className="ghost-button" disabled={history.past.length === 0 || busy} onClick={() => dispatch({ type: 'undo' })}>Undo</button>
-          <button type="button" className="ghost-button" disabled={history.future.length === 0 || busy} onClick={() => dispatch({ type: 'redo' })}>Redo</button>
-          <button type="button" className="ghost-button" disabled={!ready || unchanged || busy} onClick={() => change(() => initialSegments(duration))}>Reset</button>
+          <button type="button" className="ghost-button" disabled={history.past.length === 0 || busy} onClick={() => dispatch({ type: 'undo' })}>Anulează ultima acțiune</button>
+          <button type="button" className="ghost-button" disabled={history.future.length === 0 || busy} onClick={() => dispatch({ type: 'redo' })}>Refă ultima acțiune</button>
+          <button type="button" className="ghost-button" disabled={!ready || unchanged || busy} onClick={() => change(() => initialSegments(duration))}>Resetează</button>
         </div>
-        <div className="toolbar-group zoom-group" role="group" aria-label="Timeline zoom">
+        <div className="toolbar-group zoom-group" role="group" aria-label="Mărirea cronologiei">
           <button type="button" className="ghost-button" disabled={!ready || zoom === zoomLevels.length - 1}
             onClick={() => setZoom((current) => Math.min((current ?? 0) + 1, zoomLevels.length - 1))}>
-            Zoom out
+            Micșorează
           </button>
           <button type="button" className="ghost-button" disabled={!ready || zoom === 0}
             onClick={() => setZoom((current) => Math.max((current ?? 0) - 1, 0))}>
-            Zoom in
+            Mărește
           </button>
         </div>
       </div>
       <p className="editor-note" id={`${ids}-hint`}>
-        Click a segment to select it. Drag its edges to trim it, or drag it along the row to reorder it. Split cuts the segment under the playhead.
+        Fă clic pe un segment pentru a-l selecta. Trage marginile pentru a-l scurta sau mută-l pe rând pentru a-i schimba ordinea. Împărțirea taie segmentul la poziția de redare.
       </p>
 
       <EditTimeline timelineRef={timelineRef} segments={segments} duration={duration} selected={selectedSegment?.id}

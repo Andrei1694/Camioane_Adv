@@ -40,7 +40,7 @@ export default function FilesPage() {
   const uploading = upload !== null && upload.phase !== 'failed'
 
   useBlocker({
-    shouldBlockFn: () => !window.confirm('An upload is still running. Leave this page and cancel it?'),
+    shouldBlockFn: () => !window.confirm('Încărcarea este în curs. Părăsești pagina și o anulezi?'),
     enableBeforeUnload: uploading,
     disabled: !uploading,
   })
@@ -69,13 +69,13 @@ export default function FilesPage() {
       })
       if (revision !== useSession.getState().revision) return
       setUpload(null)
-      notify({ variant: 'success', message: `Uploaded ${stored.originalName} (${formatByteSize(stored.size)}).` })
+      notify({ variant: 'success', message: `Încărcat ${stored.originalName} (${formatByteSize(stored.size)}).` })
       setOffset(0)
     } catch (error) {
       if (revision !== useSession.getState().revision) return
       if (controller.signal.aborted) {
         setUpload(null)
-        if (controller.signal.reason === 'user') notify({ variant: 'info', message: `Upload of ${file.name} cancelled.` })
+        if (controller.signal.reason === 'user') notify({ variant: 'info', message: `Încărcarea fișierului ${file.name} a fost anulată.` })
       } else {
         setUpload({ file, phase: 'failed', error: errorMessage(error), retryable: isRetryableUpload(error) })
       }
@@ -94,7 +94,7 @@ export default function FilesPage() {
       saveBlob(blob, file.originalName)
     } catch (error) {
       if (revision !== useSession.getState().revision) return
-      notify({ variant: 'error', message: `Couldn't download ${file.originalName}. ${errorMessage(error)}` })
+      notify({ variant: 'error', message: `Nu s-a putut descărca ${file.originalName}. ${errorMessage(error)}` })
       if (error instanceof ApiError && error.status === 404) refreshFiles()
     } finally {
       setDownloading((ids) => {
@@ -106,17 +106,17 @@ export default function FilesPage() {
   }
 
   async function handleDelete(file: StoredFile) {
-    if (remove.isPending || !window.confirm(`Delete ${file.originalName}? This permanently deletes the file and can't be undone.`)) return
+    if (remove.isPending || !window.confirm(`Ștergi fișierul ${file.originalName}? Fișierul va fi șters definitiv, iar acțiunea nu poate fi anulată.`)) return
     try {
       await remove.mutateAsync(file.id)
       if (revision !== useSession.getState().revision) return
       // Deleting the last row of a later page steps back to the page before it.
       if (page.data?.files.length === 1 && offset > 0) setOffset(Math.max(0, offset - pageSize))
-      notify({ variant: 'success', message: `Deleted ${file.originalName}.` })
+      notify({ variant: 'success', message: `S-a șters ${file.originalName}.` })
       requestAnimationFrame(() => uploadButton.current?.focus())
     } catch (error) {
       if (revision !== useSession.getState().revision) return
-      notify({ variant: 'error', message: `Couldn't delete ${file.originalName}. ${errorMessage(error)}` })
+      notify({ variant: 'error', message: `Nu s-a putut șterge ${file.originalName}. ${errorMessage(error)}` })
     } finally {
       remove.reset()
       refreshFiles()
@@ -132,10 +132,10 @@ export default function FilesPage() {
     <section className="files-page">
       <header>
         <div className="page-heading">
-          <h1>Files</h1>
+          <h1>Fișiere</h1>
           <button ref={uploadButton} className="primary-button" type="button" disabled={uploading}
             aria-describedby={uploading ? uploadId : undefined} onClick={() => picker.current?.click()}>
-            Upload file
+            Încarcă un fișier
           </button>
           <input ref={picker} type="file" accept={acceptedFileTypes.join(',')} hidden tabIndex={-1}
             onChange={(event) => {
@@ -144,7 +144,7 @@ export default function FilesPage() {
               if (file) void startUpload(file)
             }} />
         </div>
-        <p className="page-description">Every image and video uploaded to Camioane App, newest first. Upload JPEG, PNG, WebP or MP4.</p>
+        <p className="page-description">Toate imaginile și videoclipurile încărcate în Camioane App, începând cu cele mai recente. Încarcă JPEG, PNG, WebP sau MP4.</p>
       </header>
       {upload && (
         <UploadProgress id={uploadId} upload={upload}

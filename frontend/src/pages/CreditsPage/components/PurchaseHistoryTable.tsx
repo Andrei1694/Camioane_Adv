@@ -8,7 +8,7 @@ import type { ListView } from '../creditsData'
 import TableState from './TableState'
 
 function Stamp({ iso }: { iso: string | null }) {
-  if (iso === null) return <span className="missing">—<span className="sr-only">Not yet</span></span>
+  if (iso === null) return <span className="missing">—<span className="sr-only">Încă nu</span></span>
   return <time dateTime={iso}>{formatLocalDay(iso)}<span className="cell-sub">{formatLocalTime(iso)}</span></time>
 }
 
@@ -21,8 +21,8 @@ export default function PurchaseHistoryTable({ view, offset, filtered, onRetry, 
   onPage: (offset: number) => void
 }) {
   const caption = view.status === 'ready'
-    ? `${plural(view.total, 'purchase')}${view.refreshing ? ' · Refreshing…' : ''}`
-    : view.status === 'loading' ? 'Loading purchases…' : 'Purchases'
+    ? `${plural(view.total, 'achiziție', 'achiziții')}${view.refreshing ? ' · Se actualizează…' : ''}`
+    : view.status === 'loading' ? 'Se încarcă achizițiile…' : 'Achiziții'
 
   return (
     <div className="credits-frame">
@@ -30,17 +30,17 @@ export default function PurchaseHistoryTable({ view, offset, filtered, onRetry, 
         <caption className={view.status === 'error' ? 'sr-only' : undefined}>{caption}</caption>
         <thead>
           <tr>
-            <th scope="col">Account</th>
-            <th className="col-when" scope="col">Requested</th>
-            <th className="col-when" scope="col">Settled</th>
-            <th className="col-credits num" scope="col">Credits</th>
-            <th className="col-money num" scope="col">Amount</th>
+            <th scope="col">Cont</th>
+            <th className="col-when" scope="col">Solicitată</th>
+            <th className="col-when" scope="col">Finalizată</th>
+            <th className="col-credits num" scope="col">Credite</th>
+            <th className="col-money num" scope="col">Sumă</th>
           </tr>
         </thead>
         <tbody>
-          <TableState view={view} colSpan={5} what="purchases" onRetry={onRetry}
-            empty={view.status === 'ready' && view.total > 0 ? 'No purchases on this page.'
-              : filtered ? 'No purchases for this account yet.' : 'No purchases yet.'} />
+          <TableState view={view} colSpan={5} what="achiziții" onRetry={onRetry}
+            empty={view.status === 'ready' && view.total > 0 ? 'Nu există achiziții pe această pagină.'
+              : filtered ? 'Nu există încă achiziții pentru acest cont.' : 'Nu există încă achiziții.'} />
           {view.status === 'ready' && view.rows.map((purchase) => {
             const pill = purchaseStatusPills[purchase.status]
             const amount = money(purchase.amountMinor, purchase.currency)
@@ -48,10 +48,10 @@ export default function PurchaseHistoryTable({ view, offset, filtered, onRetry, 
               <tr key={purchase.id}>
                 <th className="account-cell" scope="row">
                   <span className="account-line"><OwnerLabel ownerId={purchase.userId} /> <span className={`pill pill-${pill.tone}`}>{pill.label}</span></span>
-                  {purchase.reference !== null && <span className="cell-sub">Ref <span className="reference">{purchase.reference}</span></span>}
+                  {purchase.reference !== null && <span className="cell-sub">Ref. <span className="reference">{purchase.reference}</span></span>}
                 </th>
-                <td className="when-cell stack-line"><span className="stack-label">Requested </span><Stamp iso={purchase.createdAt} /></td>
-                <td className="when-cell settled-cell stack-line"><span className="stack-label">Settled </span><Stamp iso={purchase.settledAt} /></td>
+                <td className="when-cell stack-line"><span className="stack-label">Solicitată </span><Stamp iso={purchase.createdAt} /></td>
+                <td className="when-cell settled-cell stack-line"><span className="stack-label">Finalizată </span><Stamp iso={purchase.settledAt} /></td>
                 <td className="num stack-lead">{formatCount(purchase.credits)}<span className="unit"> cr</span></td>
                 <td className="num stack-pair">{amount.value}<span className="unit"> {amount.unit}</span></td>
               </tr>
@@ -59,7 +59,7 @@ export default function PurchaseHistoryTable({ view, offset, filtered, onRetry, 
           })}
         </tbody>
       </table>
-      {view.status === 'ready' && <Pagination offset={offset} pageSize={pageSize} total={view.total} label="Purchase pages" onPage={onPage} />}
+      {view.status === 'ready' && <Pagination offset={offset} pageSize={pageSize} total={view.total} label="Pagini cu achiziții" onPage={onPage} />}
     </div>
   )
 }

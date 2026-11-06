@@ -39,12 +39,12 @@ function AccessDenied() {
   if (access.status === 'granted') return <Navigate to="/dashboard" replace />
   return (
     <section>
-      <h1>Administrator access required</h1>
+      <h1>Este necesar accesul de administrator</h1>
       <p className="page-description">{user.role === 'ADMIN'
-        ? 'Your administrator access is currently unavailable. Your role may be inactive, not yet active, or expired.'
-        : 'Your account does not have administrator access.'} The dashboard, campaign, cars, files, credits, user management and the route builder require active administrator access. Contact your administrator if you need access.</p>
+        ? 'Accesul tău de administrator nu este disponibil momentan. Rolul poate fi inactiv, încă neactivat sau expirat.'
+        : 'Contul tău nu are acces de administrator.'} Panoul de control, campaniile, mașinile, fișierele, creditele, gestionarea utilizatorilor și planificatorul de trasee necesită acces activ de administrator. Contactează administratorul dacă ai nevoie de acces.</p>
       {user.role === 'ADMIN' && <button type="button" disabled={access.isFetching} onClick={access.retry}>
-        {access.isFetching ? 'Checking…' : 'Retry access check'}
+        {access.isFetching ? 'Se verifică…' : 'Reverifică accesul'}
       </button>}
     </section>
   )
@@ -52,7 +52,7 @@ function AccessDenied() {
 
 const rootRoute = createRootRoute({
   component: Layout,
-  notFoundComponent: () => <AppShell><section><h1>Page not found</h1><p className="page-description"><Link to="/">Return to the app</Link></p></section></AppShell>,
+  notFoundComponent: () => <AppShell><section><h1>Pagina nu a fost găsită</h1><p className="page-description"><Link to="/">Înapoi la aplicație</Link></p></section></AppShell>,
 })
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => <Authenticated><HomeRedirect /></Authenticated> })
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: '/login', component: LoginRoute })
@@ -63,14 +63,14 @@ const filesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/files'
 const videoEditorRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/files/$fileId/edit',
-  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Loading video editor…</p>}><VideoEditorPage /></Suspense></Authenticated>,
+  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Se încarcă editorul video…</p>}><VideoEditorPage /></Suspense></Authenticated>,
 })
 const creditsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/credits', component: () => <Authenticated adminOnly><CreditsPage /></Authenticated> })
 const usersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/users', component: () => <Authenticated adminOnly><UsersPage /></Authenticated> })
 const routeBuilderRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/routes',
-  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Loading route builder…</p>}><RouteBuilderPage /></Suspense></Authenticated>,
+  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Se încarcă planificatorul de trasee…</p>}><RouteBuilderPage /></Suspense></Authenticated>,
 })
 const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profile', component: () => <Authenticated><ProfilePage /></Authenticated> })
 const deniedRoute = createRoute({ getParentRoute: () => rootRoute, path: '/access-denied', component: () => <Authenticated><AccessDenied /></Authenticated> })

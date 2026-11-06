@@ -35,7 +35,7 @@ Styling uses plain CSS, with shared primitives and page-scoped selectors. There 
 - These are working screens for administrators. Lead with the screen's task, its relevant data and a clear next action.
 - Keep navigation and surfaces quiet. Colour identifies data, meaningful status and the primary action.
 - Use flat white surfaces, fine borders and restrained radii. Reserve elevation for floating UI.
-- Use the product's words: cars, routes, car-hours, campaigns, creatives, credits, files and accounts. Use sentence case and concrete action labels.
+- The frontend is Romanian-only, with diacritics and sentence case. Use consistent terms: „Panou de control”, „Mașini”, „Trasee”, „Campanii”, „Materiale publicitare”, „Credite”, „Fișiere”, „Utilizatori”, „Cont” and „Profil”. Car-hours are „ore-mașină”; rates use „cr/mașină-oră”. Keep the Camioane App brand unchanged.
 - Compute totals from the same rows shown on screen. Print real zeros; show absent values as a muted em dash. State the comparison or time window behind a relative figure.
 - Preserve information when a layout narrows: move fields onto labelled lines or scroll a bounded work area. The page itself should not scroll horizontally.
 - Treat sample data and unfinished capabilities honestly. A saved campaign is a draft, and a route export is not a server-side save.
@@ -281,17 +281,18 @@ Discarding unsaved edits and deleting a route both ask for confirmation. A confl
 
 ## Data formatting
 
-Use existing formatters, keeping their input units and time zones distinct. Do not create inline alternatives for formats already covered by a helper.
+Use existing `ro-RO` formatters, keeping their input units and time zones distinct. Do not create inline alternatives for formats already covered by a helper. Currency codes and amounts, ISO dates, numeric input serialization, coordinates and video timecodes retain their technical notation.
 
 | Value | Display convention | Source |
 | --- | --- | --- |
-| Counts and credits | `1,000`, with a muted `cr` suffix where needed | `formatCount` in `src/lib/format.ts` |
-| Signed credit change | `+1,000`, `−200`; neutral colour | `formatSignedCount` |
-| Money | Minor units converted to currency decimals; `1,000.00 EUR` | `money`, `formatMoney` |
+| Counts and credits | `1.000`, with a muted `cr` suffix where needed | `formatCount` in `src/lib/format.ts` |
+| One-decimal figures | `1.234,5` | `formatDecimal` |
+| Signed credit change | `+1.000`, `−200`; neutral colour | `formatSignedCount` |
+| Money | Minor units converted to currency decimals; `1.000,00 EUR` | `money`, `formatMoney` |
 | File size | Decimal B/KB/MB/GB; B and KB whole, MB and GB one decimal | `byteSize`, `byteSizeIn`, `formatByteSize` |
-| API timestamps | `Wed, 4 Nov 2026`, `14:30`, in the browser's time zone | `formatLocalDay`, `formatLocalTime` |
-| Waiting duration | Minutes in; `2 d 4 h`, `22 h 25 min`, `5 min` out | Shared `formatDuration` |
-| Count with noun | `1 car`, `6 dates` | `plural` |
+| API timestamps | `mie., 4 nov. 2026`, `14:30`, in the browser's time zone | `formatLocalDay`, `formatLocalTime` |
+| Waiting duration | Minutes in; `2 z 4 h`, `22 h 25 min`, `5 min` out | Shared `formatDuration` |
+| Count with noun | `0 mașini`, `1 mașină`, `2 mașini`, `20 de mașini`, `101 mașini`; pass explicit singular and plural forms | `plural` with Romanian plural rules |
 | Dashboard car-hours and times | One decimal for hours; 24-hour windows such as `17:00–20:00` | `src/pages/DashboardPage/dashboardData.ts` |
 | Campaign schedule | Europe/Bucharest wall-clock dates/minutes; nominal totals such as `8 h 15 min`, retaining hours beyond 24 | `src/pages/CampaignPage/campaign.ts` |
 | Video timecode | `0:12.4`, or `1:02:03.4` past one hour; source fields use seconds | `src/pages/VideoEditorPage/edit.ts` |
@@ -299,6 +300,10 @@ Use existing formatters, keeping their input units and time zones distinct. Do n
 | Missing value | Muted `—`, distinct from a real zero | `.missing` |
 
 Dashboard sample dates use UTC formatting to keep their authored calendar dates stable, and waiting times use the sample's own reference moment. Do not apply browser-local timestamp formatting to campaign calendar dates or silently interchange the route formatter's seconds with the shared duration formatter's minutes.
+
+Translate application-controlled accessibility labels, placeholders, notifications, confirmations and validation alongside visible copy. MapLibre controls use Romanian labels. Native browser dialogs and media controls follow the browser's language. User data, filenames, route URLs, storage keys and API enum values are not translated.
+
+The API returns English error text without stable error codes. `src/lib/apiErrorMessage.ts` translates known messages and parameterized validation at the shared fetch/XHR response boundary. Unknown messages use Romanian HTTP-status fallbacks. Keep these mappings aligned with backend changes; never display raw third-party video-export errors.
 
 ## States and accessibility
 
@@ -327,7 +332,7 @@ These are verified source-level differences to account for, not changes requeste
 - The Users empty row applies `.empty-state` directly to a table cell, inheriting the dashed block treatment.
 - Deletion confirmation varies: Users, Files and saved routes use the browser's `window.confirm`, while Cars uses the native confirmation dialog described under [Dialogs](#dialogs).
 - Saved-routes table headers are 12px / 500, unlike the 12px / 400 of other data tables.
-- `index.html` still names “Users · Camioane App” and describes a user management demo. `public/favicon.svg` contains template artwork rather than the shell's car/screen mark.
+- `index.html` uses `lang="ro"`, the default title “Administrare · Camioane App” and a Romanian administration description. `public/favicon.svg` still contains template artwork rather than the shell's car/screen mark.
 - There is no global skeleton system or dark theme. Do not document either as an existing capability.
 
 ## Checking a change

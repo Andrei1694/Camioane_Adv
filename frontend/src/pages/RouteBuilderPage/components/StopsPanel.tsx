@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
+import { plural } from '../../../lib/format'
 import type { Coordinate } from '../route'
 import { stopLabel } from '../route'
 import StopForm from './StopForm'
@@ -37,20 +38,20 @@ function StopRow({ point, index, count, disabled, onUpdate, onMove, onRemove, on
     <li className="route-stop">
       <div className="route-stop-heading">
         <span className="stop-number" aria-hidden="true">{index + 1}</span>
-        <button type="button" className="stop-location" onClick={onFocus} disabled={disabled} aria-label={`Show ${label.toLowerCase()} on map`}>
+        <button type="button" className="stop-location" onClick={onFocus} disabled={disabled} aria-label={`Arată ${label.toLowerCase()} pe hartă`}>
           <strong>{label}</strong>
           <span>{point[1].toFixed(5)}, {point[0].toFixed(5)}</span>
         </button>
       </div>
       <div className="stop-row-actions">
-        <button type="button" ref={editButton} onClick={() => setEditingPoint(editing ? null : pointKey)} disabled={disabled} aria-expanded={editing} aria-label={`Edit ${label.toLowerCase()}`}>Edit</button>
-        <button type="button" className="stop-move" data-control="up" onClick={() => onMove(-1)} disabled={disabled || index === 0} aria-label={`Move ${label.toLowerCase()} up`} title="Move up">
+        <button type="button" ref={editButton} onClick={() => setEditingPoint(editing ? null : pointKey)} disabled={disabled} aria-expanded={editing} aria-label={`Editează ${label.toLowerCase()}`}>Editează</button>
+        <button type="button" className="stop-move" data-control="up" onClick={() => onMove(-1)} disabled={disabled || index === 0} aria-label={`Mută ${label.toLowerCase()} în sus`} title="Mută în sus">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" /></svg>
         </button>
-        <button type="button" className="stop-move" data-control="down" onClick={() => onMove(1)} disabled={disabled || index === count - 1} aria-label={`Move ${label.toLowerCase()} down`} title="Move down">
+        <button type="button" className="stop-move" data-control="down" onClick={() => onMove(1)} disabled={disabled || index === count - 1} aria-label={`Mută ${label.toLowerCase()} în jos`} title="Mută în jos">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-6-6 6 6 6-6" /></svg>
         </button>
-        <button type="button" data-control="remove" onClick={onRemove} disabled={disabled} aria-label={`Remove ${label.toLowerCase()}`}>Remove</button>
+        <button type="button" data-control="remove" onClick={onRemove} disabled={disabled} aria-label={`Elimină ${label.toLowerCase()}`}>Elimină</button>
       </div>
       {editing && <StopForm coordinates={point} disabled={disabled} onCancel={closeEditor} onSubmit={(next) => {
         onUpdate(next)
@@ -76,10 +77,10 @@ export default function StopsPanel({ points, disabled, onChange, onFocus }: Stop
   return (
     <section className="stops-panel" aria-labelledby="stops-heading">
       <div className="route-section-heading">
-        <h2 id="stops-heading" ref={heading} tabIndex={-1}>Route stops</h2>
-        <span>{points.length} {points.length === 1 ? 'point' : 'points'}</span>
+        <h2 id="stops-heading" ref={heading} tabIndex={-1}>Opririle traseului</h2>
+        <span>{plural(points.length, 'oprire', 'opriri')}</span>
       </div>
-      <p className="route-help">Stops are visited in the order below.</p>
+      <p className="route-help">Opririle sunt parcurse în ordinea de mai jos.</p>
       {points.length ? (
         <ol className="route-stops" ref={list}>
           {points.map((point, index) => (
@@ -100,12 +101,12 @@ export default function StopsPanel({ points, disabled, onChange, onFocus }: Stop
         </ol>
       ) : (
         <div className="route-empty">
-          <strong>Where does the route start?</strong>
-          <p>Click on the map to place your first stop, or enter its coordinates below.</p>
+          <strong>De unde începe traseul?</strong>
+          <p>Fă clic pe hartă pentru a adăuga prima oprire sau introdu coordonatele ei mai jos.</p>
         </div>
       )}
       <div className="add-stop-section">
-        <h3>Add by coordinates</h3>
+        <h3>Adaugă prin coordonate</h3>
         <StopForm disabled={disabled} onSubmit={(point) => {
           onChange([...points, point])
           onFocus(point)

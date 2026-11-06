@@ -15,7 +15,7 @@ interface SessionState {
 }
 
 const storageKey = 'camioane.session.v1'
-const storageNotice = 'Browser storage is unavailable. You may need to sign in again after refreshing.'
+const storageNotice = 'Stocarea în browser nu este disponibilă. Este posibil să fie nevoie să te autentifici din nou după reîncărcare.'
 
 function parseSession(saved: string | null): Session | null {
   if (!saved) return null
@@ -38,7 +38,7 @@ function initialState(): SessionState {
     const saved = localStorage.getItem(storageKey)
     const session = parseSession(saved)
     if (saved && !session) localStorage.removeItem(storageKey)
-    return { session, revision: 0, notice: '', message: saved && !session ? 'Your session expired. Please sign in again.' : '' }
+    return { session, revision: 0, notice: '', message: saved && !session ? 'Sesiunea ta a expirat. Autentifică-te din nou.' : '' }
   } catch {
     return { session: null, revision: 0, notice: storageNotice, message: '' }
   }
@@ -98,7 +98,7 @@ export function startSessionSync() {
     const session = useSession.getState().session
     if (!session) return
     const remaining = session.expiresAt - Date.now()
-    if (remaining <= 0) signOut('Your session expired. Please sign in again.')
+    if (remaining <= 0) signOut('Sesiunea ta a expirat. Autentifică-te din nou.')
     else timer = setTimeout(scheduleExpiry, Math.min(remaining, 2_147_483_647))
   }
   function onStorage(event: StorageEvent) {

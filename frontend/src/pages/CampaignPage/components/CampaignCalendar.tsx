@@ -56,30 +56,30 @@ export default function CampaignCalendar({ days, today, month, activeDate, selec
     <div className="campaign-calendar-heading">
       <h2 id="campaign-month" aria-live="polite">{formatMonth(month)}</h2>
       <div className="campaign-calendar-navigation">
-        <button type="button" className="text-button" onClick={() => { onMonth(monthOf(today)); setFocusedDate(today) }}>Today</button>
-        <button type="button" className="icon-button" aria-label="Previous month" onClick={() => onMonth(addMonths(month, -1))}>
+        <button type="button" className="text-button" onClick={() => { onMonth(monthOf(today)); setFocusedDate(today) }}>Astăzi</button>
+        <button type="button" className="icon-button" aria-label="Luna anterioară" onClick={() => onMonth(addMonths(month, -1))}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
         </button>
-        <button type="button" className="icon-button" aria-label="Next month" onClick={() => onMonth(addMonths(month, 1))}>
+        <button type="button" className="icon-button" aria-label="Luna următoare" onClick={() => onMonth(addMonths(month, 1))}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg>
         </button>
       </div>
     </div>
-    <p id="campaign-calendar-help" className="sr-only">{selecting ? 'Select campaign dates.' : 'Choose a selected date to view its hours.'} Use arrow keys to move by day or week, Home and End within a week, and Page Up and Page Down to change month. Press Enter or Space to choose a date.</p>
+    <p id="campaign-calendar-help" className="sr-only">{selecting ? 'Selectează zilele campaniei.' : 'Alege o zi selectată pentru a-i vedea orele.'} Folosește săgețile pentru a trece la altă zi sau săptămână, Home și End în cadrul săptămânii, iar Page Up și Page Down pentru a schimba luna. Apasă Enter sau Spațiu pentru a alege o zi.</p>
     <table ref={grid} className="campaign-month-grid" role="grid" aria-labelledby="campaign-month" aria-describedby="campaign-calendar-help" aria-multiselectable="true">
-      <thead><tr>{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => <th key={day} scope="col">{day}</th>)}</tr></thead>
+      <thead><tr>{['lun.', 'mar.', 'mie.', 'joi', 'vin.', 'sâm.', 'dum.'].map((day) => <th key={day} scope="col">{day}</th>)}</tr></thead>
       <tbody>{Array.from({ length: 6 }, (_, week) => <tr key={week}>
         {dates.slice(week * 7, week * 7 + 7).map((date) => {
           const day = selected.get(date)
           const locked = !!lockedBefore && date < lockedBefore
           const unavailable = selecting ? locked || date < today && !day : !day
           const complete = day && dayIsComplete(day)
-          const hours = day ? complete ? formatHours(dayMinutes(day)) : 'Hours needed' : ''
+          const hours = day ? complete ? formatHours(dayMinutes(day)) : 'Lipsesc orele' : ''
           const current = !selecting && activeDate === date
           return <td key={date} aria-selected={!!day}>
             <button type="button" data-date={date} tabIndex={tabDate === date ? 0 : -1}
               className={['campaign-date', monthOf(date) !== month ? 'outside-month' : '', day ? 'selected' : '', current ? 'active' : '', showErrors && day && !complete ? 'needs-hours' : ''].filter(Boolean).join(' ')}
-              aria-label={`${formatDay(date)}${day ? `, selected, ${hours}` : ''}${date < today ? ', past date' : ''}${locked && day ? ', read-only' : ''}`}
+              aria-label={`${formatDay(date)}${day ? `, selectată, ${hours}` : ''}${date < today ? ', zi din trecut' : ''}${locked && day ? ', doar pentru consultare' : ''}`}
               aria-current={date === today ? 'date' : undefined} aria-disabled={unavailable}
               onFocus={() => setFocusedDate(date)} onKeyDown={(event) => handleKey(event, date)}
               onClick={() => { if (!unavailable) { onDate(date); if (monthOf(date) !== month) onMonth(monthOf(date)) } }}>
@@ -93,7 +93,7 @@ export default function CampaignCalendar({ days, today, month, activeDate, selec
       </tr>)}</tbody>
     </table>
     <div className="campaign-calendar-caption">
-      <span><span className="campaign-selection-key" aria-hidden="true" />Selected campaign day</span>
+      <span><span className="campaign-selection-key" aria-hidden="true" />Zi selectată pentru campanie</span>
       <span>Europe/Bucharest</span>
     </div>
   </>

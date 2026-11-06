@@ -32,8 +32,8 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
   const at = user.email.lastIndexOf('@')
   return (
     <>
-      <nav className="sidebar-nav" aria-label="Main navigation">
-        <p className="sidebar-label">Workspace</p>
+      <nav className="sidebar-nav" aria-label="Navigare principală">
+        <p className="sidebar-label">Spațiu de lucru</p>
         {canManage && (
           <Link to="/dashboard" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -41,7 +41,7 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
               <path d="m12 16 4.5-4.5" />
               <path d="M4 20h16" />
             </svg>
-            Dashboard
+            Panou de control
           </Link>
         )}
         {canManage && (
@@ -49,7 +49,7 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="m5 9 15-5v16L5 15V9ZM5 9H3v6h2m2 .67V21h4v-4" />
             </svg>
-            Campaign
+            Campanie
           </Link>
         )}
         {canManage && (
@@ -59,7 +59,7 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
               <circle cx="18" cy="18" r="3" />
               <path d="M9 6h7a4 4 0 0 1 0 8H8a4 4 0 0 0 0 8h4M6 9v3m12 0v3" />
             </svg>
-            Route builder
+            Planificator de trasee
           </Link>
         )}
         {canManage && (
@@ -67,7 +67,7 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="m5 10 2-6h10l2 6M5 10h14a2 2 0 0 1 2 2v6H3v-6a2 2 0 0 1 2-2ZM5 18v3m14-3v3M6 14h2m8 0h2" />
             </svg>
-            Cars
+            Mașini
           </Link>
         )}
         {canManage && (
@@ -76,7 +76,7 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
               <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
               <path d="M14 3v5h5M9 13h6m-6 4h4" />
             </svg>
-            Files
+            Fișiere
           </Link>
         )}
         {canManage && (
@@ -85,7 +85,7 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
               <ellipse cx="12" cy="6" rx="7" ry="3" />
               <path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6" />
             </svg>
-            Credits
+            Credite
           </Link>
         )}
         {canManage ? (
@@ -94,7 +94,7 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
               <circle cx="9" cy="8" r="3" />
               <path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M21 21v-2a6 6 0 0 0-4-5.66" />
             </svg>
-            Users
+            Utilizatori
           </Link>
         ) : (
           <Link to="/access-denied" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
@@ -102,12 +102,12 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
               <path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z" />
               <path d="M12 8v5m0 3h.01" />
             </svg>
-            Account access
+            Acces la cont
           </Link>
         )}
       </nav>
       <div className="sidebar-account">
-        <p className="sidebar-label">Signed in as</p>
+        <p className="sidebar-label">Autentificat ca</p>
         <div className="sidebar-identity">
           <Avatar user={user} size={40} />
           <div className="sidebar-identity-text">
@@ -120,13 +120,13 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
             <circle cx="12" cy="8" r="4" />
             <path d="M4 21v-1a8 8 0 0 1 16 0v1" />
           </svg>
-          Profile
+          Profil
         </Link>
         <button className="sidebar-signout" type="button" onClick={() => signOut()}>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5M21 12H9" />
           </svg>
-          Sign out
+          Deconectare
         </button>
       </div>
     </>
@@ -160,14 +160,14 @@ export default function AppShell({ children, user, canManage = false }: { childr
 
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#main-content">Skip to content</a>
-      <aside className="app-sidebar" aria-label="Sidebar">
+      <a className="skip-link" href="#main-content">Sari la conținut</a>
+      <aside className="app-sidebar" aria-label="Bară laterală">
         <Brand />
         <SidebarContent user={user} canManage={canManage} />
       </aside>
       <header className="mobile-header">
         <Brand />
-        <button className="navigation-toggle" type="button" aria-label="Open navigation"
+        <button className="navigation-toggle" type="button" aria-label="Deschide navigarea"
           aria-haspopup="dialog" aria-controls="mobile-navigation"
           onClick={() => mobileNavigation.current?.showModal()}>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -175,7 +175,7 @@ export default function AppShell({ children, user, canManage = false }: { childr
           </svg>
         </button>
       </header>
-      <dialog ref={mobileNavigation} id="mobile-navigation" className="mobile-navigation" aria-label="Navigation"
+      <dialog ref={mobileNavigation} id="mobile-navigation" className="mobile-navigation" aria-label="Navigare"
         onClick={(event) => {
           if (event.target !== event.currentTarget) return
           const bounds = event.currentTarget.getBoundingClientRect()
@@ -184,7 +184,7 @@ export default function AppShell({ children, user, canManage = false }: { childr
         }}>
         <div className="mobile-navigation-heading">
           <Brand onNavigate={closeNavigation} />
-          <button className="navigation-toggle" type="button" aria-label="Close navigation" onClick={closeNavigation}>
+          <button className="navigation-toggle" type="button" aria-label="Închide navigarea" onClick={closeNavigation}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="m6 6 12 12M6 18 18 6" />
             </svg>

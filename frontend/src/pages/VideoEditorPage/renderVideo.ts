@@ -34,20 +34,20 @@ export async function renderEdit(source: Blob, segments: readonly Segment[], { s
   let output: Output<Mp4OutputFormat, BufferTarget> | undefined
   try {
     const video = await input.getPrimaryVideoTrack()
-    if (!video) throw new ExportError('This file has no video track to export.')
-    if (!(await video.canDecode())) throw new ExportError("This browser can't decode this video. Try a recent Chrome, Edge or Safari.")
+    if (!video) throw new ExportError('Acest fișier nu are o pistă video de exportat.')
+    if (!(await video.canDecode())) throw new ExportError("Acest browser nu poate decoda videoclipul. Încearcă o versiune recentă de Chrome, Edge sau Safari.")
     const audio = await input.getPrimaryAudioTrack()
-    if (audio && !(await audio.canDecode())) throw new ExportError("This browser can't decode this video's sound. Try a recent Chrome, Edge or Safari.")
+    if (audio && !(await audio.canDecode())) throw new ExportError("Acest browser nu poate decoda sunetul videoclipului. Încearcă o versiune recentă de Chrome, Edge sau Safari.")
 
     // H.264 is the format LED screen controllers are most likely to play.
     const videoCodec = await getFirstEncodableVideoCodec(['avc'], {
       width: await video.getCodedWidth(), height: await video.getCodedHeight(), quality: QUALITY_HIGH,
     })
-    if (!videoCodec) throw new ExportError("This browser can't encode H.264 video. Use a recent Chrome, Edge or Safari.")
+    if (!videoCodec) throw new ExportError("Acest browser nu poate codifica video H.264. Folosește o versiune recentă de Chrome, Edge sau Safari.")
     const audioCodec = audio ? await getFirstEncodableAudioCodec(['aac', 'opus'], {
       numberOfChannels: await audio.getNumberOfChannels(), sampleRate: await audio.getSampleRate(), quality: QUALITY_HIGH,
     }) : null
-    if (audio && !audioCodec) throw new ExportError("This browser can't encode the video's sound. Use a recent Chrome, Edge or Safari.")
+    if (audio && !audioCodec) throw new ExportError("Acest browser nu poate codifica sunetul videoclipului. Folosește o versiune recentă de Chrome, Edge sau Safari.")
     signal.throwIfAborted()
 
     // The whole file is built in memory, with its index at the front so players can start it at once.
@@ -66,13 +66,13 @@ export async function renderEdit(source: Blob, segments: readonly Segment[], { s
     ])
     await output.finalize()
     const buffer = output.target.buffer
-    if (!buffer) throw new ExportError("The exported video came out empty. Try again.")
+    if (!buffer) throw new ExportError("Videoclipul exportat este gol. Încearcă din nou.")
     return new Blob([buffer], { type: 'video/mp4' })
   } catch (error) {
     if (output && output.state !== 'finalized' && output.state !== 'canceled') await output.cancel().catch(() => undefined)
     if (signal.aborted) throw cancelled()
     if (error instanceof ExportError) throw error
-    throw new ExportError(`The video couldn't be exported${error instanceof Error && error.message ? `: ${error.message}` : '.'}`)
+    throw new ExportError('Videoclipul nu a putut fi exportat. Încearcă din nou sau folosește o versiune recentă de Chrome, Edge ori Safari.')
   } finally {
     input.dispose()
   }

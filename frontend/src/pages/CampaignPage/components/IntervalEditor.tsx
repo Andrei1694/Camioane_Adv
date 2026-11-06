@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { plural } from '../../../lib/format'
 import { dayIsComplete, formatDay, formatTime, intervalErrors } from '../campaign'
 import type { CampaignDay, CampaignInterval } from '../campaign'
 
@@ -25,22 +26,22 @@ export default function IntervalEditor({ day, copyDayCount, readOnly, showErrors
     const error = errors.get(interval.id)
     const visibleError = (showErrors || touched.has(interval.id)) && error
     return <div className="form-field">
-      <label htmlFor={id}>{field === 'start' ? 'Start' : 'End'}</label>
-      <select id={id} value={interval[field] ?? ''} disabled={readOnly} aria-label={`${field === 'start' ? 'Start' : 'End'} time for interval ${day.intervals.indexOf(interval) + 1}`}
+      <label htmlFor={id}>{field === 'start' ? 'Început' : 'Sfârșit'}</label>
+      <select id={id} value={interval[field] ?? ''} disabled={readOnly} aria-label={`${field === 'start' ? 'Ora de început' : 'Ora de sfârșit'} pentru intervalul ${day.intervals.indexOf(interval) + 1}`}
         aria-invalid={!!visibleError && error.field === field}
         aria-describedby={visibleError ? `interval-${interval.id}-error` : undefined}
         onChange={(event) => onChange(interval.id, field, event.target.value === '' ? null : Number(event.target.value))}
         onBlur={() => setTouched((previous) => new Set(previous).add(interval.id))}>
-        <option value="">Choose time</option>
+        <option value="">Alege ora</option>
         {(field === 'start' ? starts : ends).map((time) => <option key={time} value={time}>{formatTime(time)}</option>)}
       </select>
     </div>
   }
 
   return <section className="campaign-editor" aria-labelledby="campaign-editor-title">
-    <h2 id="campaign-editor-title">Working hours</h2>
+    <h2 id="campaign-editor-title">Ore de funcționare</h2>
     <p className="campaign-subtitle">{formatDay(day.date)}</p>
-    <p className="campaign-help">{readOnly ? 'This past day is read-only.' : '15-minute intervals. End at 24:00 for midnight.'}</p>
+    <p className="campaign-help">{readOnly ? 'Această zi trecută poate fi doar consultată.' : 'Intervale de 15 minute. Alege 24:00 ca oră de sfârșit pentru miezul nopții.'}</p>
     <div className="campaign-intervals">
       {day.intervals.map((interval, index) => {
         const error = errors.get(interval.id)
@@ -48,7 +49,7 @@ export default function IntervalEditor({ day, copyDayCount, readOnly, showErrors
         return <div key={interval.id} className="campaign-interval">
           <div className="campaign-interval-fields">
             {timeSelect(interval, 'start')}{timeSelect(interval, 'end')}
-            <button type="button" className="icon-button" disabled={readOnly} aria-label={`Remove interval ${index + 1}`} onClick={() => onRemove(interval.id)}>
+            <button type="button" className="icon-button" disabled={readOnly} aria-label={`Elimină intervalul ${index + 1}`} onClick={() => onRemove(interval.id)}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M7 17 17 7" /></svg>
             </button>
           </div>
@@ -56,15 +57,15 @@ export default function IntervalEditor({ day, copyDayCount, readOnly, showErrors
         </div>
       })}
     </div>
-    {!day.intervals.length && <p className={showErrors ? 'field-error' : 'campaign-help'} id="campaign-empty-hours">Add at least one working interval.</p>}
+    {!day.intervals.length && <p className={showErrors ? 'field-error' : 'campaign-help'} id="campaign-empty-hours">Adaugă cel puțin un interval de funcționare.</p>}
     <button type="button" id="campaign-add-interval" className="campaign-add-interval" disabled={readOnly} aria-describedby={!day.intervals.length ? 'campaign-empty-hours' : undefined} onClick={onAdd}>
-      <span aria-hidden="true">+</span> Add interval
+      <span aria-hidden="true">+</span> Adaugă un interval
     </button>
     {copyDayCount > 0 && <div className="campaign-copy-hours">
-      <button type="button" disabled={!dayIsComplete(day)} aria-describedby="campaign-copy-help" onClick={onCopy}>Apply to other days</button>
+      <button type="button" disabled={!dayIsComplete(day)} aria-describedby="campaign-copy-help" onClick={onCopy}>Aplică și altor zile</button>
       <p id="campaign-copy-help" className="campaign-help">{dayIsComplete(day)
-        ? `Replaces the hours on ${copyDayCount} other editable ${copyDayCount === 1 ? 'day' : 'days'}. Past days are kept.`
-        : 'Complete this day’s hours to copy them to the other editable days.'}</p>
+        ? `Înlocuiește orele pentru ${plural(copyDayCount, 'altă zi editabilă', 'alte zile editabile')}. Zilele trecute sunt păstrate.`
+        : 'Completează orele acestei zile pentru a le copia în celelalte zile editabile.'}</p>
     </div>}
   </section>
 }

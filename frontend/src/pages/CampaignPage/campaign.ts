@@ -1,3 +1,5 @@
+import { formatCount } from '../../lib/format'
+
 export interface CampaignInterval {
   id: string
   start: number | null
@@ -14,8 +16,8 @@ export interface IntervalError {
   message: string
 }
 
-const dayFormat = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
-const monthFormat = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' })
+const dayFormat = new Intl.DateTimeFormat('ro-RO', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+const monthFormat = new Intl.DateTimeFormat('ro-RO', { month: 'long', year: 'numeric' })
 const bucharestDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest', year: 'numeric', month: '2-digit', day: '2-digit' })
 
 export function todayInBucharest() {
@@ -62,7 +64,7 @@ export function calendarDays(month: string) {
 export const formatDay = (date: string) => dayFormat.format(calendarDate(date))
 export const formatMonth = (date: string) => monthFormat.format(calendarDate(date))
 export const formatTime = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
-export const formatHours = (minutes: number) => `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} min` : ''}`
+export const formatHours = (minutes: number) => `${formatCount(Math.floor(minutes / 60))} h${minutes % 60 ? ` ${minutes % 60} min` : ''}`
 
 export function emptyInterval(): CampaignInterval {
   return { id: crypto.randomUUID(), start: null, end: null }
@@ -83,14 +85,14 @@ export function intervalErrors(intervals: readonly CampaignInterval[]) {
   const usable: CampaignInterval[] = []
   for (const interval of intervals) {
     const { id, start, end } = interval
-    if (start === null) errors.set(id, { field: 'start', message: 'Choose a start time.' })
-    else if (end === null) errors.set(id, { field: 'end', message: 'Choose an end time.' })
+    if (start === null) errors.set(id, { field: 'start', message: 'Alege ora de început.' })
+    else if (end === null) errors.set(id, { field: 'end', message: 'Alege ora de sfârșit.' })
     else if (!Number.isInteger(start) || start < 0 || start >= 1440 || start % 15 !== 0) {
-      errors.set(id, { field: 'start', message: 'Choose a start time in 15-minute steps.' })
+      errors.set(id, { field: 'start', message: 'Alege ora de început în pași de 15 minute.' })
     } else if (!Number.isInteger(end) || end <= 0 || end > 1440 || end % 15 !== 0) {
-      errors.set(id, { field: 'end', message: 'Choose an end time in 15-minute steps.' })
+      errors.set(id, { field: 'end', message: 'Alege ora de sfârșit în pași de 15 minute.' })
     } else if (end <= start) {
-      errors.set(id, { field: 'end', message: 'End time must be later on the same day.' })
+      errors.set(id, { field: 'end', message: 'Ora de sfârșit trebuie să fie după ora de început, în aceeași zi.' })
     } else usable.push(interval)
   }
   for (let i = 0; i < usable.length; i++) {
@@ -98,7 +100,7 @@ export function intervalErrors(intervals: readonly CampaignInterval[]) {
       const a = usable[i], b = usable[j]
       if (a.start! < b.end! && b.start! < a.end!) {
         const message = a.start === b.start && a.end === b.end
-          ? 'This interval is already scheduled.' : 'These hours overlap another interval.'
+          ? 'Acest interval este deja programat.' : 'Aceste ore se suprapun cu un alt interval.'
         errors.set(a.id, { field: 'end', message })
         errors.set(b.id, { field: 'start', message })
       }

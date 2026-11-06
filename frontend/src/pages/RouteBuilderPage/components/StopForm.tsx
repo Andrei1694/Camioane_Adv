@@ -21,7 +21,7 @@ export default function StopForm({ coordinates, disabled, onSubmit, onCancel }: 
       if (disabled) return
       const point: Coordinate = [Number(longitude), Number(latitude)]
       if (!latitude.trim() || !longitude.trim() || !isCoordinate(point)) {
-        setError('Enter a latitude between −85.051129 and 85.051129 and a longitude between −180 and 180.')
+        setError('Introdu o latitudine între −85.051129 și 85.051129 și o longitudine între −180 și 180.')
         return
       }
       setError('')
@@ -33,14 +33,14 @@ export default function StopForm({ coordinates, disabled, onSubmit, onCancel }: 
     }}>
       <div className="stop-coordinate-fields">
         <div className="form-field">
-          <label htmlFor={`${id}-latitude`}>Latitude</label>
+          <label htmlFor={`${id}-latitude`}>Latitudine</label>
           <input id={`${id}-latitude`} type="number" inputMode="decimal" min="-85.051129" max="85.051129" step="any"
             placeholder="44.4268" required value={latitude} disabled={disabled}
             aria-describedby={error ? `${id}-error` : undefined}
             onChange={(event) => setLatitude(event.target.value)} />
         </div>
         <div className="form-field">
-          <label htmlFor={`${id}-longitude`}>Longitude</label>
+          <label htmlFor={`${id}-longitude`}>Longitudine</label>
           <input id={`${id}-longitude`} type="number" inputMode="decimal" min="-180" max="180" step="any"
             placeholder="26.1025" required value={longitude} disabled={disabled}
             aria-describedby={error ? `${id}-error` : undefined}
@@ -49,8 +49,8 @@ export default function StopForm({ coordinates, disabled, onSubmit, onCancel }: 
       </div>
       {error && <p className="field-error" id={`${id}-error`} role="alert">{error}</p>}
       <div className="stop-form-actions">
-        <button type="submit" disabled={disabled}>{coordinates ? 'Apply coordinates' : 'Add stop'}</button>
-        {onCancel && <button type="button" onClick={onCancel}>Cancel</button>}
+        <button type="submit" disabled={disabled}>{coordinates ? 'Aplică coordonatele' : 'Adaugă o oprire'}</button>
+        {onCancel && <button type="button" onClick={onCancel}>Anulează</button>}
       </div>
     </form>
   )

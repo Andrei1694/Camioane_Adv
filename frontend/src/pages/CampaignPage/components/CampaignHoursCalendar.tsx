@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
+import { plural } from '../../../lib/format'
 import { dayIsComplete, dayMinutes, formatDay, formatHours, formatTime, hourSelection, validIntervals } from '../campaign'
 import type { CampaignDay } from '../campaign'
 
@@ -157,30 +158,30 @@ export default function CampaignHoursCalendar({ days, activeDate, showErrors, re
 
   return <section className="campaign-hours-calendar" aria-labelledby="campaign-hours-title">
     <div className="campaign-calendar-heading">
-      <div><h2 id="campaign-hours-title">Selected days</h2>
-        <p className="campaign-help" aria-live="polite">{pageStart + 1}–{pageStart + visibleDays.length} of {days.length} {days.length === 1 ? 'day' : 'days'}</p></div>
+      <div><h2 id="campaign-hours-title">Zile selectate</h2>
+        <p className="campaign-help" aria-live="polite">{pageStart + 1}–{pageStart + visibleDays.length} din {plural(days.length, 'zi', 'zile')}</p></div>
       <div className="campaign-calendar-navigation">
-        <button type="button" className="icon-button" aria-label="Previous selected days" disabled={pageStart === 0}
+        <button type="button" className="icon-button" aria-label="Zilele selectate anterioare" disabled={pageStart === 0}
           onClick={() => { cancelSelection(); onDate(days[Math.max(0, pageStart - columns)].date) }}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
         </button>
-        <button type="button" className="icon-button" aria-label="Next selected days" disabled={pageStart + columns >= days.length}
+        <button type="button" className="icon-button" aria-label="Zilele selectate următoare" disabled={pageStart + columns >= days.length}
           onClick={() => { cancelSelection(); onDate(days[pageStart + columns].date) }}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg>
         </button>
       </div>
     </div>
-    <p id="campaign-hours-help" className="campaign-help campaign-hours-help">Click or drag to add hours. Select a block to edit its times. <span>On touch, tap to add and swipe to scroll.</span></p>
-    <p className="sr-only" id="campaign-hours-keyboard">Use arrow keys to move between hours and selected days, Home or End for the first or last hour, and Enter or Space to add an hour. Use the time fields to adjust or remove intervals. Escape cancels a drag.</p>
+    <p id="campaign-hours-help" className="campaign-help campaign-hours-help">Fă clic sau trage pentru a adăuga ore. Selectează un bloc pentru a-i edita orele. <span>Pe ecrane tactile, atinge pentru a adăuga și glisează pentru a derula.</span></p>
+    <p className="sr-only" id="campaign-hours-keyboard">Folosește săgețile pentru a trece între ore și zilele selectate, Home sau End pentru prima sau ultima oră și Enter sau Spațiu pentru a adăuga o oră. Folosește câmpurile de oră pentru a ajusta sau elimina intervale. Escape anulează tragerea.</p>
     <div ref={viewport} className="campaign-hours-viewport" style={{ gridTemplateColumns: `64px repeat(${visibleDays.length}, minmax(0, 1fr))` }}
-      role="region" aria-label="Hourly campaign calendar" aria-describedby="campaign-hours-help campaign-hours-keyboard">
-      <div className="campaign-hours-corner" aria-hidden="true">Hours</div>
+      role="region" aria-label="Calendarul orar al campaniei" aria-describedby="campaign-hours-help campaign-hours-keyboard">
+      <div className="campaign-hours-corner" aria-hidden="true">Ore</div>
       {visibleDays.map((day) => <button key={`header-${day.date}`} type="button"
         className={`campaign-hour-day${day.date === activeDate ? ' active' : ''}${showErrors && !dayIsComplete(day) ? ' needs-hours' : ''}`}
-        aria-pressed={day.date === activeDate} aria-label={`${day.date < readOnlyBefore ? 'View read-only' : 'Edit'} ${formatDay(day.date)}, ${dayIsComplete(day) ? formatHours(dayMinutes(day)) : 'hours needed'}`}
+        aria-pressed={day.date === activeDate} aria-label={`${day.date < readOnlyBefore ? 'Consultă' : 'Editează'} ${formatDay(day.date)}, ${dayIsComplete(day) ? formatHours(dayMinutes(day)) : 'lipsesc orele'}`}
         onClick={() => { setError(null); onDate(day.date) }}>
         <span>{formatDay(day.date)}</span>
-        <span className="campaign-hour-day-total num">{dayIsComplete(day) ? formatHours(dayMinutes(day)) : 'Hours needed'}</span>
+        <span className="campaign-hour-day-total num">{dayIsComplete(day) ? formatHours(dayMinutes(day)) : 'Lipsesc orele'}</span>
       </button>)}
       <div className="campaign-hours-axis" aria-hidden="true">
         {[...hours, 24].map((hour) => <span key={hour} style={{ top: `${hour * hourHeight}px` }}>{formatTime(hour * 60)}</span>)}
@@ -190,12 +191,12 @@ export default function CampaignHoursCalendar({ days, activeDate, showErrors, re
         onPointerUp={finishSelection} onPointerCancel={cancelSelection} onLostPointerCapture={cancelSelection}>
         {hours.map((hour) => <button key={hour} type="button" className="campaign-hour-cell" aria-disabled={day.date < readOnlyBefore}
           data-hour-date={day.date} data-hour={hour} tabIndex={day.date === activeDate && hour === focusHour ? 0 : -1}
-          aria-label={`${day.date < readOnlyBefore ? 'Read-only hours' : 'Add hours'} on ${formatDay(day.date)} at ${formatTime(hour * 60)}`}
+          aria-label={`${day.date < readOnlyBefore ? 'Ore doar pentru consultare' : 'Adaugă ore'} pentru ${formatDay(day.date)} la ${formatTime(hour * 60)}`}
           onFocus={() => setFocusHour(hour)} onKeyDown={(event) => navigateHour(event, day.date, hour)}
           onClick={(event) => { if (event.detail === 0) create(day.date, hour * 60, (hour + 1) * 60) }} />)}
         {validIntervals(day).map((interval) => <button key={interval.id} type="button" className="campaign-hour-event num"
           style={{ top: `${interval.start! / 60 * hourHeight}px`, height: `${(interval.end! - interval.start!) / 60 * hourHeight}px` }}
-          aria-label={`${day.date < readOnlyBefore ? 'View read-only' : 'Edit'} ${formatDay(day.date)}, ${formatTime(interval.start!)} to ${formatTime(interval.end!)}`}
+          aria-label={`${day.date < readOnlyBefore ? 'Consultă' : 'Editează'} ${formatDay(day.date)}, de la ${formatTime(interval.start!)} la ${formatTime(interval.end!)}`}
           title={`${formatDay(day.date)}, ${formatTime(interval.start!)}–${formatTime(interval.end!)}`}
           onClick={() => { setError(null); onEdit(day.date, interval.id) }}>
           {formatTime(interval.start!)}–{formatTime(interval.end!)}
@@ -207,6 +208,6 @@ export default function CampaignHoursCalendar({ days, activeDate, showErrors, re
       </div>)}
     </div>
     {error?.days === days && <p className="field-error campaign-hours-error" role="alert">{error.message}</p>}
-    <div className="campaign-calendar-caption"><span><span className="campaign-selection-key" aria-hidden="true" />Working hours · 15-minute steps</span><span>Europe/Bucharest</span></div>
+    <div className="campaign-calendar-caption"><span><span className="campaign-selection-key" aria-hidden="true" />Ore de funcționare · Pași de 15 minute</span><span>Europe/Bucharest</span></div>
   </section>
 }

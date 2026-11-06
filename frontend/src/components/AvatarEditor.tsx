@@ -33,10 +33,10 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
   const id = useId()
   const uploading = upload !== null && upload.phase !== 'failed'
   const busy = uploading || removing
-  const owner = isSelf ? 'your' : `${user.email}'s`
+  const owner = `pentru ${user.email}`
 
   useBlocker({
-    shouldBlockFn: () => !window.confirm('A profile picture upload is still running. Leave this page and cancel it?'),
+    shouldBlockFn: () => !window.confirm('Încărcarea fotografiei de profil este în curs. Părăsești pagina și anulezi încărcarea?'),
     enableBeforeUnload: uploading,
     disabled: !uploading,
   })
@@ -75,12 +75,12 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
       await replaceCachedUser(revision, updated)
       if (!current()) return
       setUpload(null)
-      notify({ variant: 'success', message: isSelf ? 'Your profile picture is updated.' : `Updated ${owner} profile picture.` })
+      notify({ variant: 'success', message: isSelf ? 'Fotografia ta de profil a fost actualizată.' : `Fotografia de profil ${owner} a fost actualizată.` })
     } catch (error) {
       if (!current()) return
       if (controller.signal.aborted) {
         setUpload(null)
-        if (controller.signal.reason === 'user') notify({ variant: 'info', message: `Upload of ${file.name} cancelled.` })
+        if (controller.signal.reason === 'user') notify({ variant: 'info', message: `Încărcarea fișierului ${file.name} a fost anulată.` })
       } else {
         setUpload({ file, phase: 'failed', error: errorMessage(error), retryable: isRetryableUpload(error) })
         afterFailure(error)
@@ -96,7 +96,7 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
   }
 
   async function handleRemove() {
-    if (busy || !window.confirm(`Remove ${owner} profile picture?`)) return
+    if (busy || !window.confirm(isSelf ? 'Elimini fotografia ta de profil?' : `Elimini fotografia de profil ${owner}?`)) return
     setUpload(null)
     setRemoving(true)
     try {
@@ -104,12 +104,12 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
       if (!current()) return
       await replaceCachedUser(revision, { ...user, avatar: null })
       if (!current()) return
-      notify({ variant: 'success', message: isSelf ? 'Your profile picture is removed.' : `Removed ${owner} profile picture.` })
+      notify({ variant: 'success', message: isSelf ? 'Fotografia ta de profil a fost eliminată.' : `Fotografia de profil ${owner} a fost eliminată.` })
       // The Remove button goes away with the picture, so focus moves to the upload button.
       requestAnimationFrame(() => uploadButton.current?.focus())
     } catch (error) {
       if (!current()) return
-      notify({ variant: 'error', message: `Couldn't remove the picture. ${errorMessage(error)}` })
+      notify({ variant: 'error', message: `Fotografia nu a putut fi eliminată. ${errorMessage(error)}` })
       afterFailure(error)
     } finally {
       setRemoving(false)
@@ -120,12 +120,12 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
     <div className="avatar-editor">
       <div className="avatar-editor-row">
         <Avatar user={user} size={96}
-          label={user.avatar ? `${isSelf ? 'Your' : `${user.email}'s`} profile picture` : `${isSelf ? 'You have' : `${user.email} has`} no profile picture`} />
+          label={user.avatar ? isSelf ? 'Fotografia ta de profil' : `Fotografia de profil ${owner}` : isSelf ? 'Nu ai o fotografie de profil' : `${user.email} nu are o fotografie de profil`} />
         <div className="avatar-editor-controls">
           <div className="avatar-editor-actions">
             <button ref={uploadButton} className={primary ? 'primary-button' : undefined} type="button" disabled={busy}
               aria-describedby={uploading ? `${id}-upload` : `${id}-hint`} onClick={() => picker.current?.click()}>
-              {user.avatar ? 'Change picture' : 'Upload picture'}
+              {user.avatar ? 'Schimbă fotografia' : 'Încarcă o fotografie'}
             </button>
             <input ref={picker} type="file" accept={avatarTypes.join(',')} hidden tabIndex={-1}
               onChange={(event) => {
@@ -135,11 +135,11 @@ export default function AvatarEditor({ user, isSelf, primary = false }: {
               }} />
             {user.avatar && (
               <button className="text-button danger" type="button" disabled={busy} onClick={() => void handleRemove()}>
-                {removing ? 'Removing…' : 'Remove picture'}
+                {removing ? 'Se elimină…' : 'Elimină fotografia'}
               </button>
             )}
           </div>
-          <p className="field-hint" id={`${id}-hint`}>JPEG, PNG or WebP up to {avatarMaxLabel}. It's cropped to a centred square.</p>
+          <p className="field-hint" id={`${id}-hint`}>JPEG, PNG sau WebP de cel mult {avatarMaxLabel}. Fotografia este decupată într-un pătrat centrat.</p>
         </div>
       </div>
       {upload && (

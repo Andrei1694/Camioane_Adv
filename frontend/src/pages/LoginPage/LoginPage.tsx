@@ -39,12 +39,12 @@ export default function LoginPage() {
 
   return (
     <section className="login-panel">
-      <h1>Sign in</h1>
-      <p className="page-description">Use the account provided by your administrator.</p>
+      <h1>Autentificare</h1>
+      <p className="page-description">Folosește contul oferit de administratorul tău.</p>
       {message && <p className="status-message" role="status">{message}</p>}
-      <form className="user-form" onSubmit={submit} noValidate aria-label="Sign in">
+      <form className="user-form" onSubmit={submit} noValidate aria-label="Autentificare">
         <div className="form-field">
-          <label htmlFor="login-email">Email</label>
+          <label htmlFor="login-email">E-mail</label>
           <input ref={emailInput} id="login-email" name="email" type="email" autoComplete="username" autoCapitalize="none"
             spellCheck={false} required disabled={login.isPending} value={email}
             aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'login-email-error' : undefined}
@@ -52,7 +52,7 @@ export default function LoginPage() {
           {errors.email && <p className="field-error" id="login-email-error" role="alert">{errors.email}</p>}
         </div>
         <div className="form-field">
-          <label htmlFor="login-password">Password</label>
+          <label htmlFor="login-password">Parolă</label>
           <input ref={passwordInput} id="login-password" name="password" type="password" autoComplete="current-password"
             required disabled={login.isPending} value={password}
             aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'login-password-error' : undefined}
@@ -61,7 +61,7 @@ export default function LoginPage() {
         </div>
         {failure && <p className="request-error" role="alert">{failure}</p>}
         <div className="form-actions">
-          <button className="primary-button" type="submit" disabled={login.isPending}>{login.isPending ? 'Signing in…' : 'Sign in'}</button>
+          <button className="primary-button" type="submit" disabled={login.isPending}>{login.isPending ? 'Autentificare în curs…' : 'Autentificare'}</button>
         </div>
       </form>
     </section>

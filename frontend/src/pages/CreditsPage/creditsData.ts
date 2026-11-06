@@ -39,8 +39,8 @@ export function useBalance(userId: string | null) {
 
 /** The account's email for sentences and titles; the table cells use OwnerLabel instead. */
 export function accountName(users: readonly User[], userId: string | null) {
-  if (userId === null) return 'a deleted user'
-  return users.find((user) => user.id === userId)?.email ?? 'an account not in the user list'
+  if (userId === null) return 'un utilizator șters'
+  return users.find((user) => user.id === userId)?.email ?? 'un cont care nu apare în lista de utilizatori'
 }
 
 export type ListView<T> =

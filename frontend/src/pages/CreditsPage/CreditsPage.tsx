@@ -44,17 +44,17 @@ export default function CreditsPage() {
     <section className="credits-page">
       <header>
         <div className="page-heading">
-          <h1>Credits</h1>
+          <h1>Credite</h1>
           <div className="page-actions">
-            <button ref={adjustButton} type="button" onClick={() => setAdjusting(true)}>Adjust balance</button>
+            <button ref={adjustButton} type="button" onClick={() => setAdjusting(true)}>Ajustează soldul</button>
             <button ref={reviewButton} type="button" className="primary-button" disabled={!oldest}
               aria-describedby={!oldest && !pending.data ? describeId : undefined}
               onClick={() => { if (oldest) setReview(oldest) }}>
-              {oldest || !pending.data ? 'Review oldest payment' : 'No payments waiting'}
+              {oldest || !pending.data ? 'Verifică cea mai veche plată' : 'Nicio plată în așteptare'}
             </button>
           </div>
         </div>
-        <p className="page-description">Purchases wait here until you've checked their payment outside the app. Confirming one adds its credits to the account.</p>
+        <p className="page-description">Achizițiile rămân aici până când le verifici plata în afara aplicației. Confirmarea unei achiziții adaugă creditele în cont.</p>
       </header>
 
       <PendingPurchases view={listView(pending, (rows) => ({ rows, total: rows.length }))} asOf={pending.dataUpdatedAt}

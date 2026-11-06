@@ -82,7 +82,7 @@ export default function useRouteEditor(userId: string) {
   }
 
   function confirmReplace() {
-    return !dirty || window.confirm('Discard unsaved changes to this route?')
+    return !dirty || window.confirm('Renunți la modificările nesalvate ale acestui traseu?')
   }
 
   function refresh() {
@@ -92,7 +92,7 @@ export default function useRouteEditor(userId: string) {
   async function saveRoute(asNew = false) {
     if (inFlight.current || (missing && !asNew)) return false
     if (validation) { setFailure(validation); return false }
-    if (!begin('Saving route…')) return false
+    if (!begin('Se salvează traseul…')) return false
     const original = asNew ? null : saved
     try {
       const route = await save.mutateAsync({ original, input })
@@ -106,7 +106,7 @@ export default function useRouteEditor(userId: string) {
       setMissing(false)
       if (!original) setOffset(0)
       refresh()
-      notify({ variant: 'success', message: `${route.name} ${original ? 'updated' : 'saved'}.` })
+      notify({ variant: 'success', message: `Traseul „${route.name}” a fost ${original ? 'actualizat' : 'salvat'}.` })
       return true
     } catch (error) {
       await handleAdminError(error, revision)
@@ -115,7 +115,7 @@ export default function useRouteEditor(userId: string) {
       if (error instanceof ApiError && error.status === 409 && original) { setConflict(true); refresh() }
       if (error instanceof ApiError && error.status === 404 && original) {
         setMissing(true)
-        setFailure('This route has been deleted. Your changes are still here; save them as a new route.')
+        setFailure('Acest traseu a fost șters. Modificările tale sunt păstrate; salvează-le ca traseu nou.')
         refresh()
       }
     } finally { finish() }
@@ -123,7 +123,7 @@ export default function useRouteEditor(userId: string) {
   }
 
   async function openRoute(id: string) {
-    if (inFlight.current || !confirmReplace() || !begin('Opening route…')) return false
+    if (inFlight.current || !confirmReplace() || !begin('Se deschide traseul…')) return false
     try {
       const route = await queryClient.fetchQuery({
         queryKey: [...routesKey(revision), 'detail', id], staleTime: 0,
@@ -144,7 +144,7 @@ export default function useRouteEditor(userId: string) {
         if (error instanceof ApiError && error.status === 404) {
           if (saved?.id === id) {
             setMissing(true)
-            setFailure('This route has been deleted. Your changes are still here; save them as a new route.')
+            setFailure('Acest traseu a fost șters. Modificările tale sunt păstrate; salvează-le ca traseu nou.')
           }
           refresh()
         }
@@ -165,7 +165,7 @@ export default function useRouteEditor(userId: string) {
   }
 
   async function deleteRoute(route: SavedRoute) {
-    if (inFlight.current || !window.confirm(`Permanently delete “${route.name}” for all administrators?`) || !begin('Deleting route…')) return
+    if (inFlight.current || !window.confirm(`Ștergi definitiv „${route.name}” pentru toți administratorii?`) || !begin('Se șterge traseul…')) return
     try {
       let alreadyDeleted = false
       try { await remove.mutateAsync(route.id) }
@@ -183,7 +183,7 @@ export default function useRouteEditor(userId: string) {
         setMissing(false)
       }
       refresh()
-      notify({ variant: alreadyDeleted ? 'info' : 'success', message: `${route.name} ${alreadyDeleted ? 'was already deleted' : 'deleted'}.` })
+      notify({ variant: alreadyDeleted ? 'info' : 'success', message: `Traseul „${route.name}” ${alreadyDeleted ? 'a fost deja șters' : 'a fost șters'}.` })
     } catch (error) {
       await handleAdminError(error, revision)
       if (current()) setFailure(errorMessage(error))

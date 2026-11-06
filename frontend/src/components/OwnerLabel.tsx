@@ -5,12 +5,12 @@ import { useCurrentUser } from '../auth/currentUser'
 export default function OwnerLabel({ ownerId }: { ownerId: string | null }) {
   const access = useAdminAccess()
   const currentUser = useCurrentUser()
-  if (ownerId === null) return <span className="missing">Deleted user</span>
+  if (ownerId === null) return <span className="missing">Utilizator șters</span>
   const owner = access.users.find((user) => user.id === ownerId)
-  if (!owner) return <span className="missing" title="Owner not in the user list">—<span className="sr-only">Unknown owner</span></span>
+  if (!owner) return <span className="missing" title="Proprietarul nu apare în lista de utilizatori">—<span className="sr-only">Proprietar necunoscut</span></span>
   return (
     <span className="owner-email">
-      {owner.email}{owner.id === currentUser.id && <span className="unit"> (you)</span>}
+      {owner.email}{owner.id === currentUser.id && <span className="unit"> (tu)</span>}
     </span>
   )
 }

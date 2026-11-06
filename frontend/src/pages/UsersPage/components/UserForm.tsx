@@ -42,7 +42,7 @@ export default function UserForm({ user, users, isSelf, pending, error, onSave, 
     if (!nextErrors.email && users.some((existing) => (
       existing.email === normalizedEmail && existing.id !== user?.id
     ))) {
-      nextErrors.email = 'A user with this email already exists.'
+      nextErrors.email = 'Există deja un utilizator cu această adresă de e-mail.'
     }
 
     if (!user || password.length > 0) nextErrors.password = getPasswordError(password)
@@ -64,18 +64,18 @@ export default function UserForm({ user, users, isSelf, pending, error, onSave, 
 
   return (
     <form className="user-form" aria-labelledby={`${id}-title`} onSubmit={handleSubmit} noValidate>
-      <h2 id={`${id}-title`}>{user ? 'Edit user' : 'Add user'}</h2>
+      <h2 id={`${id}-title`}>{user ? 'Editează utilizatorul' : 'Adaugă un utilizator'}</h2>
       {user && (
         <div className="user-form-picture" role="group" aria-labelledby={`${id}-picture`}>
           <p className="user-form-picture-label" id={`${id}-picture`}>
-            Profile picture<span className="optional-label"> (saves straight away, apart from Save)</span>
+            Fotografie de profil<span className="optional-label"> (se salvează imediat, separat de formular)</span>
           </p>
           <AvatarEditor user={user} isSelf={isSelf} />
         </div>
       )}
       <div className="form-fields">
         <div className="form-field">
-          <label htmlFor={`${id}-email`}>Email</label>
+          <label htmlFor={`${id}-email`}>E-mail</label>
           <input
             ref={emailInput}
             id={`${id}-email`}
@@ -98,7 +98,7 @@ export default function UserForm({ user, users, isSelf, pending, error, onSave, 
         </div>
         <div className="form-field">
           <label htmlFor={`${id}-password`}>
-            Password{user && <span className="optional-label"> (optional)</span>}
+            Parolă{user && <span className="optional-label"> (opțional)</span>}
           </label>
           <input
             ref={passwordInput}
@@ -116,11 +116,11 @@ export default function UserForm({ user, users, isSelf, pending, error, onSave, 
               setErrors((current) => ({ ...current, password: undefined }))
             }}
           />
-          <p className="field-hint" id={`${id}-password-hint`}>12–128 characters.{user && ' Leave blank to keep the current password.'}</p>
+          <p className="field-hint" id={`${id}-password-hint`}>12–128 de caractere.{user && ' Lasă câmpul gol pentru a păstra parola actuală.'}</p>
           {errors.password && <p className="field-error" id={`${id}-password-error`} role="alert">{errors.password}</p>}
         </div>
         <div className="form-field">
-          <label htmlFor={`${id}-role`}>Role</label>
+          <label htmlFor={`${id}-role`}>Rol</label>
           <select id={`${id}-role`} name="role" value={role} disabled={pending || isSelf}
             aria-describedby={isSelf ? `${id}-role-hint` : undefined}
             onChange={(event) => {
@@ -129,14 +129,14 @@ export default function UserForm({ user, users, isSelf, pending, error, onSave, 
             }}>
             {roles.map((option) => <option key={option} value={option}>{roleLabels[option]}</option>)}
           </select>
-          {isSelf && <p className="field-hint" id={`${id}-role-hint`}>Another administrator must change your role.</p>}
+          {isSelf && <p className="field-hint" id={`${id}-role-hint`}>Rolul tău trebuie schimbat de un alt administrator.</p>}
         </div>
       </div>
-      {isSelf && <p className="field-hint">Changing your email or password will sign you out.</p>}
+      {isSelf && <p className="field-hint">Schimbarea adresei de e-mail sau a parolei te va deconecta.</p>}
       {error && <p className="request-error" role="alert">{error}</p>}
       <div className="form-actions">
-        <button className="primary-button" type="submit" disabled={pending}>{pending ? 'Saving…' : 'Save'}</button>
-        <button type="button" disabled={pending} onClick={onCancel}>Cancel</button>
+        <button className="primary-button" type="submit" disabled={pending}>{pending ? 'Se salvează…' : 'Salvează'}</button>
+        <button type="button" disabled={pending} onClick={onCancel}>Anulează</button>
       </div>
     </form>
   )

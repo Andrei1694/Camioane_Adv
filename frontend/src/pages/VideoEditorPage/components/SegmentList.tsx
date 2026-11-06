@@ -55,17 +55,17 @@ export default function SegmentList({ segments, duration, selected, locked, onSe
     <div className="segments-frame">
       <table className="segments-table">
         <caption>
-          {plural(segments.length, 'segment')}<span className="unit"> · </span>
-          <span className="num">{formatTimecode(totalLength(segments))}</span><span className="unit"> of {formatTimecode(duration)} kept</span>
+          {plural(segments.length, 'segment', 'segmente')}<span className="unit"> · </span>
+          <span className="num">{formatTimecode(totalLength(segments))}</span><span className="unit"> din {formatTimecode(duration)} păstrat</span>
         </caption>
         <thead>
           <tr>
             <th scope="col">Segment</th>
-            <th className="col-seconds" scope="col">Source in (s)</th>
-            <th className="col-seconds" scope="col">Source out (s)</th>
-            <th className="col-length num" scope="col">Length</th>
-            <th className="col-place" scope="col">On the timeline</th>
-            <th className="col-segment-actions" scope="col"><span className="sr-only">Actions</span></th>
+            <th className="col-seconds" scope="col">Început în sursă (s)</th>
+            <th className="col-seconds" scope="col">Sfârșit în sursă (s)</th>
+            <th className="col-length num" scope="col">Durată</th>
+            <th className="col-place" scope="col">Pe cronologie</th>
+            <th className="col-segment-actions" scope="col"><span className="sr-only">Acțiuni</span></th>
           </tr>
         </thead>
         <tbody>
@@ -78,27 +78,27 @@ export default function SegmentList({ segments, duration, selected, locked, onSe
                     Segment {index + 1}
                   </button>
                 </th>
-                <td data-label="In">
-                  <SecondsInput label={`Source in of ${name}, in seconds`} value={segment.sourceStart} disabled={locked}
+                <td data-label="Început">
+                  <SecondsInput label={`Începutul în sursă al ${name}, în secunde`} value={segment.sourceStart} disabled={locked}
                     min={0} max={segment.sourceEnd - minSegmentLength} onCommit={(seconds) => onTrim(segment.id, 'start', seconds)} />
                 </td>
-                <td data-label="Out">
-                  <SecondsInput label={`Source out of ${name}, in seconds`} value={segment.sourceEnd} disabled={locked}
+                <td data-label="Sfârșit">
+                  <SecondsInput label={`Sfârșitul în sursă al ${name}, în secunde`} value={segment.sourceEnd} disabled={locked}
                     min={segment.sourceStart + minSegmentLength} max={duration} onCommit={(seconds) => onTrim(segment.id, 'end', seconds)} />
                 </td>
-                <td className="num" data-label="Length">{formatTimecode(segmentLength(segment))}</td>
-                <td className="num" data-label="Plays">{formatTimecode(start)}–{formatTimecode(end)}</td>
+                <td className="num" data-label="Durată">{formatTimecode(segmentLength(segment))}</td>
+                <td className="num" data-label="Redare">{formatTimecode(start)}–{formatTimecode(end)}</td>
                 <td>
                   <div className="segment-actions">
                     <button type="button" className="ghost-button" disabled={locked || index === 0} onClick={() => onMove(segment.id, -1)}>
-                      Earlier<span className="sr-only"> {name}</span>
+                      Mai devreme<span className="sr-only"> {name}</span>
                     </button>
                     <button type="button" className="ghost-button" disabled={locked || index === segments.length - 1} onClick={() => onMove(segment.id, 1)}>
-                      Later<span className="sr-only"> {name}</span>
+                      Mai târziu<span className="sr-only"> {name}</span>
                     </button>
                     <button type="button" className="text-button danger" disabled={locked || only}
                       aria-describedby={only ? lastOneId : undefined} onClick={() => onRemove(segment.id)}>
-                      Delete<span className="sr-only"> {name}</span>
+                      Șterge<span className="sr-only"> {name}</span>
                     </button>
                   </div>
                 </td>
@@ -107,7 +107,7 @@ export default function SegmentList({ segments, duration, selected, locked, onSe
           })}
         </tbody>
       </table>
-      {only && <p className="segments-note" id={lastOneId}>An edit keeps at least one segment, so the last one can't be deleted. Trim it instead.</p>}
+      {only && <p className="segments-note" id={lastOneId}>Editarea păstrează cel puțin un segment, deci ultimul nu poate fi șters. Îl poți scurta.</p>}
     </div>
   )
 }

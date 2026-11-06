@@ -64,30 +64,30 @@ export default function FilePreviewDialog({ file, onClose }: { file: StoredFile,
             <OwnerLabel ownerId={file.ownerId} />
           </p>
         </div>
-        <button type="button" className="icon-button" aria-label="Close preview" onClick={() => dialog.current?.close()}>
+        <button type="button" className="icon-button" aria-label="Închide previzualizarea" onClick={() => dialog.current?.close()}>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M6 18 18 6" /></svg>
         </button>
       </div>
 
       <div className="preview-media">
-        {kind === 'other' ? <p className="preview-note">This file type can't be previewed. Download it to open it.</p>
+        {kind === 'other' ? <p className="preview-note">Acest tip de fișier nu poate fi previzualizat. Descarcă-l pentru a-l deschide.</p>
           : content.isError ? (
             <div className="request-error" role="alert">
-              <p>Couldn't load the preview. {errorMessage(content.error)}</p>
+              <p>Previzualizarea nu a putut fi încărcată. {errorMessage(content.error)}</p>
               <button type="button" disabled={content.isFetching} onClick={() => void content.refetch()}>
-                {content.isFetching ? 'Retrying…' : 'Retry'}
+                {content.isFetching ? 'Se reîncearcă…' : 'Reîncearcă'}
               </button>
             </div>
           )
-          : !content.data ? <p className="preview-note" role="status">Loading preview ({size})…</p>
-          : unplayable ? <p className="preview-note" role="alert">This browser can't show this file. Download it to check it.</p>
-          : kind === 'image' ? <img ref={image} alt={`Preview of ${file.originalName}`} onError={() => setUnplayable(true)} />
-          : <video ref={video} controls playsInline preload="metadata" aria-label={`Preview of ${file.originalName}`} onError={() => setUnplayable(true)} />}
+          : !content.data ? <p className="preview-note" role="status">Se încarcă previzualizarea ({size})…</p>
+          : unplayable ? <p className="preview-note" role="alert">Acest browser nu poate afișa fișierul. Descarcă-l pentru a-l verifica.</p>
+          : kind === 'image' ? <img ref={image} alt={`Previzualizarea fișierului ${file.originalName}`} onError={() => setUnplayable(true)} />
+          : <video ref={video} controls playsInline preload="metadata" aria-label={`Previzualizarea fișierului ${file.originalName}`} onError={() => setUnplayable(true)} />}
       </div>
 
       <div className="preview-actions">
         <button type="button" disabled={!content.data} onClick={() => content.data && saveBlob(content.data, file.originalName)}>
-          Download<span className="sr-only"> {file.originalName}</span>
+          Descarcă<span className="sr-only"> {file.originalName}</span>
         </button>
       </div>
     </dialog>

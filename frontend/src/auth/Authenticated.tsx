@@ -36,15 +36,15 @@ function VerifiedAccount({ children, user, revision, adminOnly }: {
     <UserContext.Provider value={user}>
       <AdminAccessContext.Provider value={access}>
         <AppShell user={user} canManage={status === 'granted'}>
-          {status === 'checking' ? <h1 role="status">Checking administrator access…</h1>
+          {status === 'checking' ? <h1 role="status">Se verifică accesul de administrator…</h1>
             : status === 'unavailable' ? (
               <section>
-                <h1>Could not verify administrator access</h1>
+                <h1>Accesul de administrator nu a putut fi verificat</h1>
                 <p className="request-error" role="alert">{errorMessage(result.error)}</p>
-                <p className="page-description">You are still signed in. Retry to open the admin pages.</p>
+                <p className="page-description">Ești în continuare autentificat. Reîncearcă pentru a deschide paginile de administrare.</p>
                 <div className="form-actions">
-                  <button type="button" disabled={result.isFetching} onClick={access.retry}>{result.isFetching ? 'Checking…' : 'Retry access check'}</button>
-                  <button type="button" onClick={() => signOut()}>Sign out</button>
+                  <button type="button" disabled={result.isFetching} onClick={access.retry}>{result.isFetching ? 'Se verifică…' : 'Reverifică accesul'}</button>
+                  <button type="button" onClick={() => signOut()}>Deconectare</button>
                 </div>
               </section>
             ) : children}
@@ -64,14 +64,14 @@ export default function Authenticated({ children, adminOnly = false }: { childre
   })
 
   if (!session) return <Navigate to="/login" replace />
-  if (current.isPending || (!current.isFetchedAfterMount && !current.isError)) return <AppShell><h1 role="status">Signing in…</h1></AppShell>
+  if (current.isPending || (!current.isFetchedAfterMount && !current.isError)) return <AppShell><h1 role="status">Autentificare în curs…</h1></AppShell>
   if (!current.data || current.isError) return (
     <AppShell user={current.data}><section>
-      <h1>Could not verify your session</h1>
+      <h1>Sesiunea ta nu a putut fi verificată</h1>
       <p className="request-error" role="alert">{errorMessage(current.error)}</p>
       <div className="form-actions">
-        <button type="button" disabled={current.isFetching} onClick={() => void current.refetch()}>Retry</button>
-        <button type="button" onClick={() => signOut()}>Sign out</button>
+        <button type="button" disabled={current.isFetching} onClick={() => void current.refetch()}>Reîncearcă</button>
+        <button type="button" onClick={() => signOut()}>Deconectare</button>
       </div>
     </section></AppShell>
   )

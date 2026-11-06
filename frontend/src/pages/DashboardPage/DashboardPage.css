@@ -785,7 +785,7 @@
     text-align: left;
   }
 
-  .routes-table td[data-label='Booked'] {
+  .routes-table td[data-label='Rezervat'] {
     order: 2;
     color: var(--text);
     font-size: 14px;

@@ -70,15 +70,15 @@ export const maxReferenceLength = 128
 export const maxNoteLength = 500
 
 export const purchaseStatusPills: Record<PurchaseStatus, { label: string, tone: 'positive' | 'negative' | 'warning' | 'neutral' }> = {
-  PENDING: { label: 'Waiting for payment', tone: 'warning' },
-  PAID: { label: 'Paid', tone: 'positive' },
-  FAILED: { label: 'Payment failed', tone: 'negative' },
-  CANCELED: { label: 'Cancelled', tone: 'neutral' },
+  PENDING: { label: 'În așteptarea plății', tone: 'warning' },
+  PAID: { label: 'Plătită', tone: 'positive' },
+  FAILED: { label: 'Plată eșuată', tone: 'negative' },
+  CANCELED: { label: 'Anulată', tone: 'neutral' },
 }
 
 export const transactionTypeLabels: Record<TransactionType, string> = {
-  PURCHASE: 'Purchase',
-  ADJUSTMENT: 'Adjustment',
-  CAMPAIGN_DEBIT: 'Campaign debit',
-  REFUND: 'Refund',
+  PURCHASE: 'Achiziție',
+  ADJUSTMENT: 'Ajustare',
+  CAMPAIGN_DEBIT: 'Debit pentru campanie',
+  REFUND: 'Rambursare',
 }

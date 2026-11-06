@@ -38,11 +38,11 @@ export default function CarForm({ car, cars, pending, reloading, error, missing,
 
   return (
     <form className="user-form car-form" aria-labelledby={`${id}-title`} aria-busy={busy} onSubmit={submit} noValidate>
-      <h2 id={`${id}-title`}>{car ? 'Edit car' : 'Add car'}</h2>
+      <h2 id={`${id}-title`}>{car ? 'Editează mașina' : 'Adaugă o mașină'}</h2>
       {error && <p ref={failure} className="request-error" role="alert" tabIndex={-1}>{error}</p>}
       <div className="form-fields">
         <div className="form-field">
-          <label htmlFor={`${id}-plate`}>License plate</label>
+          <label htmlFor={`${id}-plate`}>Număr de înmatriculare</label>
           <input ref={plateInput} id={`${id}-plate`} name="plate" required autoComplete="off" spellCheck={false} disabled={busy} maxLength={maxCarPlateLength}
             autoCapitalize="characters" value={input.plate} aria-invalid={Boolean(errors.plate)}
             aria-describedby={errors.plate ? `${id}-plate-error` : undefined}
@@ -53,7 +53,7 @@ export default function CarForm({ car, cars, pending, reloading, error, missing,
           {errors.plate && <p className="field-error" id={`${id}-plate-error`} role="alert">{errors.plate}</p>}
         </div>
         <div className="form-field">
-          <label htmlFor={`${id}-model`}>Make/model</label>
+          <label htmlFor={`${id}-model`}>Marcă/model</label>
           <input ref={modelInput} id={`${id}-model`} name="makeModel" required value={input.makeModel} disabled={busy} maxLength={maxCarTextLength}
             aria-invalid={Boolean(errors.makeModel)} aria-describedby={errors.makeModel ? `${id}-model-error` : undefined}
             onChange={(event) => {
@@ -63,7 +63,7 @@ export default function CarForm({ car, cars, pending, reloading, error, missing,
           {errors.makeModel && <p className="field-error" id={`${id}-model-error`} role="alert">{errors.makeModel}</p>}
         </div>
         <div className="form-field">
-          <label htmlFor={`${id}-driver`}>Driver name<span className="optional-label"> (optional)</span></label>
+          <label htmlFor={`${id}-driver`}>Numele șoferului<span className="optional-label"> (opțional)</span></label>
           <input ref={driverInput} id={`${id}-driver`} name="driverName" autoComplete="off" value={input.driverName} disabled={busy} maxLength={maxCarTextLength}
             aria-invalid={Boolean(errors.driverName)} aria-describedby={errors.driverName ? `${id}-driver-error` : undefined}
             onChange={(event) => {
@@ -73,18 +73,18 @@ export default function CarForm({ car, cars, pending, reloading, error, missing,
           {errors.driverName && <p className="field-error" id={`${id}-driver-error`} role="alert">{errors.driverName}</p>}
         </div>
         <div className="form-field">
-          <label htmlFor={`${id}-route`}>Route<span className="optional-label"> (optional)</span></label>
+          <label htmlFor={`${id}-route`}>Traseu<span className="optional-label"> (opțional)</span></label>
           <select id={`${id}-route`} name="routeId" value={input.routeId ?? ''} disabled={busy}
             onChange={(event) => {
               const value = event.target.value
               setInput({ ...input, routeId: isCarRouteId(value) ? value : null })
             }}>
-            <option value="">Unassigned</option>
+            <option value="">Neatribuit</option>
             {carRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
           </select>
         </div>
         <div className="form-field">
-          <label htmlFor={`${id}-status`}>Status</label>
+          <label htmlFor={`${id}-status`}>Stare</label>
           <select id={`${id}-status`} name="status" value={input.status} aria-describedby={`${id}-status-hint`} disabled={busy}
             onChange={(event) => {
               const value = event.target.value
@@ -92,15 +92,15 @@ export default function CarForm({ car, cars, pending, reloading, error, missing,
             }}>
             {carStatuses.map((status) => <option key={status} value={status}>{carStatusLabels[status]}</option>)}
           </select>
-          <p className="field-hint" id={`${id}-status-hint`}>Administrative status, not live connectivity.</p>
+          <p className="field-hint" id={`${id}-status-hint`}>Stare administrativă, nu conectivitate în timp real.</p>
         </div>
       </div>
       <div className="form-actions">
-        <button className="primary-button" type="submit" disabled={busy || missing}>{pending ? 'Saving…' : car ? 'Save changes' : 'Save car'}</button>
-        {canReload && !missing && <button type="button" disabled={busy} onClick={onReload}>{reloading ? 'Reloading…' : 'Reload car'}</button>}
-        <button type="button" disabled={busy} onClick={onCancel}>{missing ? 'Close' : 'Cancel'}</button>
+        <button className="primary-button" type="submit" disabled={busy || missing}>{pending ? 'Se salvează…' : car ? 'Salvează modificările' : 'Salvează mașina'}</button>
+        {canReload && !missing && <button type="button" disabled={busy} onClick={onReload}>{reloading ? 'Se reîncarcă…' : 'Reîncarcă mașina'}</button>}
+        <button type="button" disabled={busy} onClick={onCancel}>{missing ? 'Închide' : 'Anulează'}</button>
       </div>
-      {canReload && !missing && <p className="field-hint">Reload car replaces your entered values with the latest saved details.</p>}
+      {canReload && !missing && <p className="field-hint">Reîncărcarea mașinii înlocuiește valorile introduse cu ultimele date salvate.</p>}
     </form>
   )
 }

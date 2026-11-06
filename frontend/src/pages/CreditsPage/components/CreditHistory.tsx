@@ -12,8 +12,8 @@ import PurchaseHistoryTable from './PurchaseHistoryTable'
 type Tab = 'ledger' | 'purchases'
 
 const tabs: { id: Tab, label: string }[] = [
-  { id: 'ledger', label: 'Ledger' },
-  { id: 'purchases', label: 'Purchases' },
+  { id: 'ledger', label: 'Tranzacții' },
+  { id: 'purchases', label: 'Achiziții' },
 ]
 
 /** The ledger and every purchase, for all accounts or one. Picking an account also shows its balance. */
@@ -67,11 +67,11 @@ export default function CreditHistory({ users, account, onAccount }: {
   return (
     <section className="credits-section" aria-labelledby="history-title">
       <div className="section-heading">
-        <h2 id="history-title">History</h2>
+        <h2 id="history-title">Istoric</h2>
         <div className="form-field account-filter">
-          <label htmlFor={`${id}-account`}>Account</label>
+          <label htmlFor={`${id}-account`}>Cont</label>
           <select id={`${id}-account`} value={account ?? ''} onChange={(event) => pickAccount(event.target.value)}>
-            <option value="">All accounts</option>
+            <option value="">Toate conturile</option>
             {users.map((user) => <option key={user.id} value={user.id}>{user.email}</option>)}
           </select>
         </div>
@@ -81,22 +81,22 @@ export default function CreditHistory({ users, account, onAccount }: {
         <div className="account-balance" aria-live="polite">
           {balance.data ? (
             <p>
-              <span className="balance-label">Balance </span>
+              <span className="balance-label">Sold </span>
               <span className="balance-figure num">{formatCount(balance.data.balance)}</span><span className="unit"> cr</span>
-              {balance.isFetching && <span className="unit"> · Refreshing…</span>}
+              {balance.isFetching && <span className="unit"> · Se actualizează…</span>}
             </p>
           ) : balance.isError ? (
             <div className="request-error inline-error" role="alert">
-              <p>Couldn't load the balance. {errorMessage(balance.error)}</p>
+              <p>Soldul nu a putut fi încărcat. {errorMessage(balance.error)}</p>
               <button type="button" className="ghost-button" disabled={balance.isFetching} onClick={() => void balance.refetch()}>
-                {balance.isFetching ? 'Retrying…' : 'Retry'}
+                {balance.isFetching ? 'Se reîncearcă…' : 'Reîncearcă'}
               </button>
             </div>
-          ) : <p className="balance-label">Loading balance…</p>}
+          ) : <p className="balance-label">Se încarcă soldul…</p>}
         </div>
       )}
 
-      <div className="tabs" role="tablist" aria-label="Credit history" onKeyDown={moveFocus}>
+      <div className="tabs" role="tablist" aria-label="Istoricul creditelor" onKeyDown={moveFocus}>
         {tabs.map((item) => (
           <button key={item.id} ref={(element) => { tabButtons.current[item.id] = element }} type="button" role="tab"
             id={`${id}-tab-${item.id}`} aria-controls={`${id}-panel-${item.id}`} aria-selected={tab === item.id}

@@ -59,7 +59,7 @@ export default function CarsPage() {
 
   useEffect(() => {
     const previous = document.title
-    document.title = 'Cars · Camioane App'
+    document.title = 'Mașini · Camioane App'
     return () => { document.title = previous }
   }, [])
 
@@ -129,7 +129,7 @@ export default function CarsPage() {
       // A saved car should be visible even when its new details no longer match the filters.
       clearFilters()
       closeEditor()
-      notify({ variant: 'success', message: `${original ? 'Updated' : 'Added'} ${saved.plate}.` })
+      notify({ variant: 'success', message: `${original ? 'S-a actualizat' : 'S-a adăugat'} ${saved.plate}.` })
     } catch (error) {
       if (!canCommit()) return
       setFormFailure(errorMessage(error))
@@ -139,7 +139,7 @@ export default function CarsPage() {
       }
       if (error instanceof ApiError && error.status === 404) {
         setMissing(true)
-        setFormFailure('This car has been deleted. Close this editor to return to the fleet.')
+        setFormFailure('Această mașină a fost ștearsă. Închide editorul pentru a reveni la flotă.')
         if (original) await updateCache(original.id)
       }
     } finally {
@@ -166,7 +166,7 @@ export default function CarsPage() {
       setFormFailure(errorMessage(error))
       if (error instanceof ApiError && error.status === 404) {
         setMissing(true)
-        setFormFailure('This car has been deleted. Close this editor to return to the fleet.')
+        setFormFailure('Această mașină a fost ștearsă. Închide editorul pentru a reveni la flotă.')
         await updateCache(id)
       }
     } finally {
@@ -187,14 +187,14 @@ export default function CarsPage() {
     try {
       await remove.mutateAsync(deleting.id)
       if (!await updateCache(deleting.id) || !canCommit()) return
-      notify({ variant: 'success', message: `Deleted ${deleting.plate}.` })
+      notify({ variant: 'success', message: `S-a șters ${deleting.plate}.` })
       closeDelete()
     } catch (error) {
       if (!canCommit()) return
       setDeleteFailure(errorMessage(error))
       if (error instanceof ApiError && error.status === 404) {
         setDeleteMissing(true)
-        setDeleteFailure('This car has already been deleted. Close this dialog to return to the fleet.')
+        setDeleteFailure('Această mașină a fost deja ștearsă. Închide dialogul pentru a reveni la flotă.')
         await updateCache(deleting.id)
       }
     } finally {
@@ -206,95 +206,95 @@ export default function CarsPage() {
     <section className="cars-page">
       <header>
         <div className="page-heading">
-          <h1>Cars</h1>
+          <h1>Mașini</h1>
           <button ref={addButton} className={editor ? undefined : 'primary-button'} type="button" disabled={busy || !list.data}
             onClick={(event) => {
               returnFocus.current = event.currentTarget
               openEditor()
-            }}>Add car</button>
+            }}>Adaugă o mașină</button>
         </div>
-        <p className="page-description">Manage cars, driver names, routes and fleet status. Saved changes are shared with all administrators.</p>
+        <p className="page-description">Gestionează mașinile, numele șoferilor, traseele și starea flotei. Modificările salvate sunt disponibile tuturor administratorilor.</p>
       </header>
 
       {editor && <CarForm key={editor.instance} car={editor.car} cars={cars} onSave={(input) => void saveCar(input)} onCancel={closeEditor}
         pending={save.isPending} reloading={reloading} error={formFailure} missing={missing} canReload={canReload} onReload={() => void reloadCar()} />}
 
       {list.isError && <p className="request-error" role="alert">
-        {errorMessage(list.error)} {list.data && 'Showing the last loaded inventory.'}{' '}
-        <button type="button" disabled={list.isFetching} onClick={() => void list.refetch()}>{list.isFetching ? 'Retrying…' : 'Retry'}</button>
+        {errorMessage(list.error)} {list.data && 'Se afișează ultimul inventar încărcat.'}{' '}
+        <button type="button" disabled={list.isFetching} onClick={() => void list.refetch()}>{list.isFetching ? 'Se reîncearcă…' : 'Reîncearcă'}</button>
       </p>}
 
-      <div className="cars-filters" role="search" aria-label="Filter cars">
+      <div className="cars-filters" role="search" aria-label="Filtrează mașinile">
         <div className="form-field cars-search">
-          <label htmlFor="cars-search">Search cars</label>
-          <input id="cars-search" type="search" placeholder="Plate, make/model or driver" value={search}
+          <label htmlFor="cars-search">Caută mașini</label>
+          <input id="cars-search" type="search" placeholder="Număr de înmatriculare, marcă/model sau șofer" value={search}
             onChange={(event) => setSearch(event.target.value)} />
         </div>
         <div className="form-field">
-          <label htmlFor="cars-route-filter">Route</label>
+          <label htmlFor="cars-route-filter">Traseu</label>
           <select id="cars-route-filter" value={routeFilter} onChange={(event) => setRouteFilter(event.target.value)}>
-            <option value="all">All routes</option>
-            <option value="unassigned">Unassigned</option>
+            <option value="all">Toate traseele</option>
+            <option value="unassigned">Neatribuit</option>
             {carRoutes.map((route) => <option key={route.id} value={route.id}>{route.name}</option>)}
           </select>
         </div>
         <div className="form-field">
-          <label htmlFor="cars-status-filter">Status</label>
+          <label htmlFor="cars-status-filter">Stare</label>
           <select id="cars-status-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            <option value="all">All statuses</option>
+            <option value="all">Toate stările</option>
             {carStatuses.map((status) => <option key={status} value={status}>{carStatusLabels[status]}</option>)}
           </select>
         </div>
       </div>
 
       <div className="cars-table-frame" aria-busy={list.isFetching}>
-        <table className="cars-table" role="table" aria-label="Cars">
+        <table className="cars-table" role="table" aria-label="Mașini">
           <caption>
             <div className="cars-list-heading">
               <span aria-live="polite" aria-atomic="true">
-                {!list.data ? 'Cars' : hasFilters ? `${formatCount(filtered.length)} of ${plural(cars.length, 'car')}` : plural(cars.length, 'car')}
-                {list.isFetching && list.data ? ' · Refreshing…' : ''}
+                {!list.data ? 'Mașini' : hasFilters ? `${formatCount(filtered.length)} din ${plural(cars.length, 'mașină', 'mașini')}` : plural(cars.length, 'mașină', 'mașini')}
+                {list.isFetching && list.data ? ' · Se actualizează…' : ''}
               </span>
-              <button className="text-button" type="button" disabled={!hasFilters} onClick={clearFilters}>Clear filters</button>
+              <button className="text-button" type="button" disabled={!hasFilters} onClick={clearFilters}>Resetează filtrele</button>
             </div>
           </caption>
           <thead role="rowgroup"><tr role="row">
-            <th scope="col" role="columnheader">License plate</th>
-            <th scope="col" role="columnheader">Make/model</th>
-            <th scope="col" role="columnheader">Driver</th>
-            <th scope="col" role="columnheader" className="cars-route-column">Route</th>
-            <th scope="col" role="columnheader" className="cars-status-column">Status</th>
-            <th scope="col" role="columnheader" className="cars-actions-column">Actions</th>
+            <th scope="col" role="columnheader">Număr de înmatriculare</th>
+            <th scope="col" role="columnheader">Marcă/model</th>
+            <th scope="col" role="columnheader">Șofer</th>
+            <th scope="col" role="columnheader" className="cars-route-column">Traseu</th>
+            <th scope="col" role="columnheader" className="cars-status-column">Stare</th>
+            <th scope="col" role="columnheader" className="cars-actions-column">Acțiuni</th>
           </tr></thead>
           <tbody role="rowgroup">
             {filtered.map((car) => (
               <tr key={car.id} role="row">
                 <th scope="row" role="rowheader" className="cars-plate">{car.plate}</th>
-                <td role="cell"><span className="cars-mobile-label" aria-hidden="true">Make/model</span>{car.makeModel}</td>
-                <td role="cell"><span className="cars-mobile-label" aria-hidden="true">Driver</span>{car.driverName || <span className="missing">Unassigned</span>}</td>
-                <td role="cell"><span className="cars-mobile-label" aria-hidden="true">Route</span>{carRoutes.find((route) => route.id === car.routeId)?.name ?? <span className="missing">Unassigned</span>}</td>
-                <td role="cell" className="cars-status-cell"><span className="cars-mobile-label" aria-hidden="true">Status</span><span className={`pill pill-${carStatusTones[car.status]}`}>{carStatusLabels[car.status]}</span></td>
+                <td role="cell"><span className="cars-mobile-label" aria-hidden="true">Marcă/model</span>{car.makeModel}</td>
+                <td role="cell"><span className="cars-mobile-label" aria-hidden="true">Șofer</span>{car.driverName || <span className="missing">Neatribuit</span>}</td>
+                <td role="cell"><span className="cars-mobile-label" aria-hidden="true">Traseu</span>{carRoutes.find((route) => route.id === car.routeId)?.name ?? <span className="missing">Neatribuit</span>}</td>
+                <td role="cell" className="cars-status-cell"><span className="cars-mobile-label" aria-hidden="true">Stare</span><span className={`pill pill-${carStatusTones[car.status]}`}>{carStatusLabels[car.status]}</span></td>
                 <td role="cell" className="cars-actions-cell"><div className="cars-row-actions">
-                  <button type="button" className="text-button" aria-label={`Edit ${car.plate}`} disabled={busy}
+                  <button type="button" className="text-button" aria-label={`Editează ${car.plate}`} disabled={busy}
                     onClick={(event) => {
                       returnFocus.current = event.currentTarget
                       openEditor(car)
-                    }}>Edit</button>
-                  <button type="button" className="text-button danger" aria-label={`Delete ${car.plate}`} disabled={busy}
+                    }}>Editează</button>
+                  <button type="button" className="text-button danger" aria-label={`Șterge ${car.plate}`} disabled={busy}
                     onClick={(event) => {
                       returnFocus.current = event.currentTarget
                       setDeleteFailure('')
                       setDeleteMissing(false)
                       setDeleting(car)
-                    }}>Delete</button>
+                    }}>Șterge</button>
                 </div></td>
               </tr>
             ))}
           </tbody>
         </table>
-        {list.isPending && <p className="empty-state cars-empty" role="status">Loading cars…</p>}
+        {list.isPending && <p className="empty-state cars-empty" role="status">Se încarcă mașinile…</p>}
         {list.data && filtered.length === 0 && <p className="empty-state cars-empty">
-          {cars.length === 0 ? 'No cars in the fleet yet. Add a car to get started.' : 'No cars match these filters. Try another search or clear the filters.'}
+          {cars.length === 0 ? 'Nu există încă mașini în flotă. Adaugă o mașină pentru a începe.' : 'Nicio mașină nu corespunde filtrelor. Încearcă altă căutare sau resetează filtrele.'}
         </p>}
       </div>
       {deleting && <DeleteCarDialog car={deleting} onCancel={closeDelete} onDelete={() => void deleteCar()}

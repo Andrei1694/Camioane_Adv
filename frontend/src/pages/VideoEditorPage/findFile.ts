@@ -12,7 +12,7 @@ const scanPageSize = 100
  */
 export async function findFile(queryClient: QueryClient, revision: number, id: string, signal: AbortSignal): Promise<StoredFile> {
   // File IDs are lowercase UUIDs; anything else can't be in the list.
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) throw new ApiError(404, 'File not found')
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) throw new ApiError(404, 'Fișierul nu a fost găsit')
   for (const [, page] of queryClient.getQueriesData<FilePage>({ queryKey: ['files', revision] })) {
     const cached = page?.files.find((file) => file.id === id)
     if (cached) return cached
@@ -21,6 +21,6 @@ export async function findFile(queryClient: QueryClient, revision: number, id: s
     const page = await api.files({ limit: scanPageSize, offset }, signal)
     const found = page.files.find((file) => file.id === id)
     if (found) return found
-    if (page.files.length === 0 || offset + scanPageSize >= page.total) throw new ApiError(404, 'File not found')
+    if (page.files.length === 0 || offset + scanPageSize >= page.total) throw new ApiError(404, 'Fișierul nu a fost găsit')
   }
 }

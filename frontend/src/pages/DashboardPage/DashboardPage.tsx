@@ -9,7 +9,7 @@ import KpiStrip from './components/KpiStrip'
 import RoutesTable from './components/RoutesTable'
 import {
   attentionItems, checkDashboard, clientOf, dashboardReducer, finding, formatCount, formatLongDay, formatTime, initialState,
-  kpis, reviewRequest, routeDays, routeOf,
+  kpis, plural, reviewRequest, routeDays, routeOf,
 } from './dashboardData'
 import type { Attention, RequestReview } from './dashboardData'
 import { asOf, bookingRequests, bookings, cancellationRequests, commitments, confirmations, creatives } from './sampleData'
@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const notify = useNotify()
 
   function sampleOutcome(message: string) {
-    notify({ variant: 'success', message: `Sample action: ${message}` })
+    notify({ variant: 'success', message: `Acțiune demonstrativă: ${message}` })
   }
 
   const days = useMemo(() => routeDays(bookings), [])
@@ -40,33 +40,33 @@ export default function DashboardPage() {
 
   function confirm(item: RequestReview) {
     dispatch({ type: 'confirm', review: item })
-    sampleOutcome(`Confirmed ${item.request.campaign} for ${item.client.name}. ${formatCount(item.total)} cr debited, ${formatCount(item.balance - item.total)} cr left.`)
+    sampleOutcome(`S-a confirmat ${item.request.campaign} pentru ${item.client.name}. ${formatCount(item.total)} cr debitate, ${formatCount(item.balance - item.total)} cr rămase.`)
   }
 
   function decide(item: RequestReview, decision: Decision) {
     dispatch({ type: 'close-request', id: item.request.id })
     sampleOutcome(decision === 'changes'
-      ? `Asked ${item.client.name} to change ${item.request.campaign}. No credits were debited.`
-      : `Rejected ${item.request.campaign} for ${item.client.name}. No credits were debited.`)
+      ? `S-au solicitat modificări de la ${item.client.name} pentru ${item.request.campaign}. Nu au fost debitate credite.`
+      : `S-a respins ${item.request.campaign} pentru ${item.client.name}. Nu au fost debitate credite.`)
   }
 
   function judgeCreative(creative: Creative, status: CreativeStatus) {
     dispatch({ type: 'creative', id: creative.id, status })
     const unblocked = state.requests.find((request) => request.creativeId === creative.id)
-    sampleOutcome(`${status === 'approved' ? 'Approved' : 'Rejected'} ${creative.file} for ${clientOf(creative.clientId).name}.${
-      unblocked && status === 'approved' ? ` ${unblocked.campaign} no longer waits on its creative.` : ''}`)
+    sampleOutcome(`${status === 'approved' ? 'S-a aprobat' : 'S-a respins'} ${creative.file} pentru ${clientOf(creative.clientId).name}.${
+      unblocked && status === 'approved' ? ` ${unblocked.campaign} nu mai așteaptă aprobarea materialului publicitar.` : ''}`)
   }
 
   function judgeCancellation(request: CancellationRequest, approve: boolean) {
     dispatch({ type: 'cancellation', request, approve })
     sampleOutcome(approve
-      ? `Cancelled ${request.dates.length} ${routeOf(request.routeId).name} slots of ${request.campaign}. The refund waits for the refund policy.`
-      : `Declined the cancellation for ${request.campaign}. Its slots stay booked.`)
+      ? `Anulare aprobată pentru ${plural(request.dates.length, 'interval', 'intervale')} pe traseul ${routeOf(request.routeId).name}, campania ${request.campaign}. Rambursarea așteaptă stabilirea politicii de rambursare.`
+      : `S-a respins anularea pentru ${request.campaign}. Intervalele rămân rezervate.`)
   }
 
   function retry(item: Attention) {
     dispatch({ type: 'retry', bookingId: item.booking.id })
-    sampleOutcome(`Delivery to ${item.car.plate} queued at ${formatTime(asOf.time)}.`)
+    sampleOutcome(`Livrarea către ${item.car.plate} a fost programată la ${formatTime(asOf.time)}.`)
   }
 
   const next = reviews[0]
@@ -75,13 +75,13 @@ export default function DashboardPage() {
     <div className="dashboard">
       <header className="dashboard-title">
         <div className="dashboard-title-text">
-          <h1>Dashboard</h1>
+          <h1>Panou de control</h1>
           <p className="dashboard-finding">{finding(attention)}</p>
         </div>
         <div className="dashboard-title-actions">
-          <p className="sample-notice">Sample data as of {formatLongDay(asOf.date)}, {formatTime(asOf.time)}</p>
+          <p className="sample-notice">Date demonstrative din {formatLongDay(asOf.date)}, {formatTime(asOf.time)}</p>
           <button type="button" className="primary-button" disabled={!next} onClick={() => next && setReviewId(next.request.id)}>
-            {next ? 'Review next request' : 'No requests waiting'}
+            {next ? 'Verifică următoarea cerere' : 'Nicio cerere în așteptare'}
           </button>
         </div>
       </header>

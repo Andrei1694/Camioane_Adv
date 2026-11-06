@@ -14,8 +14,8 @@ export default function TableState<T>({ view, colSpan, what, empty, errorId, onR
     <tr>
       <td className="state-cell" colSpan={colSpan}>
         <div className="request-error" role="alert">
-          <p id={errorId}>Couldn't load {what}. {view.error}</p>
-          <button type="button" disabled={view.retrying} onClick={onRetry}>{view.retrying ? 'Retrying…' : 'Retry'}</button>
+          <p id={errorId}>Nu s-au putut încărca datele pentru {what}. {view.error}</p>
+          <button type="button" disabled={view.retrying} onClick={onRetry}>{view.retrying ? 'Se reîncearcă…' : 'Reîncearcă'}</button>
         </div>
       </td>
     </tr>

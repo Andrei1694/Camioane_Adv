@@ -1,4 +1,5 @@
 import { sessionSignal, signOut, useSession } from '../auth/session'
+import { apiErrorMessage } from './apiErrorMessage'
 import { isRole } from './user'
 import type { Avatar, Credentials, User, UserInput } from './user'
 import type { FilePage, StoredFile } from './file'
@@ -64,23 +65,23 @@ function decodeUser(value: unknown): User {
   const avatar = record(value) && isUuid(value.id) ? decodeAvatar(value.avatar, value.id) : undefined
   if (!record(value) || typeof value.id !== 'string' || typeof value.email !== 'string'
     || !isRole(value.role) || avatar === undefined) {
-    throw new ApiError(0, 'The API returned an unexpected user response.')
+    throw new ApiError(0, 'Serverul a returnat date neașteptate despre utilizator.')
   }
   return { id: value.id, email: value.email, role: value.role, avatar }
 }
 
 function decodeUserResponse(value: unknown) {
-  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat.')
   return decodeUser(value.user)
 }
 
 function apiBase() {
   const configured = import.meta.env.VITE_API_BASE_URL?.trim()
   const base = configured || (import.meta.env.DEV ? 'http://localhost:3000' : '')
-  if (!base) throw new ApiError(0, 'The API address is not configured.')
+  if (!base) throw new ApiError(0, 'Adresa API nu este configurată.')
   const url = new URL(base, window.location.origin)
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
-    throw new ApiError(0, 'The API address is invalid.')
+    throw new ApiError(0, 'Adresa API nu este validă.')
   }
   return url.href.replace(/\/$/, '')
 }
@@ -113,15 +114,15 @@ function settle<T>(context: RequestContext, status: number, data: unknown, decod
     throw new DOMException('Session changed', 'AbortError')
   }
   if (status < 200 || status > 299) {
-    if (status === 401 && context.token) signOut('Your session is no longer valid. Please sign in again.')
-    const message = record(data) && typeof data.error === 'string' ? data.error : 'The request failed. Please try again.'
-    throw new ApiError(status, message)
+    if (status === 401 && context.token) signOut('Sesiunea ta nu mai este validă. Autentifică-te din nou.')
+    const message = record(data) && typeof data.error === 'string' ? data.error : undefined
+    throw new ApiError(status, apiErrorMessage(status, message))
   }
   return decode(data)
 }
 
 const cancelled = () => new DOMException('Request cancelled', 'AbortError')
-const unreachable = () => new ApiError(0, 'Could not reach the API. Check your connection and try again.')
+const unreachable = () => new ApiError(0, 'Conectarea la server a eșuat. Verifică conexiunea și încearcă din nou.')
 
 async function request<T>(path: string, decode: (value: unknown) => T, options: RequestOptions = {}): Promise<T> {
   const context = begin(options.authenticated !== false)
@@ -147,7 +148,7 @@ async function request<T>(path: string, decode: (value: unknown) => T, options: 
   } catch (error) {
     if (error instanceof ApiError) throw error
     if (context.globalSignal.aborted || options.signal?.aborted) throw cancelled()
-    if (signal.aborted) throw new ApiError(0, 'The API took too long to respond. Please try again.')
+    if (signal.aborted) throw new ApiError(0, 'Serverul nu a răspuns la timp. Încearcă din nou.')
     throw unreachable()
   }
 }
@@ -210,7 +211,7 @@ function upload<T>(method: 'POST' | 'PUT', path: string, file: File, decode: (va
       return settle(context, xhr.status, data, decode)
     })
     xhr.onabort = () => done(() => { throw cancelled() })
-    xhr.ontimeout = () => done(() => { throw new ApiError(0, 'The upload took too long. Please try again.') })
+    xhr.ontimeout = () => done(() => { throw new ApiError(0, 'Încărcarea a durat prea mult. Încearcă din nou.') })
     xhr.onerror = () => done(() => { throw unreachable() })
     // The browser sets the multipart Content-Type and boundary itself.
     const body = new FormData()
@@ -227,7 +228,7 @@ function decodeFile(value: unknown): StoredFile {
     || typeof value.createdAt !== 'string' || Number.isNaN(Date.parse(value.createdAt))
     // The token goes wherever this path points, so accept only the file's own download route.
     || value.downloadUrl !== '/files/' + value.id + '/download') {
-    throw new ApiError(0, 'The API returned an unexpected file response.')
+    throw new ApiError(0, 'Serverul a returnat date neașteptate despre fișier.')
   }
   return {
     id: value.id,
@@ -241,14 +242,14 @@ function decodeFile(value: unknown): StoredFile {
 }
 
 function decodeFileResponse(value: unknown) {
-  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat.')
   return decodeFile(value.file)
 }
 
 function decodeFilePage(value: unknown): FilePage {
   if (!record(value) || !Array.isArray(value.files)
     || typeof value.total !== 'number' || !Number.isSafeInteger(value.total) || value.total < 0) {
-    throw new ApiError(0, 'The API returned an unexpected files response.')
+    throw new ApiError(0, 'Serverul a returnat o listă de fișiere neașteptată.')
   }
   return { files: value.files.map(decodeFile), total: value.total }
 }
@@ -261,7 +262,7 @@ function decodePurchase(value: unknown): CreditPurchase {
     || !isCurrency(value.currency) || !isPurchaseStatus(value.status)
     || (value.reference !== null && typeof value.reference !== 'string')
     || !isTimestamp(value.createdAt) || (value.settledAt !== null && !isTimestamp(value.settledAt))) {
-    throw new ApiError(0, 'The API returned an unexpected purchase response.')
+    throw new ApiError(0, 'Serverul a returnat date neașteptate despre achiziție.')
   }
   return {
     id: value.id,
@@ -282,7 +283,7 @@ function decodeTransaction(value: unknown): CreditTransaction {
     || !isWhole(value.amount) || value.amount === 0 || !isWhole(value.balanceAfter) || value.balanceAfter < 0
     || !isTransactionType(value.type) || (value.purchaseId !== null && !isUuid(value.purchaseId))
     || (value.note !== null && typeof value.note !== 'string') || !isTimestamp(value.createdAt)) {
-    throw new ApiError(0, 'The API returned an unexpected ledger response.')
+    throw new ApiError(0, 'Serverul a returnat date neașteptate despre tranzacții.')
   }
   return {
     id: value.id,
@@ -299,43 +300,43 @@ function decodeTransaction(value: unknown): CreditTransaction {
 function decodeBalance(value: unknown): CreditBalance {
   if (!record(value) || !isWhole(value.balance) || value.balance < 0 || !isCurrency(value.currency)
     || !isWhole(value.unitPriceMinor) || value.unitPriceMinor < 1) {
-    throw new ApiError(0, 'The API returned an unexpected balance response.')
+    throw new ApiError(0, 'Serverul a returnat date neașteptate despre sold.')
   }
   return { balance: value.balance, currency: value.currency, unitPriceMinor: value.unitPriceMinor }
 }
 
 function decodeTotal(value: Record<string, unknown>) {
-  if (!isWhole(value.total) || value.total < 0) throw new ApiError(0, 'The API returned an unexpected list response.')
+  if (!isWhole(value.total) || value.total < 0) throw new ApiError(0, 'Serverul a returnat o listă neașteptată.')
   return value.total
 }
 
 function decodePurchasePage(value: unknown): PurchasePage {
-  if (!record(value) || !Array.isArray(value.purchases)) throw new ApiError(0, 'The API returned an unexpected purchases response.')
+  if (!record(value) || !Array.isArray(value.purchases)) throw new ApiError(0, 'Serverul a returnat o listă de achiziții neașteptată.')
   return { purchases: value.purchases.map(decodePurchase), total: decodeTotal(value) }
 }
 
 function decodeTransactionPage(value: unknown): TransactionPage {
-  if (!record(value) || !Array.isArray(value.transactions)) throw new ApiError(0, 'The API returned an unexpected ledger response.')
+  if (!record(value) || !Array.isArray(value.transactions)) throw new ApiError(0, 'Serverul a returnat date neașteptate despre tranzacții.')
   return { transactions: value.transactions.map(decodeTransaction), total: decodeTotal(value) }
 }
 
 function decodePurchaseResponse(value: unknown) {
-  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat.')
   return decodePurchase(value.purchase)
 }
 
 function decodeTransactionResponse(value: unknown) {
-  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat.')
   return decodeTransaction(value.transaction)
 }
 
 function decodeConfirmation(value: unknown) {
-  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat.')
   return { purchase: decodePurchase(value.purchase), transaction: decodeTransaction(value.transaction) }
 }
 
 function decodeBlob(value: unknown) {
-  if (!(value instanceof Blob)) throw new ApiError(0, 'The API returned an unexpected download.')
+  if (!(value instanceof Blob)) throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat la descărcare.')
   return value
 }
 
@@ -343,18 +344,18 @@ function decodeCampaign(value: unknown): StoredCampaign {
   if (!record(value) || !isUuid(value.id) || typeof value.name !== 'string' || !value.name.trim()
     || value.name.length > maxCampaignNameLength || !isWhole(value.version) || value.version < 1
     || !isTimestamp(value.createdAt) || !isTimestamp(value.updatedAt) || !isCampaignSchedule(value.days)) {
-    throw new ApiError(0, 'The API returned an unexpected campaign response.')
+    throw new ApiError(0, 'Serverul a returnat date neașteptate despre campanie.')
   }
   return { id: value.id, name: value.name, days: value.days, version: value.version, createdAt: value.createdAt, updatedAt: value.updatedAt }
 }
 
 function decodeCampaignResponse(value: unknown) {
-  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat.')
   return decodeCampaign(value.campaign)
 }
 
 function decodeCampaignPage(value: unknown): CampaignPageData {
-  if (!record(value) || !Array.isArray(value.campaigns)) throw new ApiError(0, 'The API returned an unexpected campaigns response.')
+  if (!record(value) || !Array.isArray(value.campaigns)) throw new ApiError(0, 'Serverul a returnat o listă de campanii neașteptată.')
   return { campaigns: value.campaigns.map(decodeCampaign), total: decodeTotal(value) }
 }
 
@@ -366,7 +367,7 @@ function decodeCar(value: unknown): Car {
     || (value.routeId !== null && !isCarRouteId(value.routeId)) || !isCarStatus(value.status)
     || !isWhole(value.version) || value.version < 1 || value.version > 2147483647
     || !isTimestamp(value.createdAt) || !isTimestamp(value.updatedAt)) {
-    throw new ApiError(0, 'The API returned an unexpected car response.')
+    throw new ApiError(0, 'Serverul a returnat date neașteptate despre mașină.')
   }
   return {
     id: value.id, plate: value.plate, makeModel: value.makeModel, driverName: value.driverName,
@@ -376,22 +377,22 @@ function decodeCar(value: unknown): Car {
 }
 
 function decodeCarResponse(value: unknown) {
-  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat.')
   return decodeCar(value.car)
 }
 
 function decodeRoute(value: unknown): SavedRoute {
-  if (!isSavedRoute(value)) throw new ApiError(0, 'The API returned an unexpected route response.')
+  if (!isSavedRoute(value)) throw new ApiError(0, 'Serverul a returnat date neașteptate despre traseu.')
   return { id: value.id, name: value.name, waypoints: value.waypoints, version: value.version, createdAt: value.createdAt, updatedAt: value.updatedAt }
 }
 
 function decodeRouteResponse(value: unknown) {
-  if (!record(value)) throw new ApiError(0, 'The API returned an unexpected response.')
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat.')
   return decodeRoute(value.route)
 }
 
 function decodeRoutePage(value: unknown): RoutePageData {
-  if (!record(value) || !Array.isArray(value.routes)) throw new ApiError(0, 'The API returned an unexpected routes response.')
+  if (!record(value) || !Array.isArray(value.routes)) throw new ApiError(0, 'Serverul a returnat o listă de trasee neașteptată.')
   return { routes: value.routes.map(decodeRoute), total: decodeTotal(value) }
 }
 
@@ -402,7 +403,7 @@ export const api = {
   updateRoute: (id: string, data: RouteInput & { version: number }) => request('/routes/' + encodeURIComponent(id), decodeRouteResponse, { method: 'PATCH', body: data }),
   deleteRoute: (id: string) => request('/routes/' + encodeURIComponent(id), () => undefined, { method: 'DELETE' }),
   cars: (signal: AbortSignal) => request('/cars', (value) => {
-    if (!record(value) || !Array.isArray(value.cars)) throw new ApiError(0, 'The API returned an unexpected cars response.')
+    if (!record(value) || !Array.isArray(value.cars)) throw new ApiError(0, 'Serverul a returnat o listă de mașini neașteptată.')
     return value.cars.map(decodeCar)
   }, { signal }),
   car: (id: string, signal: AbortSignal) => request('/cars/' + encodeURIComponent(id), decodeCarResponse, { signal }),
@@ -416,13 +417,13 @@ export const api = {
   login: (credentials: Credentials) => request('/users/login', (value) => {
     if (!record(value) || typeof value.accessToken !== 'string' || value.tokenType !== 'Bearer'
       || typeof value.expiresIn !== 'number' || !Number.isFinite(value.expiresIn) || value.expiresIn <= 0) {
-      throw new ApiError(0, 'The API returned an unexpected sign-in response.')
+      throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat la autentificare.')
     }
     return { user: decodeUser(value.user), accessToken: value.accessToken, expiresIn: value.expiresIn }
   }, { method: 'POST', body: credentials, authenticated: false }),
   me: (signal: AbortSignal) => request('/users/me', decodeUserResponse, { signal }),
   users: (signal: AbortSignal) => request('/users', (value) => {
-    if (!record(value) || !Array.isArray(value.users)) throw new ApiError(0, 'The API returned an unexpected users response.')
+    if (!record(value) || !Array.isArray(value.users)) throw new ApiError(0, 'Serverul a returnat o listă de utilizatori neașteptată.')
     return value.users.map(decodeUser)
   }, { signal }),
   createUser: (data: UserInput) => request('/users', decodeUserResponse, { method: 'POST', body: data }),
@@ -459,5 +460,5 @@ export const api = {
 }
 
 export function errorMessage(error: unknown) {
-  return error instanceof ApiError ? error.message : 'Something went wrong. Please try again.'
+  return error instanceof ApiError ? error.message : 'A apărut o eroare. Încearcă din nou.'
 }

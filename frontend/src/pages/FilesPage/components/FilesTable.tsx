@@ -24,8 +24,8 @@ export default function FilesTable({ view, offset, pageSize, downloading, deleti
 }) {
   // The caption carries the count, or the loading line; the error row speaks for itself.
   const caption = view.status === 'ready'
-    ? `${plural(view.total, 'file')}${view.refreshing ? ' · Refreshing…' : ''}`
-    : view.status === 'loading' ? 'Loading files…' : 'Files'
+    ? `${plural(view.total, 'fișier', 'fișiere')}${view.refreshing ? ' · Se actualizează…' : ''}`
+    : view.status === 'loading' ? 'Se încarcă fișierele…' : 'Fișiere'
 
   return (
     <div className="files-frame">
@@ -33,11 +33,11 @@ export default function FilesTable({ view, offset, pageSize, downloading, deleti
         <caption className={view.status === 'error' ? 'sr-only' : undefined}>{caption}</caption>
         <thead>
           <tr>
-            <th scope="col">File</th>
-            <th className="col-owner" scope="col">Owner</th>
-            <th className="col-uploaded" scope="col">Uploaded</th>
-            <th className="col-size num" scope="col">Size</th>
-            <th className="col-actions" scope="col"><span className="sr-only">Actions</span></th>
+            <th scope="col">Fișier</th>
+            <th className="col-owner" scope="col">Proprietar</th>
+            <th className="col-uploaded" scope="col">Încărcat</th>
+            <th className="col-size num" scope="col">Dimensiune</th>
+            <th className="col-actions" scope="col"><span className="sr-only">Acțiuni</span></th>
           </tr>
         </thead>
         <tbody>
@@ -45,8 +45,8 @@ export default function FilesTable({ view, offset, pageSize, downloading, deleti
             <tr>
               <td className="state-cell" colSpan={5}>
                 <div className="request-error" role="alert">
-                  <p>Couldn't load files. {view.error}</p>
-                  <button type="button" disabled={view.retrying} onClick={onRetry}>{view.retrying ? 'Retrying…' : 'Retry'}</button>
+                  <p>Fișierele nu au putut fi încărcate. {view.error}</p>
+                  <button type="button" disabled={view.retrying} onClick={onRetry}>{view.retrying ? 'Se reîncearcă…' : 'Reîncearcă'}</button>
                 </div>
               </td>
             </tr>
@@ -54,7 +54,7 @@ export default function FilesTable({ view, offset, pageSize, downloading, deleti
           {view.status === 'ready' && view.files.length === 0 && (
             <tr>
               <td className="state-cell" colSpan={5}>
-                <p className="empty-state">{view.total === 0 ? 'No files uploaded yet.' : 'No files on this page.'}</p>
+                <p className="empty-state">{view.total === 0 ? 'Nu există încă fișiere încărcate.' : 'Nu există fișiere pe această pagină.'}</p>
               </td>
             </tr>
           )}
@@ -78,19 +78,19 @@ export default function FilesTable({ view, offset, pageSize, downloading, deleti
                   <div className="file-actions">
                     {fileKind(file.mimeType) !== 'other' && (
                       <button type="button" className="ghost-button" onClick={() => onPreview(file)}>
-                        Preview<span className="sr-only"> {name}</span>
+                        Previzualizează<span className="sr-only"> {name}</span>
                       </button>
                     )}
                     {fileKind(file.mimeType) === 'video' && (
                       <Link to="/files/$fileId/edit" params={{ fileId: file.id }} className="ghost-button">
-                        Edit<span className="sr-only"> {name}</span>
+                        Editează<span className="sr-only"> {name}</span>
                       </Link>
                     )}
                     <button type="button" className="text-button" disabled={downloading.has(file.id)} onClick={() => onDownload(file)}>
-                      {downloading.has(file.id) ? 'Downloading…' : 'Download'}<span className="sr-only"> {name}</span>
+                      {downloading.has(file.id) ? 'Se descarcă…' : 'Descarcă'}<span className="sr-only"> {name}</span>
                     </button>
                     <button type="button" className="text-button danger" disabled={deleting !== undefined} onClick={() => onDelete(file)}>
-                      {deleting === file.id ? 'Deleting…' : 'Delete'}<span className="sr-only"> {name}</span>
+                      {deleting === file.id ? 'Se șterge…' : 'Șterge'}<span className="sr-only"> {name}</span>
                     </button>
                   </div>
                 </td>
@@ -100,7 +100,7 @@ export default function FilesTable({ view, offset, pageSize, downloading, deleti
         </tbody>
       </table>
       {view.status === 'ready' && (
-        <Pagination offset={offset} pageSize={pageSize} total={view.total} label="File pages" onPage={onPage} />
+        <Pagination offset={offset} pageSize={pageSize} total={view.total} label="Pagini cu fișiere" onPage={onPage} />
       )}
     </div>
   )

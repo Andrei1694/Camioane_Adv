@@ -8,11 +8,11 @@ type Kind = SegmentKind | 'maintenance'
 
 // One map drives the bars, the screen-reader text and the legend, so a swatch is always its mark.
 const kinds: Record<Kind, { label: string, describe: (start: number, end: number) => string }> = {
-  played: { label: 'Played', describe: (start, end) => `played ${formatWindow(start, end)}` },
-  'no-logs': { label: 'No playback logs yet', describe: (start, end) => `no playback logs ${formatWindow(start, end)}` },
-  scheduled: { label: 'Scheduled', describe: (start, end) => `scheduled ${formatWindow(start, end)}` },
-  undelivered: { label: 'Content not delivered', describe: (start, end) => `content not delivered for ${formatWindow(start, end)}` },
-  maintenance: { label: 'Maintenance', describe: (start, end) => `in maintenance ${formatWindow(start, end)}` },
+  played: { label: 'Redat', describe: (start, end) => `redat ${formatWindow(start, end)}` },
+  'no-logs': { label: 'Redare încă neraportată', describe: (start, end) => `redare neraportată ${formatWindow(start, end)}` },
+  scheduled: { label: 'Programat', describe: (start, end) => `programat ${formatWindow(start, end)}` },
+  undelivered: { label: 'Conținut nelivrat', describe: (start, end) => `conținut nelivrat pentru ${formatWindow(start, end)}` },
+  maintenance: { label: 'În mentenanță', describe: (start, end) => `în mentenanță ${formatWindow(start, end)}` },
 }
 
 const span = operatingDay.end - operatingDay.start
@@ -51,11 +51,11 @@ function CarRow({ car, bookings, now }: { car: Car, bookings: Booking[], now: nu
       <ul className="timeline-track" aria-label={`${car.plate}, ${car.driver}, ${routeOf(car.routeId).name}`}>
         {car.maintenance && (
           <li className="bar bar-maintenance" style={{ left: at(car.maintenance.start), width: `${((car.maintenance.end - car.maintenance.start) / span) * 100}%` }}>
-            <span className="seg-label">Maintenance</span>
+            <span className="seg-label">În mentenanță</span>
           </li>
         )}
         {own.map((item) => <BookingBar key={item.id} booking={item} now={now} />)}
-        {own.length === 0 && !car.maintenance && <li className="sr-only">No bookings today</li>}
+        {own.length === 0 && !car.maintenance && <li className="sr-only">Nicio rezervare astăzi</li>}
       </ul>
     </div>
   )
@@ -78,20 +78,20 @@ export default function FleetTimeline({ bookings, now = asOf.time }: { bookings:
   return (
     <section className="panel timeline-panel" aria-labelledby="fleet-today-title">
       <div className="panel-header">
-        <h2 id="fleet-today-title">Fleet today</h2>
+        <h2 id="fleet-today-title">Flota astăzi</h2>
         <p className="panel-meta">{formatLongDay(asOf.date)}, {formatWindow(operatingDay.start, operatingDay.end)}</p>
       </div>
-      <ul className="legend" aria-label="Key">
+      <ul className="legend" aria-label="Legendă">
         {(Object.keys(kinds) as Kind[]).filter((kind) => present.has(kind)).map((kind) => (
           <li key={kind}><span className={`swatch seg-${kind}`} aria-hidden="true" />{kinds[kind].label}</li>
         ))}
       </ul>
-      <div className="timeline-frame" ref={frame} tabIndex={0} role="region" aria-label="Fleet today, by car and hour">
+      <div className="timeline-frame" ref={frame} tabIndex={0} role="region" aria-label="Flota astăzi, după mașină și oră">
         <div className="timeline">
           <div className="timeline-head" aria-hidden="true">
             <span className="timeline-corner" />
             <div className="timeline-axis">
-              <span className="timeline-now-label" style={{ left: at(now) }}>Now {formatTime(now)}</span>
+              <span className="timeline-now-label" style={{ left: at(now) }}>Acum {formatTime(now)}</span>
               {ticks.map((tick, index) => (
                 <span key={tick} className={`timeline-tick${index === 0 ? ' tick-start' : index === ticks.length - 1 ? ' tick-end' : ''}`}
                   style={{ left: at(tick) }}>{formatTime(tick)}</span>
@@ -104,7 +104,7 @@ export default function FleetTimeline({ bookings, now = asOf.time }: { bookings:
               <span className="now-line" style={{ left: at(now) }} />
             </div>
             {routes.map((route) => (
-              <div key={route.id} className="timeline-group" role="group" aria-label={`${route.name} route`}>
+              <div key={route.id} className="timeline-group" role="group" aria-label={`Traseul ${route.name}`}>
                 <p className="timeline-route">{route.name}</p>
                 <div>
                   {cars.filter((car) => car.routeId === route.id).map((car) => <CarRow key={car.plate} car={car} bookings={bookings} now={now} />)}

@@ -2,10 +2,10 @@ export const roles = ['ADMIN', 'OPERATOR', 'DRIVER', 'USER'] as const
 export type Role = typeof roles[number]
 
 export const roleLabels: Record<Role, string> = {
-  ADMIN: 'Admin',
+  ADMIN: 'Administrator',
   OPERATOR: 'Operator',
-  DRIVER: 'Driver',
-  USER: 'User',
+  DRIVER: 'Șofer',
+  USER: 'Utilizator',
 }
 
 export function isRole(value: unknown): value is Role {
@@ -42,14 +42,14 @@ export function normalizeEmail(email: string) {
 }
 
 export function getEmailError(email: string): string | undefined {
-  if (!email) return 'Enter an email address.'
-  if (email.length > 254) return 'Use an email address with 254 characters or fewer.'
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Enter a valid email address.'
+  if (!email) return 'Introdu o adresă de e-mail.'
+  if (email.length > 254) return 'Folosește o adresă de e-mail de cel mult 254 de caractere.'
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Introdu o adresă de e-mail validă.'
 }
 
 export function getPasswordError(password: string): string | undefined {
   const length = Array.from(password).length
-  if (length < 12 || length > 128) return 'Use a password with 12–128 characters.'
+  if (length < 12 || length > 128) return 'Folosește o parolă de 12–128 de caractere.'
 }
 
 // Mirror imageUploadTypes in backend/src/lib/file-validation.ts and avatarMaxUploadBytes in
@@ -62,7 +62,7 @@ export const avatarMaxLabel = '10 MB'
 
 /** Rejects a picture the API would refuse before any byte is sent. A blank type is left to the API. */
 export function avatarFileError(file: File): string | undefined {
-  if (file.size === 0) return `${file.name} is empty.`
-  if (file.type && !avatarTypes.some((type) => type === file.type)) return `${file.name} is not a JPEG, PNG or WebP image.`
-  if (file.size > avatarMaxBytes) return `${file.name} is larger than ${avatarMaxLabel}.`
+  if (file.size === 0) return `${file.name} este gol.`
+  if (file.type && !avatarTypes.some((type) => type === file.type)) return `${file.name} nu este o imagine JPEG, PNG sau WebP.`
+  if (file.size > avatarMaxBytes) return `${file.name} depășește ${avatarMaxLabel}.`
 }

@@ -16,10 +16,10 @@ export default function UploadProgress({ id, upload, onCancel, onRetry, onDismis
 
   if (upload.phase === 'failed') return (
     <div className="upload-block" id={id} role="alert">
-      <p className="request-error">Couldn't upload {name}. {upload.error}</p>
+      <p className="request-error">Nu s-a putut încărca {name}. {upload.error}</p>
       <div className="upload-actions">
-        {upload.retryable && <button type="button" className="ghost-button" onClick={onRetry}>Retry<span className="sr-only"> upload of {name}</span></button>}
-        <button type="button" className="text-button" onClick={onDismiss}>Dismiss</button>
+        {upload.retryable && <button type="button" className="ghost-button" onClick={onRetry}>Reîncearcă<span className="sr-only"> încărcarea fișierului {name}</span></button>}
+        <button type="button" className="text-button" onClick={onDismiss}>Închide</button>
       </div>
     </div>
   )
@@ -28,22 +28,22 @@ export default function UploadProgress({ id, upload, onCancel, onRetry, onDismis
   const total = byteSize(upload.file.size)
   const percent = upload.file.size === 0 ? 100 : Math.floor((upload.sent / upload.file.size) * 100)
   const sent = byteSizeIn(upload.sent, total.unit)
-  const figure = `${sent} of ${total.value} ${total.unit}`
+  const figure = `${sent} din ${total.value} ${total.unit}`
   const saving = upload.phase === 'saving'
 
   return (
     <div className="upload-block" id={id}>
       <div className="upload-head">
-        <p className="upload-title">Uploading {name}</p>
-        <button type="button" className="text-button" onClick={onCancel}>Cancel<span className="sr-only"> upload of {name}</span></button>
+        <p className="upload-title">Se încarcă {name}</p>
+        <button type="button" className="text-button" onClick={onCancel}>Anulează<span className="sr-only"> încărcarea fișierului {name}</span></button>
       </div>
-      <div className="upload-track" role="progressbar" aria-label={`Uploading ${name}`}
+      <div className="upload-track" role="progressbar" aria-label={`Se încarcă ${name}`}
         aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}
-        aria-valuetext={saving ? `${figure} sent, checking and saving` : `${figure}, ${percent}%`}>
+        aria-valuetext={saving ? `${figure} trimiși, se verifică și se salvează` : `${figure}, ${percent}%`}>
         <div className="upload-fill" style={{ width: `${percent}%` }} />
       </div>
       <p className="upload-figure num">
-        {sent}<span className="unit"> of {total.value} {total.unit} · {saving ? 'Checking and saving…' : `${percent}%`}</span>
+        {sent}<span className="unit"> din {total.value} {total.unit} · {saving ? 'Se verifică și se salvează…' : `${percent}%`}</span>
       </p>
     </div>
   )

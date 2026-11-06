@@ -24,14 +24,14 @@ export default function DeleteCarDialog({ car, pending, error, missing, onCancel
         if (event.clientX < bounds.left || event.clientX > bounds.right
           || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.current?.close()
       }}>
-      <div className="dialog-head"><h2 id={`${id}-title`}>Delete {car.plate}?</h2></div>
+      <div className="dialog-head"><h2 id={`${id}-title`}>Ștergi mașina {car.plate}?</h2></div>
       <p className="dialog-sub" id={`${id}-description`}>
-        This permanently deletes the car from the shared fleet inventory.
+        Mașina va fi ștearsă definitiv din inventarul comun al flotei.
       </p>
       {error && <p className="request-error" role="alert">{error}</p>}
       <div className="form-actions">
-        <button ref={cancel} type="button" disabled={pending} onClick={() => dialog.current?.close()}>{missing ? 'Close' : 'Cancel'}</button>
-        <button className="danger" type="button" disabled={pending || missing} onClick={onDelete}>{pending ? 'Deleting…' : 'Delete car'}</button>
+        <button ref={cancel} type="button" disabled={pending} onClick={() => dialog.current?.close()}>{missing ? 'Închide' : 'Anulează'}</button>
+        <button className="danger" type="button" disabled={pending || missing} onClick={onDelete}>{pending ? 'Se șterge…' : 'Șterge mașina'}</button>
       </div>
     </dialog>
   )

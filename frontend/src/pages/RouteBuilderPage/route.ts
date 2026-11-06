@@ -60,7 +60,7 @@ export function readRoute(route: Route | undefined): RouteResult | null {
 }
 
 export function formatDistance(metres: number) {
-  return `${(metres / 1000).toLocaleString('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`
+  return `${(metres / 1000).toLocaleString('ro-RO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`
 }
 
 export function formatDuration(seconds: number) {
@@ -70,7 +70,7 @@ export function formatDuration(seconds: number) {
 }
 
 export function stopLabel(index: number, count: number) {
-  return index === 0 ? 'Start' : index === count - 1 ? 'Destination' : `Stop ${index + 1}`
+  return index === 0 ? 'Plecare' : index === count - 1 ? 'Destinație' : `Oprire ${index + 1}`
 }
 
 export function exportRoute(route: RouteResult, waypoints: Coordinate[]) {
@@ -79,7 +79,7 @@ export function exportRoute(route: RouteResult, waypoints: Coordinate[]) {
     features: [
       {
         type: 'Feature',
-        properties: { name: 'Planned route', profile: 'driving', distance_metres: route.distance, duration_seconds: route.duration },
+        properties: { name: 'Traseu planificat', profile: 'driving', distance_metres: route.distance, duration_seconds: route.duration },
         geometry: { type: 'LineString', coordinates: route.coordinates },
       },
       ...waypoints.map((coordinates, index) => ({

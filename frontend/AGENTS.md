@@ -58,6 +58,12 @@ scoped here unless the requested feature also requires changes elsewhere.
   invented rows in `sampleData.ts` until fleet, booking, creative and playback
   APIs exist. Its actions change local state only. Compute figures in
   `dashboardData.ts` from rows; never type a total by hand.
+- Campaigns live under `src/pages/CampaignPage/` (admin-only at `/campaign`) and
+  use `/campaigns` to save shared drafts. Query keys start with `campaignsKey(revision)`;
+  an open editor owns a separate snapshot and submits its version to prevent lost
+  updates. Past Europe/Bucharest dates and hours are read-only. Saving does not
+  launch campaigns or charge credits. Shared API types live in `src/lib/campaign.ts`;
+  calendar and unfinished-form helpers remain page-local.
 - Role values are ADMIN, OPERATOR, DRIVER, and USER. Reuse the role list,
   validation guard, and labels in `src/lib/user.ts`. Only a verified, currently
   valid ADMIN role grants management access; preserve denial for other roles.

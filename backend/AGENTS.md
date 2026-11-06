@@ -111,7 +111,7 @@ shutdown and script tests run the entry points in child processes, with the
   `GET /health` (`{ "status": "ok" }`), `POST /users/login`, protected
   `GET /users/me`, admin-only GET/POST `/users` and PATCH/DELETE `/users/:id`,
   GET/PUT/DELETE `/users/:id/avatar` for the user or an active admin,
-  the `/files` routes, and the `/credits` routes listed in `README.md`.
+  the `/files`, `/credits`, and admin-only `/campaigns` routes listed in `README.md`.
   Public registration is removed. The health route does not query the database.
 - CRUD services recheck the actor and administrator invariants in serializable
   transactions with bounded conflict retries. Keep password hashing outside those
@@ -192,6 +192,16 @@ shutdown and script tests run the entry points in child processes, with the
   snapshotted on each purchase; never accept a price from the client.
 - The credits migration adds CHECK constraints that Prisma doesn't track; keep
   them in future migrations. Purchases and ledger rows use SET NULL on account deletion.
+
+### Campaign drafts
+
+- `/campaigns` provides shared admin-only list, detail, create and update operations.
+  `Campaign.days` is validated schedule JSON; its dates/minutes use Europe/Bucharest
+  wall-clock time. Revalidate session and active administrator access in serializable
+  transactions, require the loaded version on updates, and preserve all saved past
+  dates/intervals. Saving never launches a campaign or changes credit balances.
+- Validation lives in `src/lib/campaign-validation.ts`. Use its canonical schedule
+  parsing and date boundary checks; never use UTC midnight as the scheduling day.
 
 ## Database and configuration
 

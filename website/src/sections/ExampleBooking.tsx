@@ -8,7 +8,7 @@ const axisEnd = Math.ceil(minutesOf(slot.end) / 60) * 60 + 30
 const share = (minutes: number) => (minutes / (axisEnd - axisStart)) * 100
 const ticks = Array.from({ length: Math.floor((axisEnd - axisStart) / 60) + 1 }, (_, index) => axisStart + index * 60)
 const hourLabel = (minutes: number) => `${String(minutes / 60).padStart(2, '0')}:00`
-const cars = Array.from({ length: slot.cars }, (_, index) => `Car ${index + 1}`)
+const cars = Array.from({ length: slot.cars }, (_, index) => `Mașina ${formatCount(index + 1)}`)
 
 /** Places a band on the track; bars are inset 1px at each end so neighbours part with a 2px seam. */
 function bandStyle(start: string, end: string, inset = 0): CSSProperties {
@@ -27,16 +27,16 @@ export default function ExampleBooking() {
     <figure className="example-booking">
       <div className="example-head">
         <div>
-          <p className="example-title">Example booking</p>
+          <p className="example-title">Exemplu de rezervare</p>
           <p className="example-meta">
-            {plural(slot.cars, 'car')} · {formatWindow(slot.start, slot.end)} · {formatHours(slot.carHours)} car-hours
+            {plural(slot.cars, 'mașină', 'mașini')} · {formatWindow(slot.start, slot.end)} · {formatHours(slot.carHours)} ore-mașină
           </p>
         </div>
         <p className="example-total num">{formatCount(slot.credits)}<span className="unit"> cr</span></p>
       </div>
       <p className="sr-only">
-        {plural(slot.cars, 'car')} on one route,{' '}
-        {slot.rows.map(row => `${formatWindow(row.start, row.end)} at ${row.rate} credits per car-hour`).join(', then ')}.
+        {plural(slot.cars, 'mașină', 'mașini')} pe un traseu,{' '}
+        {slot.rows.map(row => `${formatWindow(row.start, row.end)} la ${plural(row.rate, 'credit', 'credite')} pe oră-mașină`).join(', apoi ')}.
       </p>
       <div className="example-chart" aria-hidden="true">
         <div className="chart-row">
@@ -48,11 +48,11 @@ export default function ExampleBooking() {
           </div>
         </div>
         <div className="chart-row">
-          <span className="chart-label">Rate</span>
+          <span className="chart-label">Tarif</span>
           <div className="chart-track">
             {gridlines}
             {slot.rows.map(row => (
-              <span key={row.start} className="chart-rate num" style={bandStyle(row.start, row.end)}>{row.rate}</span>
+              <span key={row.start} className="chart-rate num" style={bandStyle(row.start, row.end)}>{formatCount(row.rate)}</span>
             ))}
           </div>
         </div>
@@ -69,7 +69,7 @@ export default function ExampleBooking() {
         ))}
       </div>
       <figcaption className="example-caption">
-        Rates in credits per car-hour. Example figures that show the arithmetic, not a price list.
+        Tarife în credite pe oră-mașină. Valorile ilustrează calculul și nu reprezintă o listă de prețuri.
       </figcaption>
     </figure>
   )

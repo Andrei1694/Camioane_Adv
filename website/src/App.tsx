@@ -9,9 +9,9 @@ import HowItWorks from './sections/HowItWorks'
 import Pricing from './sections/Pricing'
 
 const navigation = [
-  { href: '#booking', label: 'What you book' },
-  { href: '#how-it-works', label: 'How it works' },
-  { href: '#pricing', label: 'Pricing' },
+  { href: '#booking', label: 'Ce rezervi' },
+  { href: '#how-it-works', label: 'Cum funcționează' },
+  { href: '#pricing', label: 'Tarife' },
 ]
 
 // Read once when the page loads; the footer needs no live clock.
@@ -24,11 +24,11 @@ function Brand() {
 export default function App() {
   return (
     <>
-      <a className="skip-link" href="#main">Skip to content</a>
+      <a className="skip-link" href="#main">Sari la conținut</a>
       <header id="top" className="site-header">
         <div className="container header-inner">
           <a className="brand" href="#top"><Brand /></a>
-          <nav aria-label="Sections">
+          <nav aria-label="Secțiuni">
             <ul className="site-nav">
               {navigation.map(({ href, label }) => (
                 <li key={href} className="nav-section"><a href={href}>{label}</a></li>
@@ -50,7 +50,7 @@ export default function App() {
       <footer className="site-footer">
         <div className="container footer-inner">
           <p className="brand"><Brand /></p>
-          <p>© {year} Camioane App · Advertising on LED-screen cars</p>
+          <p>© {year} Camioane App · Publicitate pe mașini cu ecrane LED</p>
         </div>
       </footer>
     </>

@@ -1,6 +1,6 @@
 # Camioane App website
 
-The public presentation site for advertisers: one English landing page that explains what a campaign books (routes, slots, cars, dates), how a campaign runs, pricing in credits per car-hour with a worked example, the all-or-nothing confirmation, and how creatives reach the screens. Its call to action is a `mailto:` link.
+The public presentation site for advertisers: one Romanian landing page that explains what a campaign books (routes, slots, cars, dates), how a campaign runs, pricing in credits per car-hour with a worked example, the all-or-nothing confirmation, and how creatives reach the screens. Its call to action is a `mailto:` link.
 
 It is a static React, TypeScript and Vite app, set up like `../frontend/`, with plain CSS and IBM Plex Sans self-hosted through `@fontsource`. It has no router, state or data libraries. `src/lib/api.ts` is a typed client for the backend API, but no section calls it yet, so the page works without a running API.
 
@@ -19,7 +19,7 @@ Open `http://localhost:5174`. Development and preview use port 5174 with strict 
 
 | Variable | Required | Use |
 | --- | --- | --- |
-| `VITE_CONTACT_EMAIL` | For builds | The address behind "Plan a campaign" and "Email us", and shown as text in the contact section. `vite build` fails when it's missing or not an address. Development falls back to `hello@example.com`. |
+| `VITE_CONTACT_EMAIL` | For builds | The address behind "Planifică o campanie" and "Scrie-ne", and shown as text in the contact section. `vite build` fails when it's missing or not an address. Development falls back to `hello@example.com`. |
 | `VITE_API_BASE_URL` | For API calls | The backend's base URL, or a same-origin proxy path, for `src/lib/api.ts`. Development falls back to `http://localhost:3000`. Production has no fallback: a build without it still succeeds, but every API call fails with "The API address is not configured." |
 
 Copy `.env.example` to `.env.local` to set them, and restart Vite after changes. The values ship to the browser, like every `VITE_*` variable.
@@ -50,6 +50,7 @@ These are logic and component tests, not browser layout tests. Check the page in
 
 ## Content
 
+- Visitor-facing copy, accessibility text, metadata and the email subject are Romanian. Number formatting uses `ro-RO` (for example, `0,5` hours), with explicit Romanian noun forms. The brand and section anchors stay unchanged; there is no language switcher.
 - The copy follows `../BUSINESS_PLAN.md`, confirmed rules only. Things the plan lists as still unknown (cities, fleet size, real rates, credit price, cancellation terms) don't appear.
 - The pricing example is the plan's §7.2 example. `src/lib/pricing.ts` holds its rows and computes every figure the page shows, in the hero and in the pricing table.
 - The visual system is the admin app's, adapted for a page people read; see `DESIGN.md` in this folder.

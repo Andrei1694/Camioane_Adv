@@ -7,8 +7,8 @@ const canCopy = typeof navigator !== 'undefined' && 'clipboard' in navigator
 
 const copyMessages = {
   idle: '',
-  copied: 'Address copied.',
-  failed: "Couldn't copy. Select the address instead.",
+  copied: 'Adresa a fost copiată.',
+  failed: 'Adresa nu a putut fi copiată. Selecteaz-o și copiaz-o manual.',
 }
 
 export default function Contact() {
@@ -26,15 +26,15 @@ export default function Contact() {
   return (
     <Section
       id="contact"
-      title="Plan your first campaign"
-      lead="Tell us the routes, dates and times you have in mind, and how many cars. We'll reply with the rates and availability."
+      title="Planifică prima ta campanie"
+      lead="Spune-ne ce trasee, date și ore ai în vedere și câte mașini dorești. Îți răspundem cu tarifele și disponibilitatea."
       layout="stacked"
       className="section-closing"
     >
       <div className="contact-actions">
-        <a className="button" href={contactHref}>Email us</a>
+        <a className="button" href={contactHref}>Scrie-ne</a>
         <p className="contact-address">{contactEmail}</p>
-        {canCopy && <button type="button" className="button" onClick={copyAddress}>Copy address</button>}
+        {canCopy && <button type="button" className="button" onClick={copyAddress}>Copiază adresa</button>}
       </div>
       <p className="contact-status" role="status">{copyMessages[copyState]}</p>
     </Section>

@@ -2,7 +2,7 @@
 
 This file describes the visual system of the public website (`website/`) as it is built. The site shares the admin app's brand, tokens and type. The shared tokens are defined in [`../DESIGN.md`](../DESIGN.md) and copied into `src/index.css`. Everything else here (layout, type sizes, components and patterns) belongs to the website alone. When the code changes a size or a pattern listed here, update this file in the same commit.
 
-The site is one English landing page for advertisers. People read it rather than work in it, so it follows the admin app's restraint at a reading pace. Colour belongs to the example data and the one action that matters. Type, rules and white space carry everything else.
+The site is one Romanian landing page for advertisers. People read it rather than work in it, so it follows the admin app's restraint at a reading pace. Colour belongs to the example data and the one action that matters. Type, rules and white space carry everything else.
 
 ## Sources of truth
 
@@ -20,14 +20,14 @@ The site is one English landing page for advertisers. People read it rather than
 
 ## Principles
 
-- **One action.** The page's job is to start a conversation, so it has one primary button, "Plan a campaign". Every other call to action is secondary.
+- **One action.** The page's job is to start a conversation, so it has one primary button, "Planifică o campanie". Every other call to action is secondary.
 - **Colour goes on data and the one primary action.** The only colour on the page is the example booking's `--data` bars and the navy primary button. Headers, sections and the footer stay neutral.
 - **Surfaces are flat.** A 1px line or one step of tone (`--frame`) separates things. Nothing on the page has a shadow.
-- **Use the trade's words:** cars, car-hours, credits, slots, routes, creatives.
+- **Use consistent Romanian terms:** mașini (cars), ore-mașină (car-hours), credite (credits), intervale (slots), trasee (routes), materiale publicitare (creatives).
 - **Data is honest:**
   - Every figure is computed from `src/lib/pricing.ts`. Never type a total by hand.
   - A fact shown in two places is one value in the data: the hero total, the worked formula and the table total all read `exampleSlot.credits`.
-  - The example always carries its "not a price list" label.
+  - The example always carries its "nu reprezintă o listă de prețuri" label.
 - **Each section answers one question.** The hero answers "what is this, and how is it priced?". The sections then answer what you book, how a campaign runs, what it costs, what we promise, and how creatives reach the screens. The page closes with how to start.
 
 ## Brand
@@ -60,7 +60,7 @@ These are copies of the shared tokens. Change a value in `../DESIGN.md` and `../
 | `--primary` | `#12263a` | Primary button fill, skip link |
 | `--primary-hover` | `#213d58` | Primary button hover |
 | `--focus` | `#245bba` | Focus ring |
-| `--data` | `#007c92` | Example booking bars |
+| `--data` | `#007c92` | Exemplu de rezervare bars |
 | `--rule` | `#eef1f3` | Row rules: steps, grid items, table rows, chart gridlines |
 
 ### Layout values (`src/App.css`)
@@ -108,12 +108,12 @@ These are copies of the shared tokens. Change a value in `../DESIGN.md` and `../
 | Section | Anchor | Layout | Content |
 | --- | --- | --- | --- |
 | Hero | `#top` | Own grid | Title, lead, buttons; the example booking panel |
-| What you book | `#booking` | Stacked | Six terms in three columns |
-| How a campaign runs | `#how-it-works` | Split | Seven numbered steps |
-| Pricing in credits | `#pricing` | Split | Formula box, example table, note |
-| All or nothing | `#confirmation` | Stacked | Four points, 2 × 2 |
-| Your creative on screen | `#content` | Stacked | Three points in three columns |
-| Plan your first campaign | `#contact` | Stacked, `section-closing` | The contact band |
+| Ce rezervi | `#booking` | Stacked | Six terms in three columns |
+| Cum se desfășoară o campanie | `#how-it-works` | Split | Seven numbered steps |
+| Tarife în credite | `#pricing` | Split | Formula box, example table, note |
+| Totul sau nimic | `#confirmation` | Stacked | Four points, 2 × 2 |
+| Materialele tale publicitare pe ecrane | `#content` | Stacked | Three points in three columns |
+| Planifică prima ta campanie | `#contact` | Stacked, `section-closing` | The contact band |
 
 - **Breakpoints (viewport):**
 
@@ -143,91 +143,92 @@ These are copies of the shared tokens. Change a value in `../DESIGN.md` and `../
 
 | Kind | Class | Look | Use |
 | --- | --- | --- | --- |
-| Primary | `.button.button-primary` | Navy fill, white label | "Plan a campaign" in the hero. One per page. |
-| Secondary | `.button` | White, 1px `--control-border` | "How pricing works", the header's Contact, "Email us", "Copy address" |
-| Text link | `.text-link` | Ink, underlined 3px below | "Ask us" in the pricing note |
+| Primary | `.button.button-primary` | Navy fill, white label | "Planifică o campanie" in the hero. One per page. |
+| Secondary | `.button` | White, 1px `--control-border` | "Cum se calculează costul", the header's Contact, "Scrie-ne", "Copiază adresa" |
+| Text link | `.text-link` | Ink, underlined 3px below | "Contactează-ne" in the pricing note |
 
 - Buttons are 44px tall with 20px of side padding and 16px/500 labels, and they don't wrap.
-- Most buttons are links. A `<button class="button">` ("Copy address") inherits the same font and weight.
+- Most buttons are links. A `<button class="button">` ("Copiază adresa") inherits the same font and weight.
 - Hover changes only the fill (`--hover`, or `--primary-hover` on the primary), over 120ms.
 
 ### Header and navigation (`App.tsx`)
 
 - The brand (the mark and "Camioane App") on the left links to `#top`.
-- On the right are the section links "What you book", "How it works" and "Pricing": grey 16px/500, 44px tall, 12px of side padding and a 6px radius. They get the `--hover` fill and ink on hover. Then comes Contact, a secondary button 8px further along.
+- On the right are the section links "Ce rezervi", "Cum funcționează" and "Tarife": grey 16px/500, 44px tall, 12px of side padding and a 6px radius. They get the `--hover` fill and ink on hover. Then comes Contact, a secondary button 8px further along.
 - Under 768px only Contact stays. The sticky header keeps it on screen.
 - Each section's `id` must match a link's `href`.
 
 ### Hero (`sections/Hero.tsx`)
 
 - Two columns: the text, and the 460px panel, 56px apart (40px apart once stacked), centred against each other.
-- The text: the title (at most 14em wide), then the lead (18px grey, at most 34em, 20px below), then "Plan a campaign" (primary) and "How pricing works" (secondary), 32px below with 12px between them.
+- The text: the title (at most 14em wide), then the lead (18px grey, at most 34em, 20px below), then "Planifică o campanie" (primary) and "Cum se calculează costul" (secondary), 32px below with 12px between them.
 - The panel: a 1px `--border` edge and a 10px radius, holding only the example booking.
 
-### Example booking (`sections/ExampleBooking.tsx`)
+### Exemplu de rezervare (`sections/ExampleBooking.tsx`)
 
 - A small timeline of the pricing example, every part of it derived from `exampleSlot`. It has 24px of padding (20px and 16px on phones).
-- **Title row:** "Example booking" (16px/600) over a grey 13px meta line ("2 cars · 16:30–18:00 · 3.0 car-hours"). The total sits on the right at 28px with a grey "cr".
+- **Title row:** "Exemplu de rezervare" (16px/600) over a grey 13px meta line ("2 mașini · 16:30–18:00 · 3,0 ore-mașină"). The total sits on the right at 28px with a grey "cr".
 - **Chart:** 24px below the title row, with rows 8px apart. Each row has a 44px label column (12px grey) and a track.
   - The axis runs from the hour the slot starts in to 30 minutes past the hour it ends in. Hour ticks are 12px grey and centred on their hour (`16:00`).
-  - The "Rate" row centres each band's rate (12px/500) over that band.
+  - The "Tarif" row centres each band's rate (12px/500) over that band.
   - Each car is a row of 24px solid `--data` bars, one per rate band, with a 4px radius. Where the rate changes, a 2px seam splits them.
   - Gridlines are 1px `--rule` at each hour, extending 4px above and below each track.
-- **Caption:** 12px grey, 16px below: "Rates in credits per car-hour. Example figures that show the arithmetic, not a price list."
-- The chart is `aria-hidden`. A visually hidden sentence describes it in full ("2 cars on one route, 16:30–17:00 at 20 credits per car-hour, then 17:00–18:00 at 30 credits per car-hour.").
+- **Caption:** 12px grey, 16px below: "Tarife în credite pe oră-mașină. Valorile ilustrează calculul și nu reprezintă o listă de prețuri."
+- The chart is `aria-hidden`. A visually hidden sentence describes it in full ("2 mașini pe un traseu, 16:30–17:00 la 20 de credite pe oră-mașină, apoi 17:00–18:00 la 30 de credite pe oră-mașină.").
 
 ### Lists (`sections/Booking.tsx`, `HowItWorks.tsx`, `Confirmation.tsx`, `Content.tsx`)
 
-- **Terms** ("What you book"): a definition list in a three-column grid. Each term is 16px/600 over its grey line.
-- **Steps** ("How a campaign runs"): a numbered list. Each step's number sits in a grey 32px column (600, tabular), 16px from its title, with its grey line under the title. Steps are 16px apart in padding, with a 1px `--rule` between them and no rule above the first.
-- **Points** ("All or nothing", "Your creative on screen"): a 16px/600 `h3` over a grey line, 4px apart.
+- **Terms** ("Ce rezervi"): a definition list in a three-column grid. Each term is 16px/600 over its grey line.
+- **Steps** ("Cum se desfășoară o campanie"): a numbered list. Each step's number sits in a grey 32px column (600, tabular), 16px from its title, with its grey line under the title. Steps are 16px apart in padding, with a 1px `--rule` between them and no rule above the first.
+- **Points** ("Totul sau nimic", "Materialele tale publicitare pe ecrane"): a 16px/600 `h3` over a grey line, 4px apart.
 - **Column grids** (`.grid-2`, `.grid-3`): used by the stacked sections. Each item opens with a 1px `--rule` line and 16px of space. Gaps are 32px down and 40px across (24px in one column).
 - No icons, cards, fills or numbered circles.
 
 ### Pricing (`sections/Pricing.tsx`)
 
 - **Formula box:** `--frame`, an 8px radius, 16px × 20px of padding, with lines 8px apart:
-  1. **Slot cost** = cars × the sum of (hours in each rate band × that band's rate)
-  2. A grey "For the example below:" followed, in ink, by the example worked through: "2 × (0.5 h × 20 + 1.0 h × 30) = 80 cr". It is built from `exampleSlot`, and no band's term ever wraps inside itself.
-  3. **Campaign cost** = the sum of all its slots, on every date
+  1. **Costul unui interval** = numărul de mașini × suma (orelor din fiecare segment tarifar × tariful segmentului)
+  2. A grey "Pentru exemplul de mai jos:" followed, in ink, by the example worked through: "2 × (0,5 h × 20 + 1,0 h × 30) = 80 cr". It is built from `exampleSlot`, and no band's term ever wraps inside itself.
+  3. **Costul campaniei** = suma costurilor tuturor intervalelor, pentru toate datele
 - **Table** (`.price-table`), 32px below:
   - A caption names the example: 14px grey, above the table.
   - Headers are 13px grey, regular weight and sentence case, over a 1px `--border` rule, with no fill band.
   - Rows have 12px of cell padding (8px on phones) and 1px `--rule` lines, and aren't striped.
   - The rate band is the row header. Hours, rate, cars and credits are right-aligned in tabular figures, and credits carry a grey "cr".
   - The total row is 600 weight with no rule under it.
-- **Note:** 14px grey, 16px below: "Example rates that show the arithmetic, not a price list. Ask us for the rates on your routes."
+- **Note:** 14px grey, 16px below: "Tarifele din exemplu ilustrează calculul și nu reprezintă o listă de prețuri. Contactează-ne pentru tarifele traseelor tale."
 
 ### Contact band (`sections/Contact.tsx`)
 
 - The last section sits on `--frame` in place of its top rule, a step of tone that closes the page.
 - Its actions sit in one row that wraps, 12px apart down and 20px across:
-  - "Email us": a secondary button linking to `mailto:` with the subject "Advertising campaign".
+  - "Scrie-ne": a secondary button linking to `mailto:` with the subject "Campanie publicitară".
   - The address, in ink at 500 weight, which may break anywhere so it never overflows.
-  - "Copy address": a secondary `<button>` for visitors without a mail app. It is hidden where the browser has no clipboard API.
-- A grey 14px `role="status"` line, 12px below, reports "Address copied." or "Couldn't copy. Select the address instead." It takes no space while empty.
+  - "Copiază adresa": a secondary `<button>` for visitors without a mail app. It is hidden where the browser has no clipboard API.
+- A grey 14px `role="status"` line, 12px below, reports "Adresa a fost copiată." or "Adresa nu a putut fi copiată. Selecteaz-o și copiaz-o manual." It takes no space while empty.
 - Under 768px the address takes its own line above the two buttons. The tab order is unchanged, because the address isn't focusable.
 
 ### Footer (`App.tsx`)
 
-- 32px of padding over a 1px `--border` rule, 14px grey: the brand (16px) on the left, and "© {year} Camioane App · Advertising on LED-screen cars" on the right. The two wrap with gaps of 8px down and 24px across.
+- 32px of padding over a 1px `--border` rule, 14px grey: the brand (16px) on the left, and "© {year} Camioane App · Publicitate pe mașini cu ecrane LED" on the right. The two wrap with gaps of 8px down and 24px across.
 - The year is read once when the page loads.
 
 ## Formatting data
 
-Use the helpers in `src/lib/format.ts`, which copy the admin app's en-GB formats; don't format inline.
+Use the helpers in `src/lib/format.ts`, with `ro-RO` number and plural rules; don't format inline. The admin app keeps its own locale. `plural(count, one, many)` requires explicit singular and plural forms and inserts `de` for integer counts in the Romanian `other` category.
 
 | Value | Format | Helper |
 | --- | --- | --- |
-| Credits | Whole number with a thousands separator and a grey "cr" suffix: `80 cr` | `formatCount` |
-| Hours and car-hours | Always one decimal: `0.5`, `3.0` | `formatHours` |
-| Rates | A bare number under a header or caption that names the unit ("Rate (cr/car-h)", "Rates in credits per car-hour") | `formatCount` |
+| Credits | Whole number with a Romanian thousands separator (`1.000`) and a grey "cr" suffix: `80 cr` | `formatCount` |
+| Hours and car-hours | Always one decimal with a comma: `0,5`, `3,0` | `formatHours` |
+| Rates | A bare number under a header or caption that names the unit ("Tarif (cr/oră-mașină)", "Tarife în credite pe oră-mașină") | `formatCount` |
 | Time | 24-hour clock: `16:30`; ranges with an en dash: `16:30–18:00` | `formatWindow` |
-| Counts with nouns | Singular or plural: `1 car`, `2 cars` | `plural` |
-| Separators | A middle dot between parts of a meta line: `2 cars · 16:30–18:00 · 3.0 car-hours` | — |
+| Counts with nouns | Romanian noun forms: `1 mașină`, `2 mașini`, `20 de mașini` | `plural` |
+| Separators | A middle dot between parts of a meta line: `2 mașini · 16:30–18:00 · 3,0 ore-mașină` | — |
 
 ## Content
 
+- Romanian only, with correct diacritics and a friendly, direct tone. Keep `Camioane App` and existing anchor IDs unchanged. The page uses `lang="ro"`, Romanian title/description metadata, and the email subject "Campanie publicitară". There is no language switcher.
 - The copy comes from `../BUSINESS_PLAN.md`, confirmed rules only. Things the plan lists as still unknown (cities, fleet size, real rates, the credit price, cancellation terms) don't appear.
 - There are no invented clients, testimonials, logos, vanity figures, stock photos or placeholder people.
 - Lists of terms, steps and points sit in arrays at the top of their section's file. Titles and leads are written inline.
@@ -235,7 +236,7 @@ Use the helpers in `src/lib/format.ts`, which copy the admin app's en-GB formats
 
 ## States and accessibility
 
-- **Landmarks:** a skip link to `#main`, then `header` with `nav aria-label="Sections"`, then `main`, then `footer`. Every section is a `section` with `aria-labelledby` pointing at its heading.
+- **Landmarks:** a skip link to `#main`, then `header` with `nav aria-label="Secțiuni"`, then `main`, then `footer`. Every section is a `section` with `aria-labelledby` pointing at its heading.
 - **Focus:** a 2px `--focus` outline with a 3px offset on every interactive element. Never remove it. The skip link slides in on focus, above the sticky header.
 - **Keyboard:** every control works from the keyboard in reading order, and the sticky header never covers a focused control.
 - **Charts:** the example chart is hidden from assistive technology, and its visually hidden sentence states the same facts.
@@ -249,7 +250,7 @@ Use the helpers in `src/lib/format.ts`, which copy the admin app's en-GB formats
 
 - A second primary button.
 - Forms, lead capture, chat widgets or anything else that calls an API.
-- Typing a figure by hand, or showing the pricing example without its "not a price list" label.
+- Typing a figure by hand, or showing the pricing example without its "nu reprezintă o listă de prețuri" label.
 - Invented cities, fleet sizes, prices, clients, testimonials, logos or vanity figures. Stock photos or placeholder people.
 - Gradients, glows, glass or backdrop blur. Shadows, including on the sticky header.
 - Icons in tinted circles or squares, icon-topped feature cards, or cards around list items.
@@ -260,7 +261,7 @@ Use the helpers in `src/lib/format.ts`, which copy the admin app's en-GB formats
 
 ## Known gaps
 
-- At 320px the price table is about 60px wider than its frame and scrolls inside it. The page itself doesn't scroll. Letting the "Rate (cr/car-h)" header wrap would fix it.
+- At 320px the price table is about 60px wider than its frame and scrolls inside it. The page itself doesn't scroll. Letting the "Tarif (cr/oră-mașină)" header wrap would fix it.
 
 ## Checking a change
 
@@ -268,7 +269,7 @@ Use the helpers in `src/lib/format.ts`, which copy the admin app's en-GB formats
 2. Look at the page in a browser at 1440, 768 and 390px wide.
    - Check that the page never scrolls sideways.
    - Check that there is exactly one `.button-primary`, and that the calls to action are `mailto:` links.
-   - Check that each header link and "How pricing works" lands its heading below the sticky header.
+   - Check that each header link and "Cum se calculează costul" lands its heading below the sticky header.
    - Check that every figure matches its copies: the hero total, the worked formula and the table total.
    - Tab through the page and check that the focus ring shows on every control, with nothing hidden under the header.
 3. When a token, size or pattern changes, update this file in the same commit. When a shared token changes, update `../DESIGN.md` and `../frontend/src/index.css` too.

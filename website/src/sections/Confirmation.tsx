@@ -2,20 +2,20 @@ import Section from '../components/Section'
 
 const points = [
   {
-    title: 'Every slot, every car',
-    detail: 'If a single date is one car short, nothing is booked and nothing is charged.',
+    title: 'Fiecare interval, fiecare mașină',
+    detail: 'Dacă lipsește chiar și o singură mașină la una dintre date, nu se rezervă nimic și nu se scad credite.',
   },
   {
-    title: 'Credits move at confirmation',
-    detail: 'Sending a request neither holds nor debits credits. When we confirm, we check your balance and debit the full cost in the same step as the booking.',
+    title: 'Creditele se scad la confirmare',
+    detail: 'Trimiterea unei cereri nu blochează și nu scade credite. La confirmare, verificăm soldul și scădem costul integral în același pas cu rezervarea.',
   },
   {
-    title: 'No partial bookings',
-    detail: 'A campaign is confirmed whole, or it stays unconfirmed and you see why.',
+    title: 'Fără rezervări parțiale',
+    detail: 'O campanie se confirmă integral sau rămâne neconfirmată, iar tu vezi motivul.',
   },
   {
-    title: 'No double charges',
-    detail: 'Confirming the same campaign twice never debits it twice.',
+    title: 'Fără debitări duble',
+    detail: 'Confirmarea repetată a aceleiași campanii nu scade creditele de două ori.',
   },
 ]
 
@@ -23,8 +23,8 @@ export default function Confirmation() {
   return (
     <Section
       id="confirmation"
-      title="All or nothing"
-      lead="We confirm a campaign only when we can run all of it."
+      title="Totul sau nimic"
+      lead="Confirmăm o campanie doar dacă o putem desfășura integral."
       layout="stacked"
     >
       <ul className="points grid-2">

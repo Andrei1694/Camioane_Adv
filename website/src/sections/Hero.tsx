@@ -6,14 +6,14 @@ export default function Hero() {
     <section className="hero" aria-labelledby="hero-title">
       <div className="container hero-grid">
         <div>
-          <h1 id="hero-title">Your ad on LED screens that drive through the city</h1>
+          <h1 id="hero-title">Reclama ta pe ecrane LED care străbat orașul</h1>
           <p className="hero-lead">
-            Book our cars with rooftop LED screens on set routes, by the hour. Each car you book shows only your
-            campaign for the whole slot.
+            Rezervă cu ora mașinile noastre cu ecrane LED pe plafon, pe trasee prestabilite. Fiecare mașină rezervată
+            afișează exclusiv campania ta pe toată durata intervalului.
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href={contactHref}>Plan a campaign</a>
-            <a className="button" href="#pricing">How pricing works</a>
+            <a className="button button-primary" href={contactHref}>Planifică o campanie</a>
+            <a className="button" href="#pricing">Cum se calculează costul</a>
           </div>
         </div>
         <div className="hero-visual">

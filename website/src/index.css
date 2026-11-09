@@ -84,7 +84,7 @@ figure {
   white-space: nowrap;
 }
 
-/* Links in the look of the admin app's buttons. One primary per page: "Plan a campaign". */
+/* Links in the look of the admin app's buttons. One primary per page: "Planifică o campanie". */
 .button {
   display: inline-flex;
   align-items: center;
@@ -101,7 +101,7 @@ figure {
   transition: background-color 120ms ease, border-color 120ms ease;
 }
 
-/* A <button> in the same look as the link buttons ("Copy address"). */
+/* A <button> in the same look as the link buttons ("Copiază adresa"). */
 button.button {
   font: inherit;
   font-weight: 500;

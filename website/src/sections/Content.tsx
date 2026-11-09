@@ -2,16 +2,16 @@ import Section from '../components/Section'
 
 const points = [
   {
-    title: 'Approved before it airs',
-    detail: 'Our team reviews each image or video before it goes to the screens. A replaced file is reviewed again.',
+    title: 'Aprobate înainte de afișare',
+    detail: 'Echipa noastră verifică fiecare imagine sau videoclip înainte de a ajunge pe ecrane. Dacă înlocuiești un fișier, îl verificăm din nou.',
   },
   {
-    title: 'Sent straight to the screens',
-    detail: "Approved content and the confirmed schedule go to each car's screen controller, with no copying by hand.",
+    title: 'Trimise direct pe ecrane',
+    detail: 'Materialele aprobate și programul confirmat ajung la sistemul de control al ecranului fiecărei mașini, fără copiere manuală.',
   },
   {
-    title: 'Scheduled and played, side by side',
-    detail: 'The screens report what they played, and you see it next to what was scheduled.',
+    title: 'Ce s-a programat și ce s-a afișat',
+    detail: 'Ecranele raportează ce au afișat, iar tu poți compara cu programul stabilit.',
   },
 ]
 
@@ -19,8 +19,8 @@ export default function Content() {
   return (
     <Section
       id="content"
-      title="Your creative on screen"
-      lead="The images or videos you upload go on air only once our team approves them."
+      title="Materialele tale publicitare pe ecrane"
+      lead="Imaginile sau videoclipurile încărcate sunt afișate doar după aprobarea echipei noastre."
       layout="stacked"
     >
       <ul className="points grid-3">

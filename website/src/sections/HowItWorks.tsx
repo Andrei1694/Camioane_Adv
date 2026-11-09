@@ -1,21 +1,21 @@
 import Section from '../components/Section'
 
 const steps = [
-  { title: 'Buy credits', detail: 'Top up your account by card. The credits land once the payment is confirmed.' },
-  { title: 'Build the campaign', detail: 'Pick the routes, slots and dates, and the number of cars on each route.' },
-  { title: 'Upload your creative', detail: 'Images or videos, for our team to approve before they go on screen.' },
+  { title: 'Cumpără credite', detail: 'Alimentează-ți contul cu cardul. Creditele sunt adăugate după confirmarea plății.' },
+  { title: 'Creează campania', detail: 'Alege traseele, intervalele, datele și numărul de mașini pe fiecare traseu.' },
+  { title: 'Încarcă materialele publicitare', detail: 'Imagini sau videoclipuri, pe care echipa noastră le aprobă înainte de afișare.' },
   {
-    title: 'Check and send',
-    detail: 'Review every dated slot and what it costs in credits, then send the request. Nothing leaves your balance yet.',
+    title: 'Verifică și trimite',
+    detail: 'Verifică fiecare interval, data și costul său în credite, apoi trimite cererea. În această etapă nu se scad credite din sold.',
   },
   {
-    title: 'We confirm',
-    detail: 'Our team checks the content and the schedule, then books the whole campaign and debits its credits in one step.',
+    title: 'Noi confirmăm',
+    detail: 'Echipa noastră verifică materialele și programul, apoi rezervă întreaga campanie și scade creditele aferente într-un singur pas.',
   },
-  { title: 'Follow it on the road', detail: 'See what is scheduled, what reached the screens and what the screens report as played.' },
+  { title: 'Urmărește campania în desfășurare', detail: 'Vezi ce este programat, ce a ajuns pe ecrane și ce raportează ecranele că au afișat.' },
   {
-    title: 'Change plans',
-    detail: 'Ask to cancel selected future slots, or all that remain. We review the request and return credits under the cancellation policy.',
+    title: 'Schimbă planurile',
+    detail: 'Solicită anularea anumitor intervale viitoare sau a tuturor celor rămase. Analizăm cererea și returnăm creditele conform politicii de anulare.',
   },
 ]
 
@@ -23,8 +23,8 @@ export default function HowItWorks() {
   return (
     <Section
       id="how-it-works"
-      title="How a campaign runs"
-      lead="You plan and pay in credits from your account. We check, confirm and run the cars."
+      title="Cum se desfășoară o campanie"
+      lead="Tu planifici și plătești în credite din contul tău. Noi verificăm, confirmăm și trimitem mașinile pe traseu."
     >
       <ol className="steps">
         {steps.map(({ title, detail }) => (

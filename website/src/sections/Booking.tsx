@@ -1,20 +1,20 @@
 import Section from '../components/Section'
 
 const terms = [
-  { term: 'Routes', detail: 'Set routes, driven by our own cars and drivers on a published timetable.' },
-  { term: 'Slots', detail: 'A fixed departure or a bookable period on a route, with a set start and end.' },
-  { term: 'Cars', detail: 'How many cars you want on each route in each slot.' },
-  { term: 'Dates', detail: 'Specific dates, a recurring schedule, or a mix of the two.' },
-  { term: 'Parallel routes', detail: 'Several routes in the same slot, each with its own number of cars.' },
-  { term: 'Exclusive screens', detail: 'A booked car plays only your campaign for the whole slot. No rotation with other advertisers.' },
+  { term: 'Trasee', detail: 'Trasee prestabilite, parcurse de mașinile și șoferii noștri, după un orar publicat.' },
+  { term: 'Intervale', detail: 'O plecare fixă sau o perioadă rezervabilă pe un traseu, cu ore de început și de sfârșit stabilite.' },
+  { term: 'Mașini', detail: 'Câte mașini vrei pe fiecare traseu, în fiecare interval.' },
+  { term: 'Date', detail: 'Date specifice, un program recurent sau o combinație între cele două.' },
+  { term: 'Trasee simultane', detail: 'Mai multe trasee în același interval, fiecare cu propriul număr de mașini.' },
+  { term: 'Ecrane exclusive', detail: 'O mașină rezervată afișează doar campania ta pe toată durata intervalului, fără alternare cu reclamele altor clienți.' },
 ]
 
 export default function Booking() {
   return (
     <Section
       id="booking"
-      title="What you book"
-      lead="A campaign is a set of slots on our routes. You choose the routes, the times and how many cars; we drive them."
+      title="Ce rezervi"
+      lead="O campanie cuprinde intervalele rezervate pe traseele noastre. Tu alegi traseele, orele și numărul de mașini; noi ne ocupăm de deplasare."
       layout="stacked"
     >
       <dl className="term-list grid-3">

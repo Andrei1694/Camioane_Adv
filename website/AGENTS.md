@@ -13,7 +13,7 @@ scoped here unless the requested change also requires changes elsewhere.
 
 ## Project context
 
-- This is the public presentation site for advertisers: one English landing page
+- This is the public presentation site for advertisers: one Romanian landing page
   with anchored sections (`#booking`, `#how-it-works`, `#pricing`,
   `#confirmation`, `#content`, `#contact`). It is set up like `../frontend/`
   (React, TypeScript, Vite, Oxlint, plain CSS) but is a separate package with its
@@ -29,8 +29,8 @@ scoped here unless the requested change also requires changes elsewhere.
   forms or lead capture until the backend has an endpoint for them.
 - Copy comes from `../BUSINESS_PLAN.md`, confirmed rules only. Do not invent
   cities, fleet sizes, rates, credit prices, client names, testimonials or other
-  figures. Use the trade's words from `DESIGN.md`: cars, car-hours, credits,
-  slots, routes, creatives.
+  figures. Use the Romanian terms from `DESIGN.md`: mașini, ore-mașină, credite,
+  intervale, trasee, materiale publicitare.
 - `src/lib/pricing.ts` holds the illustrative pricing example and computes every
   figure the page shows from its rows. Never type a total by hand, and keep the
   "not a price list" labels next to the example.

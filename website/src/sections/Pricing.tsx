@@ -3,22 +3,22 @@ import Section from '../components/Section'
 import { formatCount, formatHours, formatWindow, plural } from '../lib/format'
 import { exampleSlot as slot } from '../lib/pricing'
 
-const changes = slot.rows.slice(1).map(row => row.start).join(' and ')
+const changes = slot.rows.slice(1).map(row => row.start).join(' și ')
 
-// The slot formula with the example's own figures, e.g. 2 × (0.5 h × 20 + 1.0 h × 30) = 80 cr.
+// The slot formula with the example's own figures, e.g. 2 × (0,5 h × 20 + 1,0 h × 30) = 80 cr.
 const bandTerms = slot.rows.map(row => ({ key: row.start, text: `${formatHours(row.hours)} h × ${formatCount(row.rate)}` }))
 
 export default function Pricing() {
   return (
     <Section
       id="pricing"
-      title="Pricing in credits"
-      lead="You buy credits at one standard price. A campaign spends them by the car-hour, one car booked for one hour, at a rate set by the route and the time of day."
+      title="Tarife în credite"
+      lead="Cumperi credite la un preț unic. Costul unei campanii se calculează în ore-mașină: o mașină rezervată timp de o oră. Tariful în credite depinde de traseu și de momentul zilei."
     >
       <div className="formula">
-        <p><strong>Slot cost</strong> = cars × the sum of (hours in each rate band × that band's rate)</p>
+        <p><strong>Costul unui interval</strong> = numărul de mașini × suma (orelor din fiecare segment tarifar × tariful segmentului)</p>
         <p className="formula-example">
-          For the example below:{' '}
+          Pentru exemplul de mai jos:{' '}
           <span className="formula-figures num">
             {formatCount(slot.cars)} × (
             {bandTerms.map(({ key, text }, index) => (
@@ -27,21 +27,21 @@ export default function Pricing() {
             ) = <span className="nowrap">{formatCount(slot.credits)}<span className="unit"> cr</span></span>
           </span>
         </p>
-        <p><strong>Campaign cost</strong> = the sum of all its slots, on every date</p>
+        <p><strong>Costul campaniei</strong> = suma costurilor tuturor intervalelor, pentru toate datele</p>
       </div>
       <div className="table-frame">
         <table className="price-table">
           <caption>
-            Example: {plural(slot.cars, 'car')} on one route, {formatWindow(slot.start, slot.end)}, with the rate
-            changing at {changes}.
+            Exemplu: {plural(slot.cars, 'mașină', 'mașini')} pe un traseu, {formatWindow(slot.start, slot.end)}, cu
+            schimbarea tarifului la {changes}.
           </caption>
           <thead>
             <tr>
-              <th scope="col">Rate band</th>
-              <th scope="col" className="numeric">Hours</th>
-              <th scope="col" className="numeric">Rate (cr/car-h)</th>
-              <th scope="col" className="numeric">Cars</th>
-              <th scope="col" className="numeric">Credits</th>
+              <th scope="col">Segment tarifar</th>
+              <th scope="col" className="numeric">Ore</th>
+              <th scope="col" className="numeric">Tarif (cr/oră-mașină)</th>
+              <th scope="col" className="numeric">Mașini</th>
+              <th scope="col" className="numeric">Credite</th>
             </tr>
           </thead>
           <tbody>
@@ -67,8 +67,8 @@ export default function Pricing() {
         </table>
       </div>
       <p className="table-note">
-        Example rates that show the arithmetic, not a price list. <a className="text-link" href="#contact">Ask us</a> for
-        the rates on your routes.
+        Tarifele din exemplu ilustrează calculul și nu reprezintă o listă de prețuri.{' '}
+        <a className="text-link" href="#contact">Contactează-ne</a> pentru tarifele traseelor tale.
       </p>
     </Section>
   )

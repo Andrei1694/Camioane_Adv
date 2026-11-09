@@ -323,6 +323,7 @@ Tests use Node's runner and the migrated development PostgreSQL database, with t
 The suite covers:
 
 - configuration, input validation, role validity, filesystem storage and the provider registry
+- validation compatibility: exact messages and error precedence, plus HTTP checks through real routes and authentication with in-memory persistence fixtures
 - ffprobe runs and probe output, profile picture re-encoding (EXIF removal included), and upload type detection
 - accounts: administrator-created users, password hashing and validation, UUID/session-version JWTs, login-only rate limiting, permissions for all four roles, listing and updates, duplicate emails, session revocation, delete/recreate isolation, administrator self-protection and last-administrator protection, removed public registration, and the bootstrap service
 - profile pictures and files: uploads of every accepted type, rejected and malformed uploads, size limits, unreadable videos, storage failures, client disconnects at each stage (with no orphaned objects), downloads, deletion and access scoping

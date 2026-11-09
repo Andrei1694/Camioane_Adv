@@ -96,14 +96,14 @@ scoped here unless the requested feature also requires changes elsewhere.
   `camioane.session.v1`. Always validate restored sessions with the API, cancel
   requests and clear private cache on session changes, and preserve cross-tab logout.
   Never read, migrate, or overwrite the old `camioane.users-demo.v1` data.
-- Styling currently uses plain CSS. No component library, form library, or test
-  runner is configured.
+- Styling currently uses plain CSS. No component or form library is configured.
+  Frontend tests use Vitest, jsdom, and React Testing Library under `tests/`.
 - The Express API lives in `../backend/`. Read its source and README when connecting
   a feature to the API; do not invent endpoints or response contracts.
 
 ## Commands
 
-Run these commands from `frontend/`:
+Run these commands from `frontend/` with Node.js 24+:
 
 | Command | Purpose |
 | --- | --- |
@@ -113,10 +113,49 @@ Run these commands from `frontend/`:
 | `npm run dev` | Start the Vite development server |
 | `npm run build` | Run the TypeScript build check and produce `dist/` |
 | `npm run lint` | Run Oxlint using `.oxlintrc.json` |
+| `npm test` | Run the complete isolated frontend test suite once |
+| `npm run test:watch` | Watch and rerun affected tests during development |
+| `npm run test:coverage` | Run tests and write informational V8 coverage to `coverage/` |
 | `npm run preview` | Preview an existing production build locally |
 
-There is currently no `npm test` script. Do not report tests as passing when only
-the build and lint checks were run.
+The production build also type-checks tests through `tsconfig.test.json`. For a
+build without a local API configuration, use
+`VITE_API_BASE_URL=https://api.example.test npm run build`. Do not report tests as
+passing when only the build and lint checks were run.
+
+## Testing conventions
+
+- The user's explicit-test-request preference above still applies. Keep requested
+  tests in `tests/*.test.ts` or `tests/*.test.tsx`, with shared helpers in
+  `tests/helpers/`. Prefer accessible roles, labels and `user-event`, asserting
+  visible outcomes and submitted data over component internals or snapshots.
+- `vitest.config.ts` is separate from the production Vite config. It disables
+  environment-file loading, provides synthetic `.example.test` service URLs and
+  runs in Europe/Bucharest. Tests must need no backend, database, credentials or
+  external network. Unexpected fetch/XHR requests fail the test even if caught.
+- Reuse typed fixtures, controlled responses and deferred promises. Component
+  tests can mock typed `api` methods; transport tests use `respond`/`TestXHR` to
+  verify the real API client. Mock map/routing, media and encoding boundaries;
+  retain the real editing and persistence logic.
+- `renderPage` supplies an in-memory router, the existing query client and auth
+  contexts. Guard tests exercise the real `Authenticated` provider. Use
+  `authenticate` to seed a session for isolated management-page tests.
+- Shared setup clears DOM, storage, queries, session state and notifications and
+  restores clocks, browser stubs and spies. Components must clean up their own
+  listeners and requests. Register teardown for manually started subscriptions
+  with `onTestFinished`, including on assertion failures. Keep fake-clock cases
+  synchronous or fake only the clocks needed; simulated media/pointer events are
+  appropriate where jsdom or fake timers cannot drive real browser behavior.
+- Keep import-time session restoration in `session-initialization.test.ts`.
+  Do not reset the module graph inside component tests: React and store imports
+  must keep the same identity. Freeze dates for calendar tests, including
+  Bucharest midnight and both daylight-saving transitions.
+- Coverage includes all `src/` TypeScript/TSX modules, excluding declarations and
+  `main.tsx`, with no minimum threshold. Unexecuted map, timeline and encoding
+  integrations remain visible in the report. Coverage is not proof of layout,
+  native focus trapping, actual playback/encoding, or external-service behavior;
+  these still need browser checks. Keep `coverage/` and other generated output
+  untracked. Report production defects separately instead of relaxing assertions.
 
 ## Code conventions
 
@@ -188,6 +227,6 @@ the build and lint checks were run.
   `npm run build` and `npm run lint`. Report any failures or checks not run.
 - For documentation-only changes, review the content and check whitespace;
   rebuilding the application is unnecessary.
-- If a test runner is introduced, document its commands here. When the user
-  explicitly requests tests, cover meaningful behavior. Keep generated output
-  and `node_modules/` out of commits.
+- For requested test changes, run the affected tests during development, then
+  `npm test`, `npm run test:coverage`, `npm run lint`, and `npm run build`.
+  Keep generated output and `node_modules/` out of commits.

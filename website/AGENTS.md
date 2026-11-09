@@ -47,10 +47,20 @@ Run these commands from `website/`:
 | `npm run dev` | Start Vite on port 5174 |
 | `npm run build` | Type-check and produce `dist/` (needs `VITE_CONTACT_EMAIL`) |
 | `npm run lint` | Run Oxlint |
+| `npm test` | Run the logic and React component tests once |
+| `npm run test:watch` | Watch and rerun affected tests |
+| `npm run test:coverage` | Run tests with terminal and HTML coverage reports |
 | `npm run preview` | Preview the production build on port 5174 |
 
-There is no test runner. Do not report tests as passing when only the build and
-lint checks were run.
+Tests live in `tests/` and use Vitest, jsdom, and React Testing Library, configured
+separately in `vitest.config.ts`. Use explicit test imports, accessible queries,
+and focused behavioral assertions. Mock network and clipboard access; do not
+require a running backend or read real environment values. Account for
+module-load environment and capability checks before importing the target.
+Shared setup restores DOM, mocks, timers, environment overrides, and clipboard
+state. Coverage is informational, includes untested application modules, and
+excludes declarations and the bootstrap entry point. Do not report tests as
+passing when only the build and lint checks were run.
 
 ## Code conventions
 
@@ -73,6 +83,6 @@ lint checks were run.
   pattern here.
 - Use semantic elements, visible keyboard focus and layouts that work on narrow
   screens; the page never scrolls sideways. Keep one primary button on the page.
-- After changing code, dependencies or build configuration, run `npm run lint`
+- After changing code, tests, dependencies or build configuration, run `npm test`, `npm run lint`
   and `npm run build` (with `VITE_CONTACT_EMAIL` set). When a browser is
   available, check the page at 1440, 768 and 390px wide.

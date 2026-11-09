@@ -31,10 +31,22 @@ The backend allows the website's origin through its `WEBSITE_ORIGIN` setting, wh
 ```sh
 npm run build
 npm run lint
+npm test
+npm run test:coverage
 npm run preview
 ```
 
-`npm run build` runs `tsc -b`, then `vite build` into `dist/`. There is no test runner. The output is static files with a single `index.html`, so any static host works; serve it over HTTPS.
+`npm run build` runs `tsc -b` (including the tests and their configuration), then `vite build` into `dist/`. The output is static files with a single `index.html`, so any static host works; serve it over HTTPS.
+
+## Tests
+
+The Vitest suite in `tests/` uses jsdom and React Testing Library. `npm test` runs once; `npm run test:watch` reruns affected tests while editing. Tests cover pricing and Romanian formatting, contact and build configuration, API responses and failures, page structure, and clipboard interactions.
+
+Tests use reserved example addresses, mocked fetch responses, and a simulated clipboard. They require no running backend, mail app, clipboard permission, or local environment configuration. Timeout tests use controlled abort signals instead of real waits. Shared setup restores the DOM, mocks, timers, environment overrides, and clipboard state after each test.
+
+`npm run test:coverage` prints coverage and creates an HTML report at `coverage/index.html`. Coverage includes application TypeScript/TSX, including untested modules, but excludes type declarations and `src/main.tsx`. It is informational: no percentage threshold is enforced. Reports are ignored by Git.
+
+These are logic and component tests, not browser layout tests. Check the page in a browser at 1440, 768, and 390px when changing code, dependencies, or build configuration.
 
 ## Content
 

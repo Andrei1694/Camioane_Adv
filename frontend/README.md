@@ -173,7 +173,60 @@ For production, configure a routing service with suitable capacity and availabil
 
 ## Verification
 
-Run `npm run build` and `npm run lint`. There is no frontend test runner or `npm test` script; no test files were added.
+Use Node.js 24+ and install the locked dependencies with `npm ci`. Run these
+commands from `frontend/`:
+
+```sh
+npm test
+npm run test:watch
+npm run test:coverage
+npm run lint
+VITE_API_BASE_URL=https://api.example.test npm run build
+```
+
+`npm test` runs Vitest once; `test:watch` reruns affected tests interactively.
+`test:coverage` writes a terminal summary and an HTML report at
+`coverage/index.html`. Coverage is informational: there is no minimum threshold.
+Every application TypeScript/TSX module is included, even when unexecuted, except
+declarations and the `src/main.tsx` bootstrap. Generated reports are ignored by
+Git. The production build also type-checks `tests/` without relaxing the existing
+compiler settings.
+
+The separate `vitest.config.ts` uses jsdom and React Testing Library. It does not
+load `.env` files and supplies synthetic API, map and routing URLs. Tests require
+no backend, database, credentials or external services. Fetch and XHR are blocked
+unless explicitly controlled by the test; unexpected requests fail even if the
+application catches the rejection. Calendar cases use Europe/Bucharest and fixed
+dates around midnight, leap days and both daylight-saving transitions.
+
+The suite covers:
+
+| Area | Checks |
+| --- | --- |
+| Shared logic and transport | Validation, Romanian formatting, currency units, resource decoding, exact request contracts, translated errors, authentication, cancellation, timeout and XHR progress/retry |
+| Sessions and access | Restoration, expiry, unavailable storage, cross-tab changes, cache clearing, all four roles, denial/retry and stale asynchronous responses |
+| Management workflows | Users and avatars, cars and campaigns, credits, files, pending controls, retained failed edits, explicit conflict reload, pagination and cache refresh |
+| Editing and persistence | Video segments/history/time mapping and mocked export, saved-route drafts and user isolation, coordinates, conflicts, GeoJSON, and saving with map services unavailable |
+| Shared interface | Notifications and paused timers, navigation, the real app's dashboard/profile/logout path, dashboard calculations and local review actions |
+
+Tests live in `tests/*.test.ts` and `tests/*.test.tsx`. Reuse the typed factories
+and controllable responses in `tests/helpers/`, and use `renderPage` for an
+in-memory router with the existing auth contexts and query provider. Most page
+tests mock typed API methods; API-client tests control fetch/XHR directly. Prefer
+accessible queries and `user-event`, then assert what the user sees and what is
+submitted. Shared setup resets storage, session, notifications, query caches,
+clocks and browser mocks after each test. Register cleanup for subscriptions
+started outside a component. Session module-initialization tests remain in a
+separate file so resetting modules cannot split the React/store module graph.
+
+Map rendering/routing, media playback and video encoding are mocked at their
+boundaries. Tests verify the surrounding workflows, not WebGL, actual MP4 output,
+external service behavior or the timeline library's drag rendering. jsdom's
+dialog shim supports application interactions but does not prove browser focus
+trapping, layout or native Escape handling. These remain manual browser checks;
+there is no browser-automation framework or visual-snapshot suite. If a test
+reveals a production defect, report it separately rather than changing the
+expected behavior to make the suite pass.
 
 Use disposable development accounts to verify login/logout, refresh and reopening, cross-tab sign-out, expiry, non-admin denial, create/edit/delete and persistence, role changes, self-edit sign-out, duplicate/invalid emails, password boundaries, and API outage/retry. Check keyboard focus, pending controls, cancellation, and desktop/tablet/phone layouts. Do not inspect browser or application logs unless explicitly requested.
 

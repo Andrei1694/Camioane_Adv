@@ -70,7 +70,8 @@ database only; they insert and delete their own fixture users and the rows
 those users create. Uploads go to temporary directories, never `uploads/`.
 Files run one at a time (`--test-concurrency=1`) because they share the
 database. `--experimental-test-module-mocks` is needed by
-`tests/login-dummy-hash.test.ts`; keep it when running a single file.
+`tests/login-dummy-hash.test.ts` and `tests/validation-http.test.ts`; keep it when
+running either file individually.
 
 Shared helpers live in `tests/helpers/`: `env.ts` (import before `src/`),
 `api.ts` (test server, requests, tokens), `fixtures.ts` (tracked fixture rows),

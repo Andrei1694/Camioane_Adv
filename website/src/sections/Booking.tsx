@@ -16,6 +16,7 @@ export default function Booking() {
       title="Ce rezervi"
       lead="O campanie cuprinde intervalele rezervate pe traseele noastre. Tu alegi traseele, orele și numărul de mașini; noi ne ocupăm de deplasare."
       layout="stacked"
+      className="section-booking"
     >
       <dl className="term-list grid-3">
         {terms.map(({ term, detail }) => (

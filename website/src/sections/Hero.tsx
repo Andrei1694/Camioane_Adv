@@ -3,7 +3,7 @@ import ExampleBooking from './ExampleBooking'
 
 export default function Hero() {
   return (
-    <section className="hero" aria-labelledby="hero-title">
+    <section id="top" className="hero" aria-labelledby="hero-title">
       <div className="container hero-grid">
         <div>
           <h1 id="hero-title">Reclama ta pe ecrane LED care străbat orașul</h1>

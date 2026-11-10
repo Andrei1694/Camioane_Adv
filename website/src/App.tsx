@@ -25,7 +25,7 @@ export default function App() {
   return (
     <>
       <a className="skip-link" href="#main">Sari la conținut</a>
-      <header id="top" className="site-header">
+      <header className="site-header">
         <div className="container header-inner">
           <a className="brand" href="#top"><Brand /></a>
           <nav aria-label="Secțiuni">

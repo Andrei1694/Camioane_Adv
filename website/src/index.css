@@ -55,6 +55,11 @@ body {
   outline-offset: 3px;
 }
 
+/* Keep focused controls clear of the sticky header during keyboard navigation. */
+:where(a, button) {
+  scroll-margin-block: 88px 16px;
+}
+
 h1,
 h2,
 h3,
@@ -98,7 +103,7 @@ figure {
   font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
-  transition: background-color 120ms ease, border-color 120ms ease;
+  transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
 
 /* A <button> in the same look as the link buttons ("Copiază adresa"). */
@@ -110,6 +115,10 @@ button.button {
 
 .button:hover {
   background: var(--hover);
+}
+
+.button:active {
+  transform: translateY(1px);
 }
 
 .button-primary {
@@ -149,5 +158,9 @@ button.button {
 @media (prefers-reduced-motion: reduce) {
   .button {
     transition: none;
+  }
+
+  .button:active {
+    transform: none;
   }
 }

@@ -1,6 +1,6 @@
-/* One 1080px column with 24px gutters (16px on phones). */
+/* Figma's wide page frame: 64px desktop, 32px tablet and 16px phone gutters. */
 .container {
-  width: min(1080px, calc(100% - 48px));
+  width: min(1312px, calc(100% - 128px));
   margin-inline: auto;
 }
 
@@ -79,8 +79,7 @@
 }
 
 .site-footer {
-  padding-block: 32px;
-  border-top: 1px solid var(--border);
+  padding-block: 24px;
   color: var(--muted);
   font-size: 14px;
 }
@@ -101,12 +100,13 @@
 
 .hero {
   padding-block: 80px;
+  background: var(--frame);
 }
 
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
-  gap: 56px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 64px;
   align-items: center;
 }
 
@@ -140,13 +140,18 @@
 }
 
 .hero-visual {
+  display: grid;
+  align-items: center;
+  min-height: 360px;
   border: 1px solid var(--border);
   border-radius: 10px;
+  background: var(--surface);
 }
 
 /* The example booking: a small timeline of the pricing example, drawn from lib/pricing.ts. */
 .example-booking {
-  padding: 24px;
+  min-width: 0;
+  padding: 32px;
 }
 
 .example-head {
@@ -180,12 +185,12 @@
 .example-chart {
   display: grid;
   gap: 8px;
-  margin-top: 24px;
+  margin-top: 32px;
 }
 
 .chart-row {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 64px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
 }
@@ -240,7 +245,7 @@
 }
 
 .example-caption {
-  margin-top: 16px;
+  margin-top: 24px;
   color: var(--muted);
   font-size: 12px;
 }
@@ -249,14 +254,14 @@
 
 .section {
   padding-block: 80px;
-  border-top: 1px solid var(--border);
 }
 
-/* Split: the heading and lead in the left third, the content in the right two thirds. */
+/* Split is reserved for the closing copy and its functional contact controls. */
 .section-split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: 48px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  align-items: center;
+  gap: 64px;
 }
 
 /* Stacked: the heading and lead above content that spans the whole column. */
@@ -270,7 +275,7 @@
 }
 
 .section h2 {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.01em;
@@ -282,11 +287,12 @@
 }
 
 .section-body {
+  min-width: 0;
   line-height: 1.6;
 }
 
 .section-body h3 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
 }
 
@@ -298,7 +304,25 @@
 }
 
 .term dt {
+  font-size: 18px;
   font-weight: 600;
+}
+
+/* The summary uses the six real booking terms in place of the prototype's market statistics. */
+.section-booking {
+  padding-block: 48px;
+}
+
+.section-booking .section-stacked {
+  gap: 32px;
+}
+
+.term-list {
+  margin: 0;
+}
+
+.section-process {
+  background: var(--frame);
 }
 
 .steps,
@@ -309,31 +333,30 @@
 }
 
 .steps {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 40px 32px;
   counter-reset: step;
 }
 
 .step {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
-  gap: 16px;
-  padding-block: 16px;
-  border-top: 1px solid var(--rule);
+  grid-column: span 3;
   counter-increment: step;
 }
 
-.step:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-
-.step:last-child {
-  padding-bottom: 0;
+/* Four planning steps, then three delivery steps, with neither row leaving an empty cell. */
+.step:nth-child(n + 5) {
+  grid-column: span 4;
 }
 
 .step::before {
-  content: counter(step);
+  display: block;
+  margin-bottom: 12px;
+  content: counter(step, decimal-leading-zero);
   color: var(--muted);
+  font-size: 24px;
   font-weight: 600;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
 
@@ -342,7 +365,7 @@
   gap: 24px;
 }
 
-/* Column grids for stacked sections: each item opens with a row rule, like the steps. No cards. */
+/* Booking is a compact summary; assurances retain a light rule to separate each promise. */
 .grid-2,
 .grid-3 {
   display: grid;
@@ -357,20 +380,37 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.grid-2 > *,
-.grid-3 > * {
-  padding-top: 16px;
+.points.grid-2 > * {
+  padding-top: 20px;
   border-top: 1px solid var(--rule);
 }
 
+/* The reference's simple question-and-answer rows, applied to the existing creative copy. */
+.content-points {
+  gap: 0;
+}
+
+.content-points > li {
+  padding-block: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.content-points > li:first-child {
+  padding-top: 0;
+}
+
+.content-points p {
+  max-width: 65ch;
+}
+
 .formula {
-  padding: 16px 20px;
+  padding: 24px 28px;
   border-radius: 8px;
   background: var(--frame);
 }
 
 .formula p + p {
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 /* The slot formula with the example's figures, under the formula it illustrates. */
@@ -380,6 +420,7 @@
 
 .formula-figures {
   color: var(--text);
+  font-size: 20px;
 }
 
 .table-frame {
@@ -401,7 +442,7 @@
 
 .price-table th,
 .price-table td {
-  padding: 12px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--rule);
   text-align: left;
   white-space: nowrap;
@@ -413,6 +454,7 @@
   color: var(--muted);
   font-size: 13px;
   font-weight: 400;
+  white-space: normal;
 }
 
 .price-table tbody th {
@@ -445,18 +487,30 @@
 
 /* The closing band: one step of tone in place of the section rule. */
 .section-closing {
-  border-top: 0;
+  padding-block: 56px;
   background: var(--frame);
+}
+
+.section-closing .section-lead {
+  max-width: 40em;
+  font-size: 16px;
+}
+
+.section-closing .section-body {
+  text-align: right;
 }
 
 .contact-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px 20px;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .contact-address {
+  flex-basis: 100%;
+  order: -1;
   font-weight: 500;
   overflow-wrap: anywhere;
 }
@@ -469,13 +523,13 @@
 
 /* Breakpoints ------------------------------------------------------------------------------ */
 
-@media (max-width: 959px) {
-  .hero-grid,
-  .section-split {
-    grid-template-columns: minmax(0, 1fr);
+@media (max-width: 1279px) {
+  .container {
+    width: calc(100% - 64px);
   }
 
-  .hero-grid {
+  .hero-grid,
+  .section-split {
     gap: 40px;
   }
 
@@ -483,19 +537,50 @@
     font-size: 40px;
   }
 
+  .example-booking {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .hero-grid,
+  .section-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero-grid {
+    gap: 32px;
+  }
+
+  .hero-visual {
+    min-height: 0;
+  }
+
   .section-split {
     gap: 24px;
   }
 
-  .grid-3 {
+  .grid-3,
+  .steps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  /* Three points don't split evenly into two columns, so they read as one. */
-  .points.grid-3 {
-    max-width: 40em;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
+  .step,
+  .step:nth-child(n + 5) {
+    grid-column: auto;
+  }
+
+  .step:last-child {
+    grid-column: 1 / -1;
+    max-width: 65ch;
+  }
+
+  .section-closing .section-body {
+    text-align: left;
+  }
+
+  .contact-actions {
+    justify-content: flex-start;
   }
 }
 
@@ -517,7 +602,7 @@
   }
 
   .hero {
-    padding-block: 48px 56px;
+    padding-block: 40px 48px;
   }
 
   .hero h1 {
@@ -537,7 +622,8 @@
   }
 
   .grid-2,
-  .grid-3 {
+  .grid-3,
+  .steps {
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
   }
@@ -546,10 +632,21 @@
     padding: 20px 16px;
   }
 
-  /* The address takes its own line above the two buttons. It isn't focusable, so the tab order holds. */
-  .contact-address {
-    flex-basis: 100%;
-    order: -1;
+  .section-booking,
+  .section-closing {
+    padding-block: 40px;
+  }
+
+  .step::before {
+    margin-bottom: 8px;
+  }
+
+  .formula {
+    padding: 20px 16px;
+  }
+
+  .formula-figures {
+    font-size: 18px;
   }
 
   .price-table th,

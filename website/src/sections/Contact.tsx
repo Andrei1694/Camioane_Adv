@@ -28,7 +28,7 @@ export default function Contact() {
       id="contact"
       title="Planifică prima ta campanie"
       lead="Spune-ne ce trasee, date și ore ai în vedere și câte mașini dorești. Îți răspundem cu tarifele și disponibilitatea."
-      layout="stacked"
+      layout="split"
       className="section-closing"
     >
       <div className="contact-actions">

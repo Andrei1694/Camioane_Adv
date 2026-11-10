@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react'
 
 /**
- * A page section with its heading and lead. `split` puts them in the left third and the content in
- * the right two thirds; `stacked` puts them above content that spans the whole column. Both stack
- * into one column on narrow screens.
+ * A page section with its heading and lead. `split` places them beside the content (the contact
+ * band); `stacked` places them above the full-width content. Both stack below 1024px.
  */
 export default function Section({ id, title, lead, layout = 'split', className, children }: {
   id: string

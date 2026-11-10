@@ -23,7 +23,7 @@ export default function Content() {
       lead="Imaginile sau videoclipurile încărcate sunt afișate doar după aprobarea echipei noastre."
       layout="stacked"
     >
-      <ul className="points grid-3">
+      <ul className="points content-points">
         {points.map(({ title, detail }) => (
           <li key={title}>
             <h3>{title}</h3>

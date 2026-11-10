@@ -14,6 +14,7 @@ export default function Pricing() {
       id="pricing"
       title="Tarife în credite"
       lead="Cumperi credite la un preț unic. Costul unei campanii se calculează în ore-mașină: o mașină rezervată timp de o oră. Tariful în credite depinde de traseu și de momentul zilei."
+      layout="stacked"
     >
       <div className="formula">
         <p><strong>Costul unui interval</strong> = numărul de mașini × suma (orelor din fiecare segment tarifar × tariful segmentului)</p>

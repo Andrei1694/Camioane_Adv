@@ -25,6 +25,8 @@ export default function HowItWorks() {
       id="how-it-works"
       title="Cum se desfășoară o campanie"
       lead="Tu planifici și plătești în credite din contul tău. Noi verificăm, confirmăm și trimitem mașinile pe traseu."
+      layout="stacked"
+      className="section-process"
     >
       <ol className="steps">
         {steps.map(({ title, detail }) => (

@@ -2,6 +2,7 @@ import { Readable } from 'node:stream';
 import { fileTypeFromBuffer } from 'file-type';
 import type { FileTypeResult } from 'file-type';
 import { AppError } from './app-error.ts';
+import { allowedKeysSchema, parse, queryIntegerSchema, uuidSchema } from './validation.ts';
 import type { FilePagination } from '../types/file.ts';
 
 /** Detected MIME types an upload route accepts, and the 415 message for anything else. */
@@ -21,26 +22,18 @@ export const imageUploadTypes: UploadTypes = {
 };
 
 const sampleSize = 4100;
+const fileIdSchema = uuidSchema('A valid file ID is required');
+const paginationFields = allowedKeysSchema(['limit', 'offset'], 'Only limit and offset query parameters are supported');
+const limitSchema = queryIntegerSchema(50, 1, 100, 'Invalid pagination');
+const offsetSchema = queryIntegerSchema(0, 0, 2147483647, 'Invalid pagination');
 
 export function parseFileId(value: unknown) {
-  if (typeof value !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
-    throw new AppError(400, 'A valid file ID is required');
-  }
-  return value.toLowerCase();
+  return parse(fileIdSchema, value);
 }
 
 export function parseFilePagination(query: Record<string, unknown>): FilePagination {
-  if (Object.keys(query).some((key) => key !== 'limit' && key !== 'offset')) {
-    throw new AppError(400, 'Only limit and offset query parameters are supported');
-  }
-  function integer(value: unknown, fallback: number, min: number, max: number) {
-    if (value === undefined) return fallback;
-    if (typeof value !== 'string' || !/^\d+$/.test(value)) throw new AppError(400, 'Invalid pagination');
-    const parsed = Number(value);
-    if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) throw new AppError(400, 'Invalid pagination');
-    return parsed;
-  }
-  return { limit: integer(query.limit, 50, 1, 100), offset: integer(query.offset, 0, 0, 2147483647) };
+  parse(paginationFields, query);
+  return { limit: parse(limitSchema, query.limit), offset: parse(offsetSchema, query.offset) };
 }
 
 export function sanitizeFilename(value: string) {

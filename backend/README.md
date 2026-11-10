@@ -117,6 +117,15 @@ Errors are `{ "error": "message" }`:
 - `413`: body over 16 KiB; `415`: unsupported encoding.
 - `429`: login rate limit; `500`: generic unexpected failure.
 
+Request bodies, IDs, queries, and campaign schedules use Zod 4 schemas in
+`src/lib/*-validation.ts`. The shared `src/lib/validation.ts` parser converts
+schema failures to `AppError(400, message)`. Validate stages and fields in their
+existing order so requests with several invalid fields retain the same first
+error. Keep explicit messages, per-endpoint unknown-field policies, the existing
+email/UUID patterns, and each field's Unicode or UTF-16 length rules; Zod defaults
+must not change the API contract. Service business rules and upload inspection
+remain separate from request schemas.
+
 Login is limited to 20 requests per IP per 15 minutes, including successful and invalid attempts. The limit is in memory and returns `Retry-After`. Multi-instance hosting requires a shared limiter store; configure proxy trust to match the actual trusted proxy topology before deployment.
 
 ## Uploaded files

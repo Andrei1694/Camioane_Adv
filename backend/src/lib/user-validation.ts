@@ -1,33 +1,34 @@
-import { AppError } from './app-error.ts';
-import { isRoleName } from './role.ts';
+import * as z from 'zod';
+import { RoleName } from '../generated/prisma/enums.ts';
+import { allowedKeysSchema, objectSchema, parse, uuidSchema } from './validation.ts';
 import type { CreateUserData, UpdateUserData, UserCredentials } from '../types/user.ts';
 
+const emailSchema = z.string({ error: 'Email must be a string' }).trim().toLowerCase()
+  .refine((email) => email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), { error: 'A valid email address is required' });
+const passwordSchema = z.string({ error: 'Password must be a string' }).refine((password) => {
+  const length = Array.from(password).length;
+  return length >= 12 && length <= 128;
+}, { error: 'Password must contain between 12 and 128 characters' });
+const roleSchema = z.enum(RoleName, { error: 'Role must be ADMIN, OPERATOR, DRIVER, or USER' });
+const bodySchema = objectSchema('A JSON object is required').transform((body) => Object.fromEntries(Object.entries(body)));
+const fieldsSchema = allowedKeysSchema(['email', 'password', 'role'], 'Only email, password, and role can be changed');
+const updateSchema = fieldsSchema.refine((data) => Object.keys(data).length > 0, { error: 'Provide at least one field to update' });
+const userIdSchema = uuidSchema('A valid user ID is required');
+
 export function parseEmail(value: unknown): string {
-  if (typeof value !== 'string') throw new AppError(400, 'Email must be a string');
-  const email = value.trim().toLowerCase();
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new AppError(400, 'A valid email address is required');
-  }
-  return email;
+  return parse(emailSchema, value);
 }
 
 export function parsePassword(value: unknown): string {
-  if (typeof value !== 'string') throw new AppError(400, 'Password must be a string');
-  const length = Array.from(value).length;
-  if (length < 12 || length > 128) throw new AppError(400, 'Password must contain between 12 and 128 characters');
-  return value;
+  return parse(passwordSchema, value);
 }
 
 function parseRole(value: unknown): CreateUserData['role'] {
-  if (!isRoleName(value)) throw new AppError(400, 'Role must be ADMIN, OPERATOR, DRIVER, or USER');
-  return value;
+  return parse(roleSchema, value);
 }
 
 export function parseBody(body: unknown): Record<string, unknown> {
-  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-    throw new AppError(400, 'A JSON object is required');
-  }
-  return Object.fromEntries(Object.entries(body));
+  return parse(bodySchema, body);
 }
 
 export function parseCredentials(body: unknown): UserCredentials {
@@ -37,20 +38,13 @@ export function parseCredentials(body: unknown): UserCredentials {
 
 export function parseCreateUser(body: unknown): CreateUserData {
   const data = parseBody(body);
-  checkKeys(data);
+  parse(fieldsSchema, data);
   return { ...parseCredentials(data), role: data.role === undefined ? 'USER' : parseRole(data.role) };
-}
-
-function checkKeys(data: Record<string, unknown>) {
-  if (Object.keys(data).some((key) => !['email', 'password', 'role'].includes(key))) {
-    throw new AppError(400, 'Only email, password, and role can be changed');
-  }
 }
 
 export function parseUpdateUser(body: unknown): UpdateUserData {
   const data = parseBody(body);
-  checkKeys(data);
-  if (Object.keys(data).length === 0) throw new AppError(400, 'Provide at least one field to update');
+  parse(updateSchema, data);
   const update: UpdateUserData = {};
   if ('email' in data) update.email = parseEmail(data.email);
   if ('password' in data) update.password = parsePassword(data.password);
@@ -59,10 +53,9 @@ export function parseUpdateUser(body: unknown): UpdateUserData {
 }
 
 export function isUserId(value: unknown): value is string {
-  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+  return userIdSchema.safeParse(value).success;
 }
 
 export function parseUserId(value: unknown): string {
-  if (!isUserId(value)) throw new AppError(400, 'A valid user ID is required');
-  return value.toLowerCase();
+  return parse(userIdSchema, value);
 }

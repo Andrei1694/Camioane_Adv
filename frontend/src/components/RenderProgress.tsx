@@ -1,3 +1,5 @@
+import './UploadProgress.css'
+
 export type Render =
   | { phase: 'rendering', progress: number }
   | { phase: 'failed', error: string }

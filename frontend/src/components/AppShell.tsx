@@ -80,6 +80,15 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
           </Link>
         )}
         {canManage && (
+          <Link to="/screen" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <rect x="2" y="5" width="20" height="12" rx="1" />
+              <path d="M10 5v12m5-12v12M8 21h8m-4-4v4" />
+            </svg>
+            Ecran camion
+          </Link>
+        )}
+        {canManage && (
           <Link to="/credits" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <ellipse cx="12" cy="6" rx="7" ry="3" />

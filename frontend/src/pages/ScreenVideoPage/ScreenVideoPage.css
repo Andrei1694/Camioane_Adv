@@ -1,0 +1,194 @@
+.app-content:has(> .screen-video) {
+  max-width: none;
+}
+
+.screen-video {
+  min-width: 0;
+  font-size: 14px;
+  container: screen-video / inline-size;
+}
+
+.screen-video .page-heading {
+  flex-wrap: wrap;
+}
+
+.screen-video .page-heading .primary-button {
+  white-space: normal;
+}
+
+.screen-video .screen-note {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.screen-video .screen-source {
+  margin-top: 24px;
+  padding-block: 20px;
+  border-block: 1px solid var(--border);
+}
+
+.screen-video .screen-source-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+}
+
+.screen-video .screen-source-details {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.screen-video .screen-source-details strong {
+  font-weight: 500;
+}
+
+.screen-video .screen-source-details > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.screen-video .screen-preview {
+  margin-top: 24px;
+}
+
+.screen-video .screen-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.screen-video h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.screen-video .screen-section-heading > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.screen-video .screen-canvas-frame {
+  position: relative;
+  margin-top: 36px;
+  background: #000;
+}
+
+.screen-video canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2304 / 512;
+}
+
+/* Guides are separate DOM elements; they never become encoded pixels. */
+.screen-video .screen-region-outline {
+  position: absolute;
+  border: 1px solid var(--control-border);
+  pointer-events: none;
+}
+
+.screen-video .screen-region-outline > span {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.screen-video .screen-scrubber {
+  display: block;
+  width: 100%;
+  height: 44px;
+  margin: 8px 0 0;
+  accent-color: var(--data);
+}
+
+.screen-video .screen-playback {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.screen-video .screen-playback button {
+  min-width: 72px;
+}
+
+.screen-video .screen-regions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.screen-video fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 12px 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.screen-video legend {
+  padding-inline: 4px;
+  font-weight: 500;
+}
+
+.screen-video .screen-region-size {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.screen-video fieldset label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.screen-video input[type='radio'] {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--data);
+}
+
+.screen-video fieldset:disabled label {
+  color: var(--muted);
+  cursor: default;
+}
+
+.screen-video .screen-layout-note {
+  margin-top: 24px;
+  padding-left: 12px;
+  border-left: 2px solid var(--control-border);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@container screen-video (max-width: 800px) {
+  .screen-video .screen-regions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .screen-video .page-heading .primary-button {
+    width: 100%;
+  }
+
+  .screen-video .screen-canvas-frame {
+    margin-top: 48px;
+  }
+}

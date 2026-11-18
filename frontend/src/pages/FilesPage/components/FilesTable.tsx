@@ -82,9 +82,14 @@ export default function FilesTable({ view, offset, pageSize, downloading, deleti
                       </button>
                     )}
                     {fileKind(file.mimeType) === 'video' && (
-                      <Link to="/files/$fileId/edit" params={{ fileId: file.id }} className="ghost-button">
-                        Editează<span className="sr-only"> {name}</span>
-                      </Link>
+                      <>
+                        <Link to="/files/$fileId/edit" params={{ fileId: file.id }} className="ghost-button">
+                          Editează<span className="sr-only"> {name}</span>
+                        </Link>
+                        <Link to="/files/$fileId/screen" params={{ fileId: file.id }} className="ghost-button">
+                          Ecran camion<span className="sr-only"> {name}</span>
+                        </Link>
+                      </>
                     )}
                     <button type="button" className="text-button" disabled={downloading.has(file.id)} onClick={() => onDownload(file)}>
                       {downloading.has(file.id) ? 'Se descarcă…' : 'Descarcă'}<span className="sr-only"> {name}</span>

@@ -22,6 +22,8 @@ export default function HomeScreen() {
         <Text style={styles.section} accessibilityRole="header">Display test</Text>
         <Text style={styles.muted}>Play a local video on HDMI while keeping controls on your phone.</Text>
         <Button label="HDMI test" onPress={() => router.push('/hdmi-test')} />
+        <Button label="Truck screen video" onPress={() => router.push({ pathname: '/hdmi-test', params: { sample: 'truck-screen' } })} />
+        <Text style={styles.muted}>The included truck video has three screen regions in one 2304 × 512 picture.</Text>
       </View>
       <View style={styles.account}>
         <Text style={styles.section} accessibilityRole="header">Account</Text>

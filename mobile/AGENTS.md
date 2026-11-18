@@ -30,6 +30,10 @@ repository-wide guidance in `../AGENTS.md` as well.
   unavailable state. Native source and the iOS config plugin live in
   `modules/hdmi-player/`, not the generated app folders. Playback belongs to the
   focused test screen and stops on navigation or session changes.
+- The home screen's **Truck screen video** button opens `/hdmi-test?sample=truck-screen`
+  with the bundled `assets/truck_screen.mp4` (2304 × 512) preselected. The regular
+  HDMI test keeps `flower.mp4`. Both samples wait for Play and survive cleanup;
+  only imported picker copies are deleted. Register bundled samples in `app.json`.
 - Use npm. `package.json` and `package-lock.json` are authoritative for versions.
   Keep them in sync.
 - In development only, `admin` / `admin` opens an in-memory Operator preview.

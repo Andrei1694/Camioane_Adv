@@ -10,8 +10,8 @@ import { useNotify } from '../../lib/useNotify'
 import { fileKind, fileTypeLabel } from '../../lib/file'
 import { formatByteSize } from '../../lib/format'
 import EditTimeline from './components/EditTimeline'
-import RenderProgress from './components/RenderProgress'
-import type { Render } from './components/RenderProgress'
+import RenderProgress from '../../components/RenderProgress'
+import type { Render } from '../../components/RenderProgress'
 import SegmentList from './components/SegmentList'
 import {
   canSplit, dropAt, emptyHistory, formatTimecode, historyReducer, initialSegments, isUnchanged, moveBy, remove, resize, split,

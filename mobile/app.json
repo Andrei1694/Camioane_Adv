@@ -37,7 +37,7 @@
       "expo-secure-store",
       "expo-font",
       "./modules/hdmi-player/app.plugin.js",
-      ["expo-asset", { "assets": ["./assets/flower.mp4"] }]
+      ["expo-asset", { "assets": ["./assets/flower.mp4", "./assets/truck_screen.mp4"] }]
     ]
   }
 }

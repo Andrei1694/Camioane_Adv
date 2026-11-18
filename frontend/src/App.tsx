@@ -21,6 +21,7 @@ import './App.css'
 // Reloads once when a deployment has replaced the page's chunk.
 const RouteBuilderPage = lazyRouteComponent(() => import('./pages/RouteBuilderPage/RouteBuilderPage'))
 const VideoEditorPage = lazyRouteComponent(() => import('./pages/VideoEditorPage/VideoEditorPage'))
+const ScreenVideoPage = lazyRouteComponent(() => import('./pages/ScreenVideoPage/ScreenVideoPage'))
 
 function Layout() {
   const revision = useSession((state) => state.revision)
@@ -66,6 +67,16 @@ const videoEditorRoute = createRoute({
   component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Se încarcă editorul video…</p>}><VideoEditorPage /></Suspense></Authenticated>,
 })
 const creditsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/credits', component: () => <Authenticated adminOnly><CreditsPage /></Authenticated> })
+const screenVideoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/screen',
+  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Se încarcă pagina pentru ecranul camionului…</p>}><ScreenVideoPage /></Suspense></Authenticated>,
+})
+const fileScreenVideoRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/files/$fileId/screen',
+  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Se încarcă pagina pentru ecranul camionului…</p>}><ScreenVideoPage /></Suspense></Authenticated>,
+})
 const usersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/users', component: () => <Authenticated adminOnly><UsersPage /></Authenticated> })
 const routeBuilderRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -74,7 +85,7 @@ const routeBuilderRoute = createRoute({
 })
 const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profile', component: () => <Authenticated><ProfilePage /></Authenticated> })
 const deniedRoute = createRoute({ getParentRoute: () => rootRoute, path: '/access-denied', component: () => <Authenticated><AccessDenied /></Authenticated> })
-const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, campaignRoute, carsRoute, filesRoute, videoEditorRoute, creditsRoute, usersRoute, routeBuilderRoute, profileRoute, deniedRoute]) })
+const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, campaignRoute, carsRoute, filesRoute, videoEditorRoute, screenVideoRoute, fileScreenVideoRoute, creditsRoute, usersRoute, routeBuilderRoute, profileRoute, deniedRoute]) })
 
 declare module '@tanstack/react-router' {
   interface Register {

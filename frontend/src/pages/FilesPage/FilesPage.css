@@ -89,6 +89,7 @@
 /* 32px buttons sit centred on the first 21px text line of the row. */
 .files-page .file-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 4px;
   margin-block: -5px;

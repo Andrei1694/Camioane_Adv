@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["HdmiPlayerModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.hdmiplayer.HdmiPlayerModule"]
+  }
+}

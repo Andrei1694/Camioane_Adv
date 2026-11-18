@@ -26,6 +26,7 @@ Use Node.js 24+ and npm inside each package.
 | `frontend/` | `npm run lint` | Run Oxlint |
 | `frontend/` | `npm run preview` | Preview the production build |
 | `mobile/` | `npm start` | Start Metro for Expo Go or a development build |
+| `mobile/` | `npm run build:ios -- --device` | Build, sign, and install the development app on a physical iPhone |
 | `mobile/` | `npm run typecheck` | Check TypeScript |
 | `mobile/` | `npm run lint` | Run Oxlint |
 | `website/` | `npm run dev` | Start Vite on port 5174 |
@@ -33,6 +34,69 @@ Use Node.js 24+ and npm inside each package.
 | `website/` | `npm run lint` | Run Oxlint |
 
 Follow `backend/README.md` for setup, migrations, and administrator bootstrap. The backend executes TypeScript directly without compilation.
+
+### Build and install on an iPhone
+
+The HDMI player requires the app's own development build; Expo Go cannot load it.
+Use macOS with Xcode 27+, CocoaPods, Node.js 24+, and dependencies installed in
+`mobile/`. Add your Apple account to Xcode and make sure a development signing
+certificate is available. Connect the iPhone by USB, unlock it, trust the Mac,
+and enable **Settings → Privacy & Security → Developer Mode**, completing any
+restart prompts.
+
+From the repository root:
+
+```sh
+cd mobile
+node --version
+npm run build:ios -- --device
+```
+
+Select the physical iPhone, not a simulator. The command builds and signs the
+app, installs **Camioane Driver**, and starts Metro. For scripted installs,
+discover the current device with `xcrun devicectl list devices` and pass its
+identifier after `--device`; do not hardcode a developer's device identifier.
+Check signing identities with `security find-identity -v -p codesigning` if
+signing fails.
+
+If Metro needs to run separately, start it from `mobile/` in one terminal:
+
+```sh
+npx expo start --dev-client --lan --port 8081
+```
+
+Then build/install from `mobile/` in another terminal:
+
+```sh
+npm run build:ios -- --device --no-bundler
+```
+
+Do not combine `--port` with `--no-bundler`; Expo rejects that combination.
+Check for an existing server before starting one and preserve unrelated servers.
+Keep Metro running and the Mac and iPhone on the same local network. Allow the
+app's local-network access prompt. If server discovery fails, use **Enter URL
+manually** in the installed app with `http://<Mac-LAN-IP>:8081`; no Expo account
+login is needed. A server bound with `--localhost` is unsuitable for a physical
+phone. Likewise, `EXPO_PUBLIC_API_BASE_URL` must use an address reachable from
+the phone, not `localhost`; without an override, development uses Metro's host
+on API port 3000. Preserve existing environment files.
+
+If installation succeeds but launch reports **Untrusted Developer**, ask the
+user to open **Settings → General → VPN & Device Management**, select their
+**Apple Development** profile, and trust it, completing any restart prompts.
+Then relaunch the installed app; this does not require another build. Verify
+installation with `xcrun devicectl device info apps --device "<device-id>"
+--bundle-id com.camioane.driver` and confirm the app actually opens on the phone
+before reporting launch success. Do not inspect device or Metro logs unless
+requested.
+
+The development-only `admin` / `admin` shortcut opens a local Operator preview
+without a backend session. It can open the HDMI test, but physical playback still
+requires a compatible adapter and display. Rebuild after native dependency or
+native code changes; JavaScript-only changes use the running Metro server.
+Keep generated `mobile/ios/` and `mobile/android/` folders untracked and configure
+native changes through Expo config and local modules. See `mobile/AGENTS.md`
+and `mobile/README.md` for the full mobile workflow.
 
 ## Coding Style & Naming Conventions
 

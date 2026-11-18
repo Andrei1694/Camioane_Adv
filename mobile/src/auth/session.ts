@@ -12,6 +12,8 @@ interface Session {
 
 interface SessionState {
   session: Session | null
+  /** Development preview is memory-only and never grants a backend session. */
+  preview: boolean
   revision: number
   /** The saved session has been read from platform storage. */
   hydrated: boolean
@@ -39,7 +41,7 @@ function parseSession(saved: string | null): Session | null {
 }
 
 export const useSession = create<SessionState>(() => ({
-  session: null, revision: 0, hydrated: false, notice: '', message: '',
+  session: null, preview: false, revision: 0, hydrated: false, notice: '', message: '',
 }))
 let requests = new AbortController()
 let writes = Promise.resolve()
@@ -79,13 +81,20 @@ export function hydrateSession() {
   return hydration
 }
 
-function replaceSession(session: Session | null, message = '') {
+function replaceSession(session: Session | null, message = '', preview = false) {
   requests.abort()
   requests = new AbortController()
   void queryClient.cancelQueries()
   queryClient.clear()
   persist(session)
-  useSession.setState((state) => ({ session, revision: state.revision + 1, message }))
+  useSession.setState((state) => ({ session, preview: __DEV__ && preview, revision: state.revision + 1, message }))
+}
+
+/** Local screen preview only: no token, saved credentials, or API login. */
+export function signInDevelopmentPreview(username: string, password: string) {
+  if (!__DEV__ || username !== 'admin' || password !== 'admin') return false
+  replaceSession(null, '', true)
+  return true
 }
 
 export function signIn(accessToken: string, expiresIn: number) {

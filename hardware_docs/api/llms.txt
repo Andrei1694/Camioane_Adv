@@ -1,0 +1,81 @@
+# NovaCloud-EN
+
+## Docs
+- [API Access Guide](https://developer-en.vnnox.com/doc-4696857.md): 
+- [Common HTTP Status Codes](https://developer-en.vnnox.com/doc-4696860.md): 
+- VNNOX > Solutions [Program widget examples](https://developer-en.vnnox.com/folder-53325354.md): 
+- VNNOX > Solutions > Program widget examples [Hand-drawn clock widget](https://developer-en.vnnox.com/doc-6506467.md): 
+- VNNOX > Solutions > Program widget examples [Text component](https://developer-en.vnnox.com/doc-7691702.md): 
+- VNNOX > Solutions > Program widget examples [RSS component](https://developer-en.vnnox.com/doc-7691703.md): 
+- VNNOX > Solutions > Program widget examples [WEATHER - Simple Weather Component](https://developer-en.vnnox.com/doc-7691704.md): 
+- VNNOX > Solutions > Program widget examples [ANALOG_WEATHER - Basic Weather Component](https://developer-en.vnnox.com/doc-7691705.md): 
+- VNNOX > Solutions > Program widget examples [ANALOG_WEATHER - Basic Weather Component](https://developer-en.vnnox.com/doc-7691712.md): 
+- VNNOX > Solutions > Program widget examples [Weather widget](https://developer-en.vnnox.com/doc-6506699.md): 
+- VNNOX > Solutions > Program widget examples [Environmental Monitoring widget](https://developer-en.vnnox.com/doc-6507057.md): 
+- VNNOXCare [Notes](https://developer-en.vnnox.com/doc-4696871.md): 
+
+## API Docs
+- VNNOX > Player > Player Management [Add Player](https://developer-en.vnnox.com/api-446386210.md):  1. This interface allows adding players to the cloud. After addition, the devices will be added to the pending activation list and automatically moved to the player list of the corresponding account once they are connected to the network.
+- VNNOX > Player > Player Management [Obtain player list](https://developer-en.vnnox.com/api-180498654.md): 
+- VNNOX > Player > Obtaining Player Status [Obtaining Basic Player Information](https://developer-en.vnnox.com/api-180498661.md): 
+- VNNOX > Player > Obtaining Player Status [Obtaining Player Configuration Status](https://developer-en.vnnox.com/api-186309730.md): 
+- VNNOX > Solutions > Emergency Insertion [Single-Page Emergency Insertion Solutions](https://developer-en.vnnox.com/api-180502122.md): 
+- VNNOX > Solutions > Emergency Insertion [Canceling Emergency Insertion Solutions](https://developer-en.vnnox.com/api-180502123.md): 
+- VNNOX > Solutions [Common Solutions](https://developer-en.vnnox.com/api-180502121.md): :::tip
+- VNNOX > Solutions [Offline Export](https://developer-en.vnnox.com/api-277397809.md): 1.Through this interface, you can export Nova playback protocol for offline programs
+- VNNOX > Solutions [Over-specification Detection Switching](https://developer-en.vnnox.com/api-277399402.md): Use this API to control the player to enable or disable over-specification detection
+- VNNOX > Solutions [Program Over-specification Detection](https://developer-en.vnnox.com/api-277411236.md): 1.This interface is used to check whether the program sent to the required devices will be any over-specification
+- VNNOX > Real-Time Control [NTP Time Synchronization](https://developer-en.vnnox.com/api-180502118.md): 
+- VNNOX > Real-Time Control [Synchronous playback](https://developer-en.vnnox.com/api-180502119.md): 
+- VNNOX > Real-Time Control [Brightness Adjustment](https://developer-en.vnnox.com/api-180498655.md): 
+- VNNOX > Real-Time Control [Screenshots](https://developer-en.vnnox.com/api-180502120.md): 
+- VNNOX > Real-Time Control [Volume Adjustment](https://developer-en.vnnox.com/api-180498656.md): 
+- VNNOX > Real-Time Control [Video Source Switching](https://developer-en.vnnox.com/api-180498657.md): 
+- VNNOX > Real-Time Control [Screen Status](https://developer-en.vnnox.com/api-180498658.md): 
+- VNNOX > Real-Time Control [Restart Players](https://developer-en.vnnox.com/api-180498659.md): 
+- VNNOX > Real-Time Control [Screen Power](https://developer-en.vnnox.com/api-180498660.md): 
+- VNNOX > Scheduled Control [Scheduled Screen Status](https://developer-en.vnnox.com/api-285406451.md): :::tip
+- VNNOX > Scheduled Control [Scheduled Restart Players](https://developer-en.vnnox.com/api-285484784.md): :::tip
+- VNNOX > Scheduled Control [Scheduled Volume Adjustment](https://developer-en.vnnox.com/api-285492978.md): :::tip
+- VNNOX > Scheduled Control [Scheduled Brightness Adjustment](https://developer-en.vnnox.com/api-285501603.md): :::tip
+- VNNOX > Scheduled Control [Scheduled Video Source Switching](https://developer-en.vnnox.com/api-285704459.md): :::tip
+- VNNOX > Logs > Play Logs [Batch Searching for Play Log Overviews](https://developer-en.vnnox.com/api-188119325.md): 
+- VNNOX > Logs > Play Logs [Batch Searching for Play Log Details](https://developer-en.vnnox.com/api-189311783.md): 
+- VNNOX > Logs > Play Logs [Searching for the Play Log Detail of a Single Player](https://developer-en.vnnox.com/api-188120581.md): 
+- VNNOX > Logs > Play Logs [Searching for the Play Log Overview of a Single Player](https://developer-en.vnnox.com/api-189316709.md): 
+- VNNOX > Logs [Obtaining Control Command Execution Logs](https://developer-en.vnnox.com/api-186383461.md): 
+- VNNOX > Notifications [Video Source Change Notifications](https://developer-en.vnnox.com/api-186379152.md): 
+- VNNOX > Notifications [Solution Change Notifications](https://developer-en.vnnox.com/api-186380851.md): 
+- VNNOXCare > Device Status Monitoring > Receiving Card [Topology Information](https://developer-en.vnnox.com/api-198265532.md): 
+- VNNOXCare > Device Status Monitoring > Receiving Card [Basic Information](https://developer-en.vnnox.com/api-181820138.md): 
+- VNNOXCare > Device Status Monitoring > Receiving Card [Monitoring Information](https://developer-en.vnnox.com/api-181820139.md): 
+- VNNOXCare > Device Status Monitoring > Receiving Card [Alarm Information](https://developer-en.vnnox.com/api-181820140.md): 
+- VNNOXCare > Device Status Monitoring > Screen [Screen list](https://developer-en.vnnox.com/api-262298538.md): 
+- VNNOXCare > Device Status Monitoring > Screen [Screen detail](https://developer-en.vnnox.com/api-289009793.md): 
+- VNNOXCare > Device Status Monitoring > Screen [Monitoring Information](https://developer-en.vnnox.com/api-181820141.md): 
+- VNNOXCare > Device Status Monitoring > Master Controller [Basic Information](https://developer-en.vnnox.com/api-181820142.md): 
+- VNNOXCare > Device Status Monitoring > Master Controller [Alarm Information](https://developer-en.vnnox.com/api-181820143.md): 
+- VNNOXCare > Device Status Monitoring > Master Controller [Operating Parameters Information](https://developer-en.vnnox.com/api-188113043.md): 
+- VNNOXCare > Device Status Monitoring > Smart Module [Monitoring Information](https://developer-en.vnnox.com/api-188113524.md): 
+- VNNOXCare > Device Status Monitoring > Smart Module [Alarm Infomation](https://developer-en.vnnox.com/api-188114426.md): 
+- VNNOXCare > Device Status Monitoring > Input Source [Monitor Infomation](https://developer-en.vnnox.com/api-188114676.md): 
+- VNNOXCare > Device Status Monitoring > Module/Cabinet [Monitoring Information](https://developer-en.vnnox.com/api-188115020.md): 
+- VNNOXCare > Device Status Monitoring > Monitoring Card [Alarm Information](https://developer-en.vnnox.com/api-341731719.md): 
+- VNNOXCare > Device Status Monitoring > Monitoring Card [Monitoring Information](https://developer-en.vnnox.com/api-198270522.md): 
+- VNNOXCare > Device Status Monitoring > Camera [Camera configuration](https://developer-en.vnnox.com/api-293155189.md): 
+- VNNOXCare > Device Status Monitoring > Camera [The camera monitors the aggregated information](https://developer-en.vnnox.com/api-293155525.md): 
+- VNNOXCare > Brightness Log [Brightness History](https://developer-en.vnnox.com/api-198267779.md): 
+- Others > Third-Party System Authorization [Obtaining User List](https://developer-en.vnnox.com/api-186409405.md): 
+- Others > Third-Party System Authorization [Obtaining Login URL](https://developer-en.vnnox.com/api-186409414.md): 
+
+## Schemas
+- [Scheduled plan item](https://developer-en.vnnox.com/schema-161188704.md): 
+- [Player Common Solution](https://developer-en.vnnox.com/schema-162442578.md): 
+- [Hand drawn digital clock](https://developer-en.vnnox.com/schema-156550829.md): 
+- [Environmental Monitoring item](https://developer-en.vnnox.com/schema-161429769.md): 
+- [Solution widgets base](https://developer-en.vnnox.com/schema-161525226.md): 
+- [Text component](https://developer-en.vnnox.com/schema-220230730.md): 
+- [RSS component](https://developer-en.vnnox.com/schema-220235090.md): 
+- [WEATHER - Simple Weather Component](https://developer-en.vnnox.com/schema-220236771.md): 
+- [ANALOG_WEATHER - Basic Weather Component](https://developer-en.vnnox.com/schema-220244495.md): 
+- [ADVANCED_WEATHER - Advanced Weather Component](https://developer-en.vnnox.com/schema-220247740.md): 

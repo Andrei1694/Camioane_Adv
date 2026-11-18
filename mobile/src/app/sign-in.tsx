@@ -5,14 +5,14 @@ import type { TextInputInstance, TextInputProps } from 'react-native'
 import { useMutation } from '@tanstack/react-query'
 import Button from '../components/Button'
 import Screen from '../components/Screen'
-import { signIn, useSession } from '../auth/session'
+import { signIn, signInDevelopmentPreview, useSession } from '../auth/session'
 import { api, errorMessage } from '../lib/api'
 import { colors, radius, touchTarget, type } from '../lib/theme'
 import { getEmailError, getPasswordError, normalizeEmail } from '../lib/user'
 
 export default function SignInScreen() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState(__DEV__ ? 'admin' : '')
+  const [password, setPassword] = useState(__DEV__ ? 'admin' : '')
   const [errors, setErrors] = useState<{ email?: string, password?: string }>({})
   const [failure, setFailure] = useState('')
   const emailInput = useRef<TextInputInstance>(null)
@@ -24,6 +24,10 @@ export default function SignInScreen() {
   async function submit() {
     if (login.isPending) return
     const normalized = normalizeEmail(email)
+    if (signInDevelopmentPreview(normalized, password)) {
+      setPassword('')
+      return
+    }
     const next = { email: getEmailError(normalized), password: getPasswordError(password) }
     setErrors(next)
     setFailure('')
@@ -45,13 +49,17 @@ export default function SignInScreen() {
       <View style={styles.heading}>
         <Image source={require('../../assets/splash-icon.png')} style={styles.mark} accessibilityIgnoresInvertColors />
         <Text style={styles.title} accessibilityRole="header">Sign in</Text>
-        <Text style={styles.description}>Use the driver or operator account provided by your administrator.</Text>
+        <Text style={styles.description}>
+          {__DEV__
+            ? 'Use admin / admin for a local preview, or sign in with your driver or operator account.'
+            : 'Use the driver or operator account provided by your administrator.'}
+        </Text>
       </View>
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
       {message ? <Text style={styles.message} accessibilityLiveRegion="polite">{message}</Text> : null}
       <Field
         ref={emailInput}
-        label="Email"
+        label={__DEV__ ? 'Email or preview user' : 'Email'}
         error={errors.email}
         value={email}
         editable={!login.isPending}

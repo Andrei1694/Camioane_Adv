@@ -1,0 +1,7 @@
+{
+  "name": "hdmi-player",
+  "version": "1.0.0",
+  "private": true,
+  "description": "External-display-only video playback for Camioane Driver",
+  "main": "index.ts"
+}

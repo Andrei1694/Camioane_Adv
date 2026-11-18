@@ -79,6 +79,9 @@ interface RequestContext {
 
 function begin(authenticated: boolean): RequestContext {
   const state = useSession.getState()
+  if (authenticated && state.preview) {
+    throw new ApiError(0, 'Local preview has no backend account. Sign out and use your account to access server data.')
+  }
   return { token: authenticated ? state.session?.accessToken : undefined, revision: state.revision, globalSignal: sessionSignal() }
 }
 

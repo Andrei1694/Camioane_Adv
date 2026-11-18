@@ -1,0 +1,40 @@
+**************************************************************Sep 18,  2026  V5.1.0**********************************************************************
+ [Supporting Software]
+           NovaLCT V5.9.2   and later
+           ViPlex Express V4.1.1  and later
+           ViPlex Handy V6.0.0  and later
+           VNNOX Care App  V2.5.0  and later
+                                     
+ [New Features]
+             ●Allows devices with default static IPs to be discoverable and allows the static IPs to be changed to dynamic IPs.
+             ●Added support for viewing abnormal alarms for webpages, streaming media, and RSS.
+             ●Added support for VNNOX Care monitoring V3.0.
+             ●Added support for viewing and exporting alarm logs for playback and device operations.
+             ●Added support for viewing device operation logs in ViPlex Express.
+             ●Added support for one-click download of the current playlist's description files, media files, and screenshots.
+             ●Added support for HDMI source scaling in multi-screen mosaic.
+             ●Added support for HDMI source upscaling. See the HDMI Video Source Scaling Instructions for details.
+             ●Added support for downloading device diagnostic reports in ViPlex Express.
+             ●Following a technical upgrade, models originally configured with one primary and one backup Ethernet port can now utilize both Ethernet ports for output, enabling a total output capacity of 1.3 million pixels.
+             ●Added support for exporting and importing configuration parameters (including video source, screen status, power, time synchronization, network, playback settings, screen topology, and peripherals).
+             ●Added support for disabling multi-screen mosaic (users can now select from Off, Auto Mosaic, or Adaptive Mosaic).
+ [Improvements]
+            ●Improved the screenshot display when PlayService is closed.
+            ●Improved the image clarity of pixel-to-pixel video playback on ultra-long screens.
+            ●Improved the device to automatically install required fonts and remove unused fonts based on the text media widgets in the playlist.
+            ●Users can now click to check the device's current network connection status.
+            ●Players can be bound to VNNOX Care by using player authentication information.
+            ●Users can download 4G module operation logs.
+            ●Users can configure automatic cut-to-display for ultra-long screens in ViPlex Express. See Ultra-Long-Screen Solution Configuration Guide for details.
+            ●Improved upgrade result messages.
+            ●Improved USB playback by adding transcoding support for playlists not meeting the requirements.
+            ●Improved time zone settings to include Kolkata.
+            ●Improved the minimum auto-mosaic width to 64 for models supporting multi-screen mosaic.
+            ●Improved the minimum EDID width for HDMI IN to 512.
+
+ [Changes]
+               None 
+ [Bug Fixes]
+              ●Fixed known bugs.
+ [Notes]
+               None 

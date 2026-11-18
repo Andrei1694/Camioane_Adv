@@ -1,13 +1,16 @@
+import { useRouter } from 'expo-router'
 import { StyleSheet, Text, View } from 'react-native'
 import Button from '../../components/Button'
 import Screen from '../../components/Screen'
 import { useCurrentUser } from '../../auth/currentUser'
-import { signOut } from '../../auth/session'
+import { signOut, useSession } from '../../auth/session'
 import { colors, radius, type } from '../../lib/theme'
 import { roleLabels } from '../../lib/user'
 
 export default function HomeScreen() {
   const user = useCurrentUser()
+  const preview = useSession((state) => __DEV__ && state.preview)
+  const router = useRouter()
   return (
     <Screen>
       <Text style={styles.title} accessibilityRole="header">Your routes</Text>
@@ -16,10 +19,15 @@ export default function HomeScreen() {
         <Text style={styles.muted}>Route and shift assignments aren't available in the app yet.</Text>
       </View>
       <View style={styles.account}>
+        <Text style={styles.section} accessibilityRole="header">Display test</Text>
+        <Text style={styles.muted}>Play a local video on HDMI while keeping controls on your phone.</Text>
+        <Button label="HDMI test" onPress={() => router.push('/hdmi-test')} />
+      </View>
+      <View style={styles.account}>
         <Text style={styles.section} accessibilityRole="header">Account</Text>
         <View>
           <Text style={styles.email}>{user.email}</Text>
-          <Text style={styles.meta}>{roleLabels[user.role]}</Text>
+          <Text style={styles.meta}>{preview ? 'Local preview · Operator' : roleLabels[user.role]}</Text>
         </View>
         <Button label="Sign out" onPress={() => signOut()} />
       </View>

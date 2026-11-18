@@ -8,6 +8,9 @@ import { signOut, useSession } from '../../auth/session'
 import { api, errorMessage } from '../../lib/api'
 import { colors, type } from '../../lib/theme'
 import { appRoles, roleLabels } from '../../lib/user'
+import type { User } from '../../lib/user'
+
+const previewUser: User = { id: 'local-preview', email: 'admin', role: 'OPERATOR' }
 
 // Mirrors frontend/src/auth/Authenticated.tsx: every session is checked with GET /users/me
 // before any signed-in screen renders, and again whenever the app returns to the foreground.
@@ -62,7 +65,15 @@ function VerifiedApp({ revision }: { revision: number }) {
 
 export default function AppLayout() {
   const signedIn = useSession((state) => state.session !== null)
+  const preview = useSession((state) => __DEV__ && state.preview)
   const revision = useSession((state) => state.revision)
+  if (preview) {
+    return (
+      <UserContext.Provider key={revision} value={previewUser}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.surface } }} />
+      </UserContext.Provider>
+    )
+  }
   // On sign-out this group can render once more before the navigator removes it; skip the
   // session check then rather than call the API without a token.
   if (!signedIn) return null

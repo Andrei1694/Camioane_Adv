@@ -20,13 +20,22 @@ repository-wide guidance in `../AGENTS.md` as well.
   `DRIVER` and `OPERATOR` roles. Other roles can sign in but see an
   explanation and a sign-out button. `appRoles` in `src/lib/user.ts` is the one
   place that decides this.
-- So far it covers sign-in, session restore and sign-out against the existing
+- It covers sign-in, session restore and sign-out against the existing
   `POST /users/login` and `GET /users/me`. The backend has no route, shift or
   fleet API yet, so the home screen says so instead of showing invented data.
   Read `../backend/README.md` and its source before connecting a feature; do not
   invent endpoints or response contracts.
+- The signed-in HDMI test plays one local video on an external display, with
+  phone controls only. It needs a development build; Expo Go and web show an
+  unavailable state. Native source and the iOS config plugin live in
+  `modules/hdmi-player/`, not the generated app folders. Playback belongs to the
+  focused test screen and stops on navigation or session changes.
 - Use npm. `package.json` and `package-lock.json` are authoritative for versions.
   Keep them in sync.
+- In development only, `admin` / `admin` opens an in-memory Operator preview.
+  It has no access token, skips the server session check, blocks protected API
+  calls, and ends on sign-out or a full reload. Keep this behind `__DEV__`;
+  never turn these preview values into real backend credentials.
 
 ## Local setup and running the app
 
@@ -84,6 +93,8 @@ Run these from `mobile/`:
 | `npm run web` | Run the driver app in a browser on port 5173; stop the admin dashboard first if it uses that port |
 | `npm run ios` | Start Metro and open the iOS simulator |
 | `npm run android` | Start Metro and open an Android device or emulator |
+| `npm run build:ios -- --device` | Build and install the iOS development app with native HDMI support |
+| `npm run build:android -- --device` | Build and install the Android development app with native HDMI support |
 | `npm run typecheck` | Type-check with `tsc --noEmit` |
 | `npm run lint` | Run Oxlint using `.oxlintrc.json`; it prints nothing when clean |
 | `npx expo-doctor` | Check dependency versions and the app config |

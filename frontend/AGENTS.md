@@ -50,6 +50,12 @@ scoped here unless the requested feature also requires changes elsewhere.
   edit, replace or single-file endpoint. Check the library's behaviour in its
   `src/` before working around it: bars keep their own position state, and the
   ruler caches tick cells per zoom.
+- Van-screen video lives under `src/pages/ScreenVideoPage/` (admin-only,
+  lazy-loaded at `/screen` and `/files/$fileId/screen`). Its unconfirmed ViPlex
+  layout lives in the pure `screenLayout.ts`; preview and rendering share its
+  placement maths. Conversion creates a new 2304 × 512 MP4 in the browser and
+  uploads only that result as a new file. `RenderProgress` in `src/components/`
+  is shared with the video editor; never replace the source file.
 - The Profile page lives under `src/pages/ProfilePage/` (`/profile`, every role)
   and sets or removes the signed-in account's picture. `AvatarEditor` in
   `src/components/` does the work and is also used by the Users edit form, where

@@ -22,6 +22,7 @@ Styling uses plain CSS, with shared primitives and page-scoped selectors. There 
 | Profile screen | [ProfilePage](src/pages/ProfilePage/) |
 | Campaign list, calendar, working hours and review | [CampaignPage](src/pages/CampaignPage/) |
 | Preview, editing timeline and segment list | [VideoEditorPage](src/pages/VideoEditorPage/) |
+| Truck-screen composition and per-region framing | [ScreenVideoPage](src/pages/ScreenVideoPage/) |
 | Stop editor, routing summary and map | [RouteBuilderPage](src/pages/RouteBuilderPage/) |
 | Shared row identity and pagination | [OwnerLabel.tsx](src/components/OwnerLabel.tsx), [Pagination.tsx](src/components/Pagination.tsx) |
 | Pictures and picture editing | [Avatar.tsx](src/components/Avatar.tsx), [Avatar.css](src/components/Avatar.css), [AvatarEditor.tsx](src/components/AvatarEditor.tsx), [AvatarEditor.css](src/components/AvatarEditor.css) |
@@ -126,7 +127,7 @@ Management links depend on verified administrator access. Profile is available t
 | --- | --- | --- |
 | Users, Profile and access views | Maximum 760px | Shell default |
 | Dashboard | Full available width | 24px |
-| Files, Credits and video editor | Full available width | Shell default |
+| Files, Credits, video editor and van-screen video | Full available width | Shell default |
 | Cars and campaign list | Maximum 1100px | 28px 24px |
 | Campaign creator and route builder | Maximum 1600px | 28px 24px |
 
@@ -247,7 +248,7 @@ Profile stays in the 760px reading column and is available to every signed-in ro
 
 ### Files
 
-Files uses the real API and a full-width table. Identity includes filename and file type, followed by owner, upload timestamp, right-aligned size and row actions. Preview opens media in a dialog; Edit is a link for video files; Download and Delete are text actions. Narrow rows keep the owner on its own line so long emails remain readable. Upload feedback sits beneath the page heading; preview loading, unsupported media and retrieval failure remain in the preview frame.
+Files uses the real API and a full-width table. Identity includes filename and file type, followed by owner, upload timestamp, right-aligned size and row actions. Preview opens media in a dialog; Edit and Ecran camion are links for video files; Download and Delete are text actions. Actions wrap within their column. Narrow rows keep the owner on its own line so long emails remain readable. Upload feedback sits beneath the page heading; preview loading, unsupported media and retrieval failure remain in the preview frame.
 
 ### Credits
 
@@ -266,6 +267,14 @@ Use 15-minute increments; `24:00` is an end time only. Intervals may be adjacent
 The full-width editor combines a stable media preview, playback/scrubbing controls, edit/history/zoom controls, a re-themed timeline and editable segment rows. The preview uses `object-fit: contain` on a neutral frame, with height `min(48dvh, 420px)` on desktop and `min(40dvh, 280px)` on phones.
 
 The `<video>` element drives playback; the timeline visualizes edits and reports gestures. Keep segment bounds editable through labelled fields and buttons, not only drags. Render/export progress and failures remain inline. Export creates and uploads a new file; it does not replace the source. Timeline colours and typography follow the app tokens instead of the library's default theme.
+
+### Van-screen video
+
+The full-width conversion page lives in `src/pages/ScreenVideoPage/`, lazy-loaded and admin-only at `/screen` and `/files/$fileId/screen`. Open a local MP4 or use “Ecran camion” on a video row in Files. Source identity includes its name, type and size. Only the converted result is uploaded as a new file; the original remains unchanged.
+
+The preview is a 2304 × 512 canvas scaled to the available width. Region outlines and labels sit outside its pixels and never appear in the output. Playback and a keyboard/touch scrubber use a hidden video as their clock. Each region has a fieldset with its editor position and dimensions, plus cover/contain radios; contain is the default to preserve text and logos. The three fieldsets stack below 800px of available page width, and controls retain 44px touch targets.
+
+`screenLayout.ts` is the single source for the unconfirmed ViPlex widget sizes and placement maths, shared by preview and encoding. Keep the visible note that the layout, physical-side mapping and HDMI output at 2304 × 512 still need truck verification. Rendering is dynamically loaded and produces H.264 video with the original audio re-encoded. Shared `RenderProgress` and `UploadProgress` provide cancellation, retry and dismissal; navigation warns while work is running.
 
 ### Route builder
 

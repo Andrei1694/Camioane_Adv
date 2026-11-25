@@ -52,9 +52,12 @@ scoped here unless the requested feature also requires changes elsewhere.
   ruler caches tick cells per zoom.
 - Van-screen video lives under `src/pages/ScreenVideoPage/` (admin-only,
   lazy-loaded at `/screen` and `/files/$fileId/screen`). Its unconfirmed ViPlex
-  layout lives in the pure `screenLayout.ts`; preview and rendering share its
-  placement maths. Conversion creates a new 2304 × 512 MP4 in the browser and
-  uploads only that result as a new file. `RenderProgress` in `src/components/`
+  fallback lives in the pure `screenLayout.ts`; preview and rendering share its
+  placement maths and the editable canvas/regions. Shared presets use
+  `/screen-presets`, `screenPresetsKey(revision)` and `handleAdminError`.
+  Keep an independent loaded preset/version; conflicts preserve edits until
+  explicit reload or saving as new. Conversion snapshots the layout and preset
+  name, creates an MP4 in the browser and uploads only that result as a new file. `RenderProgress` in `src/components/`
   is shared with the video editor; never replace the source file.
 - The Profile page lives under `src/pages/ProfilePage/` (`/profile`, every role)
   and sets or removes the signed-in account's picture. `AvatarEditor` in

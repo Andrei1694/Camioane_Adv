@@ -84,7 +84,7 @@
 .screen-video canvas {
   display: block;
   width: 100%;
-  aspect-ratio: 2304 / 512;
+  height: auto;
 }
 
 /* Guides are separate DOM elements; they never become encoded pixels. */
@@ -102,6 +102,8 @@
   color: var(--muted);
   font-size: 12px;
   line-height: 1.25;
+  overflow-wrap: anywhere;
+  background: var(--surface);
 }
 
 .screen-video .screen-scrubber {
@@ -148,7 +150,7 @@
   font-size: 12px;
 }
 
-.screen-video fieldset label {
+.screen-video .screen-fit {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -177,8 +179,62 @@
   font-size: 13px;
 }
 
+.screen-video .screen-presets,
+.screen-video .screen-geometry {
+  margin-top: 28px;
+}
+
+.screen-video .screen-presets {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.screen-video .screen-preset-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.screen-video .screen-preset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.screen-video .form-field {
+  min-width: 0;
+}
+
+.screen-video .form-field input,
+.screen-video .form-field select {
+  width: 100%;
+  min-width: 0;
+}
+
+.screen-video .screen-canvas-fields {
+  margin-top: 16px;
+}
+
+.screen-video .screen-canvas-fields .screen-number-fields {
+  max-width: 480px;
+}
+
+.screen-video .screen-number-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
 @container screen-video (max-width: 800px) {
   .screen-video .screen-regions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .screen-video .screen-preset-fields {
     grid-template-columns: minmax(0, 1fr);
   }
 }

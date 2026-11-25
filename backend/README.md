@@ -228,6 +228,46 @@ before releasing the frontend that uses this API. Production uses
 `npx prisma migrate deploy`, not `migrate dev`. No new environment settings or
 dependencies are required.
 
+## Screen presets
+
+`/screen-presets` stores shared screen layouts for the web administrator's van-video
+converter. Every operation rechecks the session and active ADMIN role inside a
+serializable transaction. Presets have no owner restriction. The mobile app keeps
+its fixed Version A layout and does not use this API.
+
+| Method | Path | Result |
+| --- | --- | --- |
+| GET | `/screen-presets` | `{ presets }`, all rows ordered by creation time then UUID, ascending |
+| GET | `/screen-presets/:id` | `{ preset }` |
+| POST | `/screen-presets` | `{ preset }`, 201 |
+| PATCH | `/screen-presets/:id` | `{ preset }`, 200 |
+| DELETE | `/screen-presets/:id` | Permanent deletion, 204 |
+
+Create bodies are `{ name, canvas: { width, height }, regions }`. Updates require
+the complete form plus the loaded `version`. Names are trimmed, 1–200 characters,
+and cannot contain null characters. Duplicate names are allowed. Canvas dimensions
+must be even integers between 16 and 4096 pixels. `regions` contains exactly
+`left`, `middle`, and `right`; each has `{ x, y, width, height, fit }`. Positions
+are non-negative integers, dimensions are positive integers, and each region must
+fit entirely within the canvas. Overlapping regions are allowed and are drawn in
+left/middle/right order. `fit` is `cover` or `contain`. Unknown fields, query
+parameters, and invalid layouts return 400. JSON bodies are limited to 16 KiB;
+responses use `Cache-Control: no-store`. There is no pagination.
+
+Public presets contain `{ id, name, canvas, regions, version, createdAt, updatedAt }`.
+Updates atomically match and increment the version; stale edits return 409 and
+missing presets return 404. The web editor preserves local changes on conflict
+until an explicit reload or saving as a new preset. Conversion snapshots the
+layout, and the output filename includes the preset name.
+
+Apply `add_screen_presets` and regenerate Prisma Client before releasing the web
+editor. The migration inserts exactly one real configuration from the ViPlex
+photos, **ViPlex foto – Versiunea A**: a 2304 × 512 canvas with left `(0, 0,
+1018, 512)`, middle `(1024, 0, 512, 512)`, and right `(1585, 0, 719, 512)`, all
+using `contain`. This is not demo data and still needs physical truck verification.
+Production applies committed migrations with `npx prisma migrate deploy`.
+No additional environment settings or dependencies are required.
+
 ## Cars
 
 Cars are persistent inventory shared by all currently active administrators. The

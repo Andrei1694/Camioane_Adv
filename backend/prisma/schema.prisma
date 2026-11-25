@@ -63,6 +63,21 @@ model SavedRoute {
   @@index([createdAt, id])
 }
 
+/// Shared screen-layout configurations for testing van-screen conversions.
+model ScreenPreset {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String   @db.VarChar(200)
+  canvasWidth  Int
+  canvasHeight Int
+  /// { left|middle|right: { x, y, width, height, fit } }, validated by screen-preset-validation.ts
+  regions      Json
+  version      Int      @default(1)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([createdAt, id])
+}
+
 enum RoleName {
   ADMIN
   OPERATOR

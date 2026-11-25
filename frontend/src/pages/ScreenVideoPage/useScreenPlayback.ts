@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { placement, screenCanvas, screenRegions } from './screenLayout'
-import type { Fit, RegionId } from './screenLayout'
+import { placement, regionIds } from './screenLayout'
+import { screenLayoutError } from '../../lib/screenPreset'
+import type { ScreenLayout } from '../../lib/screenPreset'
 
 /** The hidden video is the playback clock; only its pixels reach the preview canvas. */
-export function useScreenPlayback(source: Blob | undefined, fits: Record<RegionId, Fit>) {
+export function useScreenPlayback(source: Blob | undefined, layout: ScreenLayout) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const frameRef = useRef(0)
@@ -52,13 +53,15 @@ export function useScreenPlayback(source: Blob | undefined, fits: Record<RegionI
     const video = videoRef.current
     const context = canvasRef.current?.getContext('2d')
     if (!video || !context) return
+    const validLayout = !screenLayoutError(layout)
     function draw() {
       if (!context || !video) return
       context.fillStyle = '#000'
-      context.fillRect(0, 0, screenCanvas.width, screenCanvas.height)
-      if (!source || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return
-      for (const region of screenRegions) {
-        const { sx, sy, sw, sh, dx, dy, dw, dh } = placement(video.videoWidth, video.videoHeight, region, fits[region.id])
+      context.fillRect(0, 0, context.canvas.width, context.canvas.height)
+      if (!validLayout || !source || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return
+      for (const id of regionIds) {
+        const region = layout.regions[id]
+        const { sx, sy, sw, sh, dx, dy, dw, dh } = placement(video.videoWidth, video.videoHeight, region, region.fit)
         context.drawImage(video, sx, sy, sw, sh, dx, dy, dw, dh)
       }
     }
@@ -88,7 +91,7 @@ export function useScreenPlayback(source: Blob | undefined, fits: Record<RegionI
       video.removeEventListener('pause', stop)
       video.removeEventListener('ended', stop)
     }
-  }, [source, fits])
+  }, [source, layout])
 
   return {
     videoRef, canvasRef, duration, unplayable, time, playing,

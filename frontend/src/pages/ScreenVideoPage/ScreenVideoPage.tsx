@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useBlocker, useNavigate, useParams } from '@tanstack/react-router'
 import { useSession } from '../../auth/session'
@@ -8,17 +8,20 @@ import UploadProgress from '../../components/UploadProgress'
 import type { Upload } from '../../components/UploadProgress'
 import { api, ApiError, errorMessage } from '../../lib/api'
 import { declaredTypeError, fileTypeLabel } from '../../lib/file'
+import { screenLayoutError } from '../../lib/screenPreset'
+import type { ScreenLayout, ScreenPreset } from '../../lib/screenPreset'
 import { formatByteSize } from '../../lib/format'
 import { useNotify } from '../../lib/useNotify'
 import { formatTimecode } from '../VideoEditorPage/edit'
 import { ExportError } from '../VideoEditorPage/exportError'
 import { findFile } from '../VideoEditorPage/findFile'
-import { defaultFits, screenCanvas, screenFileName, screenRegions } from './screenLayout'
-import type { Fit, RegionId } from './screenLayout'
+import { defaultLayout, regionIds, regionLabels, screenFileName } from './screenLayout'
+import PresetPanel from './components/PresetPanel'
+import LayoutFields from './components/LayoutFields'
 import { useScreenPlayback } from './useScreenPlayback'
 import './ScreenVideoPage.css'
 
-type Conversion = { source: Blob, name: string, fits: Record<RegionId, Fit> }
+type Conversion = { source: Blob, name: string, layout: ScreenLayout, presetName: string }
 type Job =
   | { step: 'render', render: Render, conversion: Conversion }
   | { step: 'upload', upload: Upload, conversion: Conversion }
@@ -41,7 +44,18 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
   const jobAbort = useRef<AbortController | null>(null)
   const [local, setLocal] = useState<File>()
   const [selectionError, setSelectionError] = useState<string>()
-  const [fits, setFits] = useState(defaultFits)
+  const [layout, setLayout] = useState<ScreenLayout>(() => structuredClone(defaultLayout))
+  const [selectedPreset, setSelectedPreset] = useState<ScreenPreset | null>(null)
+  const [presetName, setPresetName] = useState('')
+  const [layoutTouched, setLayoutTouched] = useState(false)
+  const [presetPending, setPresetPending] = useState(false)
+  const layoutError = screenLayoutError(layout)
+  const selectPreset = useCallback((preset: ScreenPreset) => {
+    setSelectedPreset(structuredClone(preset))
+    setPresetName(preset.name)
+    setLayout(structuredClone({ canvas: preset.canvas, regions: preset.regions }))
+    setLayoutTouched(true)
+  }, [])
   const [job, setJob] = useState<Job | null>(null)
 
   const meta = useQuery({
@@ -72,13 +86,16 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
   const name = local?.name ?? file?.originalName
   const mimeType = local ? local.type || 'video/mp4' : file?.mimeType
   const size = local?.size ?? file?.size
-  const playback = useScreenPlayback(source, fits)
+  const playback = useScreenPlayback(source, layout)
   const { videoRef, canvasRef } = playback
-  const busy = job !== null && (job.step === 'render' ? job.render.phase === 'rendering' : job.upload.phase !== 'failed')
+  const converting = job !== null && (job.step === 'render' ? job.render.phase === 'rendering' : job.upload.phase !== 'failed')
+  const busy = converting || presetPending
   const currentTime = Math.min(playback.time, playback.duration)
 
   useBlocker({
-    shouldBlockFn: () => !window.confirm('Conversia sau încărcarea este în curs. Părăsești pagina și o anulezi?'),
+    shouldBlockFn: () => !window.confirm(presetPending
+      ? 'Salvarea presetului este în curs. Părăsești pagina?'
+      : 'Conversia sau încărcarea este în curs. Părăsești pagina și o anulezi?'),
     enableBeforeUnload: busy,
     disabled: !busy,
   })
@@ -102,7 +119,7 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
   }
 
   async function startExport(conversion: Conversion) {
-    if (jobAbort.current || !canEncode) return
+    if (jobAbort.current || presetPending || !canEncode) return
     playback.pause()
     const controller = new AbortController()
     jobAbort.current = controller
@@ -111,7 +128,7 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
     try {
       const { renderScreen } = await import('./renderScreen')
       controller.signal.throwIfAborted()
-      const blob = await renderScreen(conversion.source, conversion.fits, {
+      const blob = await renderScreen(conversion.source, conversion.layout, {
         signal: controller.signal,
         onProgress: (progress) => {
           if (!isCurrent(controller) || controller.signal.aborted) return
@@ -137,7 +154,7 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
   }
 
   async function uploadExport(rendered: File, conversion: Conversion, controller = new AbortController()) {
-    if (jobAbort.current && jobAbort.current !== controller) return
+    if (presetPending || (jobAbort.current && jobAbort.current !== controller)) return
     jobAbort.current = controller
     setJob({ step: 'upload', upload: { file: rendered, phase: 'sending', sent: 0 }, conversion })
     const sending = (current: Job | null) => isCurrent(controller) && !controller.signal.aborted
@@ -183,13 +200,13 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
       <header>
         <div className="page-heading">
           <h1>Video pentru ecranul camionului</h1>
-          <button type="button" className="primary-button" disabled={!playback.ready || busy || !canEncode}
-            aria-describedby={busy ? `${ids}-job` : `${ids}-export-note`}
-            onClick={() => { if (source && name) void startExport({ source, name: screenFileName(name), fits: { ...fits } }) }}>
+          <button type="button" className="primary-button" disabled={!playback.ready || busy || !canEncode || !!layoutError}
+            aria-describedby={layoutError ? `${ids}-layout-error` : converting ? `${ids}-job` : `${ids}-export-note`}
+            onClick={() => { if (source && name && !layoutError) void startExport({ source, name: screenFileName(name, presetName), layout: structuredClone(layout), presetName }) }}>
             Convertește și salvează în Fișiere
           </button>
         </div>
-        <p className="page-description">Un MP4 de <span className="num">2304 × 512</span> cu trei copii ale aceluiași videoclip, salvat ca fișier nou în Fișiere. Originalul rămâne neschimbat.</p>
+        <p className="page-description">Un MP4 de <span className="num">{layout.canvas.width || 0} × {layout.canvas.height || 0}</span> cu trei copii ale aceluiași videoclip, salvat ca fișier nou în Fișiere. Originalul rămâne neschimbat.</p>
       </header>
       <p className="screen-note" id={`${ids}-export-note`}>{exportNote}</p>
       {job?.step === 'render' && (
@@ -217,25 +234,34 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
         {selectionError && <p className="field-error" role="alert" id={`${ids}-selection-error`}>{selectionError}</p>}
         {sourceError && <div className="request-error" role="alert">
           <p>{notFound ? 'Fișierul nu mai apare în Fișiere sau linkul este incorect.' : `Videoclipul nu a putut fi încărcat. ${errorMessage(meta.error ?? content.error)}`}</p>
-          {!notFound && <button type="button" disabled={meta.isFetching || content.isFetching}
+          {!notFound && <button type="button" disabled={busy || meta.isFetching || content.isFetching}
             onClick={() => { void (meta.isError ? meta.refetch() : content.refetch()) }}>Reîncearcă</button>}
         </div>}
         {!local && file && !isMp4 && <p className="request-error" role="alert">Pot fi convertite doar videoclipuri MP4.</p>}
       </div>
 
+      <PresetPanel layout={layout} selectedPreset={selectedPreset} name={presetName} touched={layoutTouched}
+        busy={busy} onSelect={selectPreset} onPendingChange={setPresetPending}
+        onNameChange={(value) => { setPresetName(value); setLayoutTouched(true) }}
+        onDelete={() => { setSelectedPreset(null); setLayoutTouched(true) }} />
+
       <section className="screen-preview" aria-labelledby={`${ids}-preview-title`}>
         <div className="screen-section-heading">
           <h2 id={`${ids}-preview-title`}>Previzualizare</h2>
-          <span className="num">2304 × 512 px</span>
+          <span className="num">{layout.canvas.width || 0} × {layout.canvas.height || 0} px</span>
         </div>
-        <div className="screen-canvas-frame">
-          <canvas ref={canvasRef} width={screenCanvas.width} height={screenCanvas.height}
+        <div className="screen-canvas-frame" hidden={!!layoutError}>
+          <canvas ref={canvasRef} width={layoutError ? 16 : layout.canvas.width} height={layoutError ? 16 : layout.canvas.height}
             role="img" aria-label="Previzualizarea celor trei copii ale videoclipului, cu spații negre între regiuni" />
-          {screenRegions.map((region) => <div key={region.id} className="screen-region-outline" aria-hidden="true" style={{
-            left: `${region.x / screenCanvas.width * 100}%`, top: `${region.y / screenCanvas.height * 100}%`,
-            width: `${region.width / screenCanvas.width * 100}%`, height: `${region.height / screenCanvas.height * 100}%`,
-          }}><span>{region.label}</span></div>)}
+          {!layoutError && regionIds.map((id) => {
+            const region = layout.regions[id]
+            return <div key={id} className="screen-region-outline" aria-hidden="true" style={{
+              left: `${region.x / layout.canvas.width * 100}%`, top: `${region.y / layout.canvas.height * 100}%`,
+              width: `${region.width / layout.canvas.width * 100}%`, height: `${region.height / layout.canvas.height * 100}%`,
+            }}><span>{regionLabels[id]}</span></div>
+          })}
         </div>
+        {layoutError && <p className="screen-note">Corectează geometria pentru a vedea previzualizarea.</p>}
         <video ref={videoRef} hidden playsInline preload="auto" />
         {playback.unplayable ? <p className="request-error" role="alert">Acest browser nu poate reda videoclipul. Alege un alt MP4 sau folosește o versiune recentă de Chrome, Edge ori Safari.</p>
           : !playback.ready && !sourceError && (local || !file || isMp4) ? <p className="screen-note" role="status">
@@ -252,17 +278,9 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
         </div>
       </section>
 
-      <div className="screen-regions">
-        {screenRegions.map((region) => <fieldset key={region.id} disabled={busy}>
-          <legend>{region.label}</legend>
-          <p className="screen-region-size num">{region.width} × {region.height} px · x {region.x}, y {region.y}</p>
-          <label><input type="radio" name={`${ids}-${region.id}`} value="cover" checked={fits[region.id] === 'cover'}
-            onChange={() => setFits((current) => ({ ...current, [region.id]: 'cover' }))} />Decupează pentru umplere</label>
-          <label><input type="radio" name={`${ids}-${region.id}`} value="contain" checked={fits[region.id] === 'contain'}
-            onChange={() => setFits((current) => ({ ...current, [region.id]: 'contain' }))} />Încadrează cu bandă neagră</label>
-        </fieldset>)}
-      </div>
-      <p className="screen-layout-note">Configurația provine din fotografiile ViPlex și trebuie confirmată pe camion, inclusiv corespondența dintre regiuni și laturile fizice. Ieșirea HDMI la <span className="num">2304 × 512</span> nu a fost testată.</p>
+      <LayoutFields layout={layout} disabled={busy} error={layoutError} errorId={`${ids}-layout-error`}
+        onChange={(update) => { setLayout(update); setLayoutTouched(true) }} />
+      <p className="screen-layout-note">Configurația pornește de la {selectedPreset ? `presetul „${selectedPreset.name}”` : 'layoutul ViPlex implicit sau modificările tale'} și include geometria și încadrarea curente. Layoutul, corespondența dintre regiuni și laturile fizice și ieșirea HDMI trebuie confirmate pe camion.</p>
     </section>
   )
 }

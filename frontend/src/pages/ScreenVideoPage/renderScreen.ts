@@ -6,13 +6,16 @@ import {
 } from 'mediabunny'
 import type { InputAudioTrack, InputVideoTrack } from 'mediabunny'
 import { ExportError } from '../VideoEditorPage/exportError'
-import { placement, screenCanvas, screenRegions } from './screenLayout'
-import type { Fit, RegionId } from './screenLayout'
+import { placement, regionIds } from './screenLayout'
+import { screenLayoutError } from '../../lib/screenPreset'
+import type { ScreenLayout } from '../../lib/screenPreset'
 
-export async function renderScreen(source: Blob, fits: Record<RegionId, Fit>, { signal, onProgress }: {
+export async function renderScreen(source: Blob, layout: ScreenLayout, { signal, onProgress }: {
   signal: AbortSignal
   onProgress: (fraction: number) => void
 }): Promise<Blob> {
+  const validation = screenLayoutError(layout)
+  if (validation) throw new ExportError(validation)
   const input = new Input({ source: new BlobSource(source), formats: [MP4] })
   let output: Output<Mp4OutputFormat, BufferTarget> | undefined
   try {
@@ -22,8 +25,8 @@ export async function renderScreen(source: Blob, fits: Record<RegionId, Fit>, { 
     if (!(await video.canDecode())) throw new ExportError('Acest browser nu poate decoda videoclipul. Încearcă o versiune recentă de Chrome, Edge sau Safari.')
     const audio = await input.getPrimaryAudioTrack()
     if (audio && !(await audio.canDecode())) throw new ExportError('Acest browser nu poate decoda sunetul videoclipului. Încearcă o versiune recentă de Chrome, Edge sau Safari.')
-    const videoCodec = await getFirstEncodableVideoCodec(['avc'], { ...screenCanvas, quality: QUALITY_HIGH })
-    if (!videoCodec) throw new ExportError('Acest browser nu poate codifica video H.264 la 2304 × 512. Folosește o versiune recentă de Chrome, Edge sau Safari.')
+    const videoCodec = await getFirstEncodableVideoCodec(['avc'], { ...layout.canvas, quality: QUALITY_HIGH })
+    if (!videoCodec) throw new ExportError(`Acest browser nu poate codifica video H.264 la ${layout.canvas.width} × ${layout.canvas.height}. Folosește o versiune recentă de Chrome, Edge sau Safari.`)
     const audioCodec = audio ? await getFirstEncodableAudioCodec(['aac', 'opus'], {
       numberOfChannels: await audio.getNumberOfChannels(), sampleRate: await audio.getSampleRate(), quality: QUALITY_HIGH,
     }) : null
@@ -33,7 +36,7 @@ export async function renderScreen(source: Blob, fits: Record<RegionId, Fit>, { 
     if (!Number.isFinite(duration) || duration <= 0) throw new ExportError('Durata videoclipului nu a putut fi citită.')
     signal.throwIfAborted()
 
-    const canvas = new OffscreenCanvas(screenCanvas.width, screenCanvas.height)
+    const canvas = new OffscreenCanvas(layout.canvas.width, layout.canvas.height)
     const context = canvas.getContext('2d')
     if (!context) throw new ExportError('Acest browser nu poate crea imaginea pentru ecranul camionului.')
     output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target: new BufferTarget() })
@@ -44,7 +47,7 @@ export async function renderScreen(source: Blob, fits: Record<RegionId, Fit>, { 
     if (audioSource) output.addAudioTrack(audioSource)
     await output.start()
     await Promise.all([
-      pumpVideo(video, videoSource, context, fits, signal, (timestamp) => onProgress(Math.max(0, Math.min(timestamp / duration, 1)))),
+      pumpVideo(video, videoSource, context, layout, signal, (timestamp) => onProgress(Math.max(0, Math.min(timestamp / duration, 1)))),
       audio && audioSource ? pumpAudio(audio, audioSource, signal) : undefined,
     ])
     signal.throwIfAborted()
@@ -65,14 +68,15 @@ export async function renderScreen(source: Blob, fits: Record<RegionId, Fit>, { 
 }
 
 async function pumpVideo(track: InputVideoTrack, source: CanvasSource, context: OffscreenCanvasRenderingContext2D,
-  fits: Record<RegionId, Fit>, signal: AbortSignal, onDone: (timestamp: number) => void) {
+  layout: ScreenLayout, signal: AbortSignal, onDone: (timestamp: number) => void) {
   for await (const sample of new VideoSampleSink(track).samples()) {
     try {
       signal.throwIfAborted()
       context.fillStyle = '#000'
-      context.fillRect(0, 0, screenCanvas.width, screenCanvas.height)
-      for (const region of screenRegions) {
-        const { sx, sy, sw, sh, dx, dy, dw, dh } = placement(sample.displayWidth, sample.displayHeight, region, fits[region.id])
+      context.fillRect(0, 0, layout.canvas.width, layout.canvas.height)
+      for (const id of regionIds) {
+        const region = layout.regions[id]
+        const { sx, sy, sw, sh, dx, dy, dw, dh } = placement(sample.displayWidth, sample.displayHeight, region, region.fit)
         sample.draw(context, sx, sy, sw, sh, dx, dy, dw, dh)
       }
       await source.add(sample.timestamp, sample.duration)

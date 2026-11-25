@@ -222,6 +222,21 @@ shutdown and script tests run the entry points in child processes, with the
   Other operations reject query parameters. JSON bodies are limited to 16 KiB.
   Cars' `CarRoute` labels and campaign drafts remain independent. No demo seed.
 
+### Screen presets
+
+- `/screen-presets` provides shared admin-only list, detail, create, full-form
+  update and delete operations. Recheck the session and active ADMIN role in
+  every serializable transaction; atomically match/increment update versions.
+- `ScreenPreset` stores the canvas dimensions and exactly three JSON regions.
+  Use `screen-preset-validation.ts` for body validation and stored-region reads.
+  Canvases have even dimensions from 16 to 4096; integer regions must fit inside
+  them, with overlaps allowed and `cover`/`contain` framing. Bodies are limited
+  to 16 KiB. Queries are rejected; lists return every row in creation/UUID order,
+  ascending. Responses are private (`no-store`).
+- The migration inserts only the actual, unconfirmed ViPlex photo Version A
+  configuration, not demo data. Presets are for the web administrator converter;
+  mobile keeps its fixed layout. No environment settings are added.
+
 ### Campaign drafts
 
 - `/campaigns` provides shared admin-only list, detail, create and update operations.

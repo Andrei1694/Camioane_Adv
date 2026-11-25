@@ -11,6 +11,8 @@ import { isCarRouteId, isCarStatus, maxCarPlateLength, maxCarTextLength, plateKe
 import type { Car, CarInput } from './car'
 import { isSavedRoute } from './route'
 import type { RouteInput, RoutePageData, SavedRoute } from './route'
+import { isScreenPreset } from './screenPreset'
+import type { ScreenPreset, ScreenPresetInput } from './screenPreset'
 
 export class ApiError extends Error {
   readonly status: number
@@ -396,7 +398,27 @@ function decodeRoutePage(value: unknown): RoutePageData {
   return { routes: value.routes.map(decodeRoute), total: decodeTotal(value) }
 }
 
+function decodeScreenPreset(value: unknown): ScreenPreset {
+  if (!isScreenPreset(value)) throw new ApiError(0, 'Serverul a returnat date neașteptate despre preset.')
+  return { id: value.id, name: value.name, canvas: value.canvas, regions: value.regions,
+    version: value.version, createdAt: value.createdAt, updatedAt: value.updatedAt }
+}
+
+function decodeScreenPresetResponse(value: unknown) {
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat.')
+  return decodeScreenPreset(value.preset)
+}
+
+function decodeScreenPresets(value: unknown) {
+  if (!record(value) || !Array.isArray(value.presets)) throw new ApiError(0, 'Serverul a returnat o listă de preseturi neașteptată.')
+  return value.presets.map(decodeScreenPreset)
+}
+
 export const api = {
+  screenPresets: (signal: AbortSignal) => request('/screen-presets', decodeScreenPresets, { signal }),
+  createScreenPreset: (data: ScreenPresetInput) => request('/screen-presets', decodeScreenPresetResponse, { method: 'POST', body: data }),
+  updateScreenPreset: (id: string, data: ScreenPresetInput & { version: number }) => request('/screen-presets/' + encodeURIComponent(id), decodeScreenPresetResponse, { method: 'PATCH', body: data }),
+  deleteScreenPreset: (id: string) => request('/screen-presets/' + encodeURIComponent(id), () => undefined, { method: 'DELETE' }),
   routes: (page: { limit: number, offset: number }, signal: AbortSignal) => request('/routes' + query(page), decodeRoutePage, { signal }),
   route: (id: string, signal: AbortSignal) => request('/routes/' + encodeURIComponent(id), decodeRouteResponse, { signal }),
   createRoute: (data: RouteInput) => request('/routes', decodeRouteResponse, { method: 'POST', body: data }),

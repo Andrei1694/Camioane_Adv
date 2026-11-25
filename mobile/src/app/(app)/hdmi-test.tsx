@@ -23,9 +23,9 @@ const playbackLabels: Record<PlaybackState, string> = {
 
 export default function HdmiTestScreen() {
   const router = useRouter()
-  const { sample } = useLocalSearchParams<{ sample?: string }>()
+  const { sample, resultId } = useLocalSearchParams<{ sample?: string; resultId?: string }>()
   const truckScreen = sample === 'truck-screen'
-  const { status, file, busy, ready, error, chooseVideo, control } = useHdmiTest(truckScreen ? 'truck-screen' : 'flower')
+  const { status, file, busy, ready, error, chooseVideo, control } = useHdmiTest(truckScreen ? 'truck-screen' : 'flower', resultId)
   const playing = status.playback === 'playing'
   const playbackActive = playing || status.playback === 'buffering'
   const { dimmed, dim, wake, error: dimError } = useScreenDim(playbackActive, playing)
@@ -34,7 +34,7 @@ export default function HdmiTestScreen() {
 
   return (
     <Screen>
-      <Text style={styles.title} accessibilityRole="header">{truckScreen ? 'Truck screen video' : 'HDMI test'}</Text>
+      <Text style={styles.title} accessibilityRole="header">{truckScreen || resultId ? 'Truck screen video' : 'HDMI test'}</Text>
       <Text style={styles.body}>Video plays on the connected display. This phone shows controls only.</Text>
       {!hdmiPlayer ? (
         <Text style={styles.muted}>{unavailableMessage}</Text>

@@ -7,6 +7,7 @@ import type { HdmiStatus } from '../../modules/hdmi-player'
 import { useSession } from '../auth/session'
 import { deleteVideoCopy, loadSampleVideo, pickVideo } from './hdmiFiles'
 import type { HdmiVideo, SampleVideo } from './hdmiFiles'
+import { takeHdmiResult } from '../features/screen/hdmiResults'
 
 const initialStatus: HdmiStatus = { sessionId: '', display: null, playback: 'idle', error: null }
 const cacheWarning = 'A temporary video could not be removed. Your phone can clear it from the app cache.'
@@ -42,7 +43,7 @@ function preparationDetachedFiles(failure: unknown) {
     && (failure.code === 'ERR_HDMI_PREPARE_FAILED' || failure.code === 'ERR_HDMI_CANCELLED')
 }
 
-export function useHdmiTest(initialSample: SampleVideo = 'flower') {
+export function useHdmiTest(initialSample: SampleVideo = 'flower', resultId?: string) {
   const [status, setStatus] = useState(initialStatus)
   const [file, setFile] = useState<HdmiVideo | null>(null)
   const [busy, setBusy] = useState(false)
@@ -161,7 +162,7 @@ export function useHdmiTest(initialSample: SampleVideo = 'flower') {
       setReady(true)
       setStatus(next)
       // Do not await preparation here: disposal must be able to cancel it.
-      void selectVideo(current, () => loadSampleVideo(initialSample))
+      void selectVideo(current, () => resultId ? takeHdmiResult(resultId) : loadSampleVideo(initialSample))
     }).catch(() => {
       if (current.alive) setError('HDMI playback could not start. Leave this screen and try again.')
     })
@@ -195,7 +196,7 @@ export function useHdmiTest(initialSample: SampleVideo = 'flower') {
     }
 
     return dispose
-  }, [initialSample, removeFile, selectVideo]))
+  }, [initialSample, resultId, removeFile, selectVideo]))
 
   // Every activation has its own tag: a late completion after pause or navigation
   // cannot disable the wake lock of a resumed or newly opened session.

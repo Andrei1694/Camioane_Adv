@@ -10,7 +10,7 @@ export const roleLabels: Record<Role, string> = {
 }
 
 /** Roles this app is built for. Other accounts can sign in but see an explanation instead of the app. */
-export const appRoles: readonly Role[] = ['DRIVER', 'OPERATOR']
+export const appRoles: readonly Role[] = roles
 
 export function isRole(value: unknown): value is Role {
   return roles.some((role) => role === value)

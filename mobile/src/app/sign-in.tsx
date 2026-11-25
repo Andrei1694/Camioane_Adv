@@ -51,7 +51,7 @@ export default function SignInScreen() {
         <Text style={styles.title} accessibilityRole="header">Sign in</Text>
         <Text style={styles.description}>
           {__DEV__
-            ? 'Use admin / admin for a local preview, or sign in with your driver or operator account.'
+            ? 'Use admin / admin for a local preview, or sign in with your account.'
             : 'Use the driver or operator account provided by your administrator.'}
         </Text>
       </View>

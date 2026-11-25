@@ -1,12 +1,12 @@
 # Camioane Driver (mobile)
 
-An Expo (React Native) app for the drivers and operators of the LED-screen trucks. It signs in with an existing account, keeps the session in the device's secure storage, and includes an HDMI video test for Android and iPhone development builds. The backend has no route, shift or fleet API yet, so the home screen says assignments aren't available rather than showing invented data.
+An Expo (React Native) app for the LED-screen trucks. It signs in with an existing account, keeps the session in the device's secure storage, converts videos into the three-region truck layout, and includes an HDMI player for Android and iPhone development builds. The backend has no route, shift or fleet API yet, so the home screen says assignments aren't available rather than showing invented data.
 
 Expo SDK 58, React Native 0.88, React 19, TypeScript, Expo Router, TanStack Query and Zustand.
 
 ## Accounts
 
-There is no registration. An administrator creates accounts on the web dashboard's Users page (`../frontend`) and gives them the Driver or Operator role. Admin and User accounts can sign in, but the app only tells them it's for drivers and operators and offers sign-out.
+There is no registration. An administrator creates accounts on the web dashboard's Users page (`../frontend`). ADMIN, OPERATOR, DRIVER and USER can all open the mobile app, including **Ecrane camioane**. File visibility and saving remain controlled by the server's existing permissions; enabling a mobile role grants no access to another account's files.
 
 Development mode prefills `admin` / `admin`. Press **Sign in** to open an Operator screen preview without a backend login. This is a local preview identity, not a real administrator account: it creates no token, cannot call protected APIs, and ends on sign-out or a full reload. The shortcut and prefilled values are disabled in production builds. Replace the fields with your real account details to use normal sign-in.
 
@@ -21,7 +21,7 @@ npm ci
 npm start
 ```
 
-For the HDMI test, install a development build as described below, then open the development server from that app. To preview sign-in in Expo Go, run `npx expo start --go`; Expo Go displays an explanation instead of enabling the HDMI test.
+For native conversion and HDMI, install a development build as described below, then open the development server from that app. To preview sign-in in Expo Go, run `npx expo start --go`; Expo Go displays an explanation instead of enabling the custom native converter and HDMI player. The browser has its own converter but cannot play on HDMI.
 
 To run the same driver app in a browser:
 
@@ -83,9 +83,37 @@ Before a production build:
 
 The icon and splash come from `../assets/app-icon/`. The iOS icon is flattened onto white because the App Store rejects icons with transparency.
 
+## Ecrane camioane
+
+Open **Ecrane camioane** on Home (`/screen`, optionally `/screen?fileId=<id>`). Choose an MP4 from the phone or the paginated **Fișiere** picker. The picker uses `GET /files?limit=50&offset=…` and authenticated `GET /files/:id/download`; it only offers MP4 files for this workflow. It does not add file management or change server permissions.
+
+The synchronized preview shows three copies of the same source on a black **2304 × 512** canvas. The regions exactly match the dashboard: left **1018 × 512 at x=0**, middle **512 × 512 at x=1024**, right **719 × 512 at x=1585**, all at y=0. Each defaults to **Încadrează cu bandă neagră** (contain); choose **Decupează pentru umplere** (centered cover) independently. Use Play/Pause and the seek control to inspect framing. The source filename, size and duration remain visible.
+
+**Convertește și salvează în Fișiere** creates H.264 MP4, preserving source audio, upright orientation and the original file. Native audio is encoded as AAC; the browser prefers AAC and can use Opus when its encoder requires it, matching the dashboard. The filename is `<original name> (ecran camion).mp4`. Conversion and multipart `POST /files` upload have separate progress phases, cancellation and retry. A failed upload retains the finished conversion: **Salvează rezultatul în Fișiere** retries the upload without encoding again. Unsupported exact-size encoding reports an error rather than silently changing dimensions.
+
+After conversion, **Redă pe HDMI** opens the existing player with a separate temporary copy and waits for explicit **Play**. It also works after an upload failure. Opening HDMI during an upload cancels that transfer; returning allows saving the existing conversion. The player's looping, dimming and background behavior are unchanged, including muted HDMI audio. Returning to the editor retains its source, framing and result. Both original HDMI sample shortcuts remain available on Home.
+
+Conversion runs in the foreground and keeps the screen awake. Backgrounding, confirmed navigation away, sign-out and expiry cancel unfinished work. Native readers are released before temporary files are removed. The editor's source, framing and results last only for that editor/session; successfully uploaded files persist on the server. A killed app or failed cleanup can leave cache files until OS eviction. Physical truck mapping is still unconfirmed: this canvas does not establish which physical side each region drives or the phone's HDMI output resolution.
+
+The `admin` / `admin` development preview supports local selection, conversion and HDMI. It cannot list, download or save server files. Browser conversion uses canvas and a lazily loaded mediabunny encoder; browser codec availability is required, and HDMI remains unavailable.
+
+### Converter implementation and verification
+
+`src/features/screen/screenLayout.ts` ports the dashboard's pure placement calculations. Its rectangles drive native preview and conversion. The local `modules/screen-video` Expo module uses AVFoundation with the same Core Image compositor for iOS preview and asset-reader/writer export. Android shares a custom video effect between ExoPlayer and Media3 Transformer at the HDMI module's Media3 version (1.11.1), with encoder resolution fallback disabled. Native files stay on disk rather than being loaded wholesale into JavaScript. Session and job identifiers discard stale callbacks. Rebuild both native development apps after adding or changing this module; Expo Go cannot load it.
+
+The iOS compositor renders black when AVFoundation requests a time with no source frame, such as an initial empty edit or an audio-only tail. These valid timeline gaps must not be treated as decoding failures. Reader/player errors still fail normally, and the export session is bounded by the original asset duration. Audio and video use separate reading/writing queues so a blocked read cannot starve the other track. Cancellation runs on a separate control queue and waits for both media queues to drain before settling the conversion promise and allowing temporary-file cleanup.
+
+Before recording device support, compare preview and output frames against the dashboard with landscape, portrait, rotated, audio and silent MP4s; check each region's contain/cover settings, black gaps, 2304 × 512 dimensions and duration. Exercise selection cancellation, invalid/unsupported sources, cancellation during conversion and transfer, retry after download/upload failures, navigation, sign-out and expiry. With existing accounts, verify the file picker honors the server's visibility for each available role without changing roles. Check a small screen, large text, keyboard seeking in the browser, converted-video handoff and both HDMI samples. Report actual HDMI/display checks separately from simulator or build checks. Do not add automated tests or inspect logs without an explicit request.
+
+Verification on 2026-11-19: Node 24 type checking, lint and Android/iOS/web exports passed. The Android native module and arm64 development APK built; no Android runtime device was available. iOS simulator and signed device builds passed with Swift concurrency and dependency warnings. The final signed app was installed and opened to the editor on the connected iPhone 15 Pro Max. On the simulator, landscape, portrait/silent and rotation-metadata sources converted, contain and cover settings worked independently, and converted-video HDMI handoff reached Ready to play without autoplay; returning retained the editor result. Media inspection confirmed 2304 × 512 H.264, AAC and the two-second duration for the landscape and rotated exports, with upright frames and black gaps. Browser preview/conversion, keyboard seeking, a 375px layout, cancellation with source/framing retained, the navigation warning and sign-out were exercised. No automated tests were added or modified, and no logs were inspected.
+
+iOS frame-reading fix verified on 2026-11-19: the reported 1:51 MP4 had its first video frame at 0.04 seconds. The rebuilt app converted it completely on the physical iPhone 15 Pro Max, and cancellation followed by another complete conversion worked without losing the source, framing or previous result. The exported H.264/AAC file was 2304 × 512; an extracted frame showed all three regions and black gaps. Its video/container duration was 111.32 seconds, matching the source video track; the source container reported 111.331791 seconds. Apple decoded both original and exported audio from 0 through 111.291791 seconds, confirming that the decoded audio duration was retained. Type checking, lint, Android/iOS bundle exports and the signed iOS build passed; Swift concurrency and dependency warnings remain. No automated tests or log inspection were used.
+
+Still unverified: Android playback/encoding on hardware, every framing combination against the dashboard, maximum system text size, unsupported-device encoders, real-account file listing/download/upload and failure retry, role visibility, and expiry/background cancellation during native encoding. No HDMI display was connected, so actual external playback, physical region mapping and HDMI lifecycle checks remain pending.
+
 ## HDMI test
 
-1. Install a development build and sign in with an existing Driver or Operator account.
+1. Install a development build and sign in with an existing account.
 2. Connect a video-output-capable phone through a compatible HDMI adapter. For the truck, connect to the TB60's **HDMI IN** and select its HDMI/synchronous input using the controller's existing tools.
 3. Open **HDMI test** from the home screen for the flower sample, or **Truck screen video** for the included converted truck clip. Confirm that an external display and its negotiated pixel resolution appear.
 4. The selected bundled sample loads automatically and waits for Play. **Truck screen video** opens `sample-10s (ecran camion).mp4`, a 2304 × 512 picture containing three screen regions. To use your own video, tap **Choose video** and select a downloaded local video in the system file picker. H.264 in an MP4 container is a useful compatibility baseline. Cloud-provider files must finish downloading/copying before playback can prepare.
@@ -106,7 +134,7 @@ Replacing a file or leaving the test removes its imported copy only after native
 
 On iOS, `start(sessionId, expiresAt)` accepts the login expiry in epoch milliseconds, or null for the development preview. Android continues to use `start(sessionId)`. The native `prepare(sessionId, uri)` promise resolves on playable readiness, rejects after media failure cleanup, and is cancelled by replacement, release, or module destruction. Status events reserve `loading` for initial preparation and report `buffering` only while an explicit Play request is waiting for media. Pause, Stop, interruption, disconnection, and Android backgrounding clear that request; late native events cannot resume it or replace the stopped/error state. Rebuild the development app after changing this native contract; a JavaScript reload alone is insufficient.
 
-This version uses one video and one external display. It does not stream from the API, create a playlist, set custom HDMI timings, or compose the three truck regions. It does not configure TB60 mapping or scaling. The displayed resolution is the output mode negotiated by the phone and adapter, not the dimensions of the video file. USB-C alone does not guarantee video-output support; screen-mirroring-only adapters may not expose a separate display.
+The HDMI player uses one local video and one external display. It does not stream from the API, create a playlist, set custom HDMI timings, or configure TB60 mapping or scaling. Use **Ecrane camioane** to compose the three regions before opening the player. The displayed resolution is the output mode negotiated by the phone and adapter, not the dimensions of the video file. USB-C alone does not guarantee video-output support; screen-mirroring-only adapters may not expose a separate display.
 
 ### iPhone background playback
 
@@ -134,6 +162,8 @@ The home screen's **Truck screen video** button opens `/hdmi-test?sample=truck-s
 This is the user's `sample-10s (ecran camion).mp4`, copied unchanged on 2026-11-19: 41,837,676 bytes, H.264 at 2304 × 512, with AAC audio (muted during HDMI playback). Its SHA-256 is `6ee88a6a3f34136495cb3e84a7ab121370a3763e6c307845b729572b15a7170a`. The source clip is [Samplelib's 10-second MP4](https://samplelib.com/mp4/sample-10s.mp4), converted by the admin frontend into the three-region truck layout. [Samplelib's license](https://samplelib.com/license.html) permits use and modification.
 
 Both videos are registered with the `expo-asset` config plugin. The underscore in `truck_screen.mp4` keeps its Android raw-resource name valid. Regenerate and rebuild native projects when changing this asset configuration; development sessions also serve the asset through Metro. Bundling the 2304 × 512 video does not change the phone's HDMI mode or confirm the truck's physical region mapping.
+
+Truck-video integration verified on 2026-11-19: type checking, lint, Android/iOS/web exports, and the signed iPhone build passed. The installed app opened on the connected iPhone 15 Pro Max; the new home-screen button loaded the supplied filename and reached Ready to play. The first development load took time to transfer the 42 MB asset through Metro. The regular HDMI test still loaded the flower sample. Browser navigation for both buttons worked and showed the native-player requirement. No external display was connected, so HDMI playback of this clip and physical region mapping remain unverified. No automated tests were added or modified.
 
 ### Hardware verification
 

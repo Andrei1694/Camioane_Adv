@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["ScreenVideoModule"] },
+  "android": { "modules": ["expo.modules.screenvideo.ScreenVideoModule"] }
+}

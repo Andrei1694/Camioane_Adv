@@ -3,6 +3,10 @@ import { Platform } from 'react-native'
 import { sessionSignal, signOut, useSession } from '../auth/session'
 import { isRole } from './user'
 import type { Credentials, User } from './user'
+import type { FilePage, StoredFile } from './file'
+import { downloadVideo, uploadVideo } from './fileTransport'
+import { deleteVideo } from '../features/screen/videoFiles'
+import type { LocalVideo } from '../features/screen/types'
 
 // Port of frontend/src/lib/api.ts, limited to the endpoints this app uses.
 export class ApiError extends Error {
@@ -133,9 +137,65 @@ async function request<T>(path: string, decode: (value: unknown) => T, options: 
   }
 }
 
+function decodeFile(value: unknown): StoredFile {
+  if (!record(value) || typeof value.id !== 'string' || !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(value.id)
+    || (value.ownerId !== null && typeof value.ownerId !== 'string')
+    || typeof value.originalName !== 'string' || typeof value.mimeType !== 'string'
+    || typeof value.size !== 'number' || !Number.isSafeInteger(value.size) || value.size < 0
+    || typeof value.createdAt !== 'string' || Number.isNaN(Date.parse(value.createdAt))
+    || value.downloadUrl !== '/files/' + value.id + '/download') throw new ApiError(0, 'Datele fișierului nu sunt valide.')
+  return { id: value.id, ownerId: value.ownerId, originalName: value.originalName, mimeType: value.mimeType,
+    size: value.size, createdAt: value.createdAt, downloadUrl: value.downloadUrl }
+}
+
+function decodeFilePage(value: unknown): FilePage {
+  if (!record(value) || !Array.isArray(value.files) || typeof value.total !== 'number'
+    || !Number.isSafeInteger(value.total) || value.total < 0) throw new ApiError(0, 'Lista fișierelor nu este validă.')
+  return { files: value.files.map(decodeFile), total: value.total }
+}
+
+interface TransferOptions { signal: AbortSignal; onProgress?: (fraction: number) => void }
+async function transfer<T>(options: TransferOptions, run: (context: RequestContext, signal: AbortSignal) => Promise<T>) {
+  const context = begin(true)
+  const timeout = AbortSignal.timeout(10 * 60_000)
+  const signal = AbortSignal.any([context.globalSignal, timeout, options.signal])
+  try { return await run(context, signal) } catch (error) {
+    if (context.globalSignal.aborted || options.signal.aborted) throw cancelled()
+    if (timeout.aborted) throw new ApiError(0, 'Transferul a durat prea mult. Încearcă din nou.')
+    if (error instanceof ApiError) throw error
+    throw new ApiError(0, 'Transferul a eșuat. Verifică conexiunea și încearcă din nou.')
+  }
+}
+
 export const api = {
   login: (credentials: Credentials) => request('/users/login', decodeLogin, { method: 'POST', body: credentials, authenticated: false }),
   me: (signal: AbortSignal) => request('/users/me', decodeUserResponse, { signal }),
+  files: (offset: number, signal: AbortSignal) => request(`/files?limit=50&offset=${offset}`, decodeFilePage, { signal }),
+  downloadFile: (file: StoredFile, options: TransferOptions) => transfer(options, async (context, signal) => {
+    // Validate even caller-provided metadata before attaching a bearer token.
+    const path = decodeFile(file).downloadUrl
+    const result = await downloadVideo(apiBase() + path, file.originalName, {
+      ...options, signal, headers: { Authorization: 'Bearer ' + context.token },
+    })
+    try {
+      signal.throwIfAborted()
+      return settle(context, result.status, result.body, () => {
+        if (!result.video) throw new ApiError(0, 'Fișierul descărcat este gol.')
+        return result.video
+      })
+    } catch (error) {
+      if (result.video) await deleteVideo(result.video)
+      throw error
+    }
+  }),
+  uploadFile: (file: LocalVideo, options: TransferOptions) => transfer(options, async (context, signal) => {
+    const result = await uploadVideo(apiBase() + '/files', file, { ...options, signal, headers: { Authorization: 'Bearer ' + context.token } })
+    signal.throwIfAborted()
+    return settle(context, result.status, result.body, (value) => {
+      if (!record(value)) throw new ApiError(0, 'Răspunsul la salvare nu este valid.')
+      return decodeFile(value.file)
+    })
+  }),
 }
 
 export function errorMessage(error: unknown) {

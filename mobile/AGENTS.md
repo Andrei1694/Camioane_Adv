@@ -16,10 +16,9 @@ repository-wide guidance in `../AGENTS.md` as well.
 ## Project context
 
 - This is the Camioane Driver app: an Expo (React Native) app for iOS, Android,
-  and browsers through React Native Web. It serves drivers and operators, the
-  `DRIVER` and `OPERATOR` roles. Other roles can sign in but see an
-  explanation and a sign-out button. `appRoles` in `src/lib/user.ts` is the one
-  place that decides this.
+  and browsers through React Native Web. All four roles (`ADMIN`, `OPERATOR`,
+  `DRIVER`, `USER`) can use it. `appRoles` in `src/lib/user.ts` is the one place
+  that decides the mobile role gate; server file authorization stays unchanged.
 - It covers sign-in, session restore and sign-out against the existing
   `POST /users/login` and `GET /users/me`. The backend has no route, shift or
   fleet API yet, so the home screen says so instead of showing invented data.
@@ -34,12 +33,24 @@ repository-wide guidance in `../AGENTS.md` as well.
   with the bundled `assets/truck_screen.mp4` (2304 × 512) preselected. The regular
   HDMI test keeps `flower.mp4`. Both samples wait for Play and survive cleanup;
   only imported picker copies are deleted. Register bundled samples in `app.json`.
+- **Ecrane camioane** opens `/screen` (optional `fileId`) for local/saved MP4
+  selection, synchronized three-region preview, framing, conversion, upload and
+  HDMI handoff. Feature code lives in `src/features/screen/`; the local
+  `modules/screen-video/` module shares its compositor/effect between native
+  preview and export. Keep the exact dashboard geometry and centered contain/
+  cover calculations aligned. Web uses separate canvas/mediabunny modules.
+  Keep native videos on disk and use session/job IDs to reject stale events.
+  Foreground conversion keeps the screen awake; backgrounding, confirmed exit,
+  or a session change cancels unfinished work. Release readers before deleting
+  files. Upload retry reuses the result. HDMI takes a separate session-scoped
+  copy, waits for Play and must not delete the editor's result on return.
 - Use npm. `package.json` and `package-lock.json` are authoritative for versions.
   Keep them in sync.
 - In development only, `admin` / `admin` opens an in-memory Operator preview.
   It has no access token, skips the server session check, blocks protected API
   calls, and ends on sign-out or a full reload. Keep this behind `__DEV__`;
   never turn these preview values into real backend credentials.
+  Local conversion and HDMI work in this preview; server Files access does not.
 
 ## Local setup and running the app
 
@@ -181,7 +192,7 @@ above ran.
   treats the app becoming active as focus, so the session check refetches and a
   revoked token signs the user out.
 - `src/lib/api.ts` is the single typed fetch client. It runtime-decodes every
-  response, times out after 15 s, drops responses that arrive after a session
+  response, times out after 15 s (10 minutes for file transfers), drops responses that arrive after a session
   change, and signs out on a 401. Mirror changes to the web client's shared
   logic (`../frontend/src/lib/api.ts`, `../frontend/src/auth/session.ts`) when
   they apply here.

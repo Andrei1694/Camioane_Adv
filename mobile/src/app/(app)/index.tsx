@@ -19,6 +19,11 @@ export default function HomeScreen() {
         <Text style={styles.muted}>Route and shift assignments aren't available in the app yet.</Text>
       </View>
       <View style={styles.account}>
+        <Text style={styles.section} accessibilityRole="header">Ecrane camioane</Text>
+        <Text style={styles.muted}>Pregătește un MP4 pentru cele trei regiuni, salvează-l în Fișiere și redă-l pe HDMI.</Text>
+        <Button label="Ecrane camioane" variant="primary" onPress={() => router.push('/screen')} />
+      </View>
+      <View style={styles.account}>
         <Text style={styles.section} accessibilityRole="header">Display test</Text>
         <Text style={styles.muted}>Play a local video on HDMI while keeping controls on your phone.</Text>
         <Button label="HDMI test" onPress={() => router.push('/hdmi-test')} />

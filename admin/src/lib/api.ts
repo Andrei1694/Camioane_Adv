@@ -13,6 +13,8 @@ import { isSavedRoute } from './route'
 import type { RouteInput, RoutePageData, SavedRoute } from './route'
 import { isScreenPreset } from './screenPreset'
 import type { ScreenPreset, ScreenPresetInput } from './screenPreset'
+import { maxConfigVariableNameLength } from './configVariable'
+import type { ConfigVariable, ConfigVariableInput } from './configVariable'
 
 export class ApiError extends Error {
   readonly status: number
@@ -422,7 +424,45 @@ function decodeScreenPresets(value: unknown) {
   return value.presets.map(decodeScreenPreset)
 }
 
+function decodeConfigVariable(value: unknown): ConfigVariable {
+  if (!record(value) || !isUuid(value.id)
+    || typeof value.name !== 'string' || !value.name.trim() || value.name.length > maxConfigVariableNameLength || value.name.includes('\0')
+    || typeof value.value !== 'string' || value.value.includes('\0')
+    || typeof value.description !== 'string' || value.description.includes('\0')
+    || !isWhole(value.version) || value.version < 1 || value.version > 2147483647
+    || !isTimestamp(value.createdAt) || !isTimestamp(value.updatedAt)) {
+    throw new ApiError(0, 'Serverul a returnat date neașteptate despre variabila de configurare.')
+  }
+  return {
+    id: value.id, name: value.name, value: value.value, description: value.description,
+    version: value.version, createdAt: value.createdAt, updatedAt: value.updatedAt,
+  }
+}
+
+function decodeConfigVariableResponse(value: unknown) {
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat un răspuns neașteptat.')
+  return decodeConfigVariable(value.configVariable)
+}
+
 export const api = {
+  configVariables(signal: AbortSignal) {
+    return request('/config-variables', (value) => {
+      if (!record(value) || !Array.isArray(value.configVariables)) throw new ApiError(0, 'Serverul a returnat o listă de variabile neașteptată.')
+      return value.configVariables.map(decodeConfigVariable)
+    }, { signal })
+  },
+  configVariable(id: string, signal: AbortSignal) {
+    return request('/config-variables/' + encodeURIComponent(id), decodeConfigVariableResponse, { signal })
+  },
+  createConfigVariable(data: ConfigVariableInput) {
+    return request('/config-variables', decodeConfigVariableResponse, { method: 'POST', body: data })
+  },
+  updateConfigVariable(id: string, data: ConfigVariableInput & { version: number }) {
+    return request('/config-variables/' + encodeURIComponent(id), decodeConfigVariableResponse, { method: 'PATCH', body: data })
+  },
+  deleteConfigVariable(id: string) {
+    return request('/config-variables/' + encodeURIComponent(id), () => undefined, { method: 'DELETE' })
+  },
   screenPresets: (signal: AbortSignal) => request('/screen-presets', decodeScreenPresets, { signal }),
   createScreenPreset: (data: ScreenPresetInput) => request('/screen-presets', decodeScreenPresetResponse, { method: 'POST', body: data }),
   updateScreenPreset: (id: string, data: ScreenPresetInput & { version: number }) => request('/screen-presets/' + encodeURIComponent(id), decodeScreenPresetResponse, { method: 'PATCH', body: data }),

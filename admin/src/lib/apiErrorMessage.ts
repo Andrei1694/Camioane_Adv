@@ -3,6 +3,19 @@ import { formatCount, plural } from './format'
 // The API supplies English messages without error codes. Translate known messages at the
 // shared fetch/XHR boundary; new server messages use a Romanian fallback for their status.
 const messages: Record<string, string> = {
+  'A valid configuration variable ID is required': 'Este necesar un identificator valid pentru variabila de configurare.',
+  'Configuration variable endpoints do not accept query parameters': 'Cererile pentru variabile nu acceptă parametri suplimentari.',
+  'Unsupported configuration variable fields': 'Cererea conține câmpuri neacceptate pentru variabila de configurare.',
+  'Configuration variable names must contain 1–200 characters and no null characters': 'Numele variabilei trebuie să conțină 1–200 de caractere, fără caractere nule.',
+  'Value must be a string': 'Valoarea trebuie să fie text.',
+  'Value must not contain null characters': 'Valoarea nu poate conține caractere nule.',
+  'Description must be a string': 'Descrierea trebuie să fie text.',
+  'Description must not contain null characters': 'Descrierea nu poate conține caractere nule.',
+  'A valid configuration variable version is required': 'Reîncarcă variabila pentru a folosi ultima versiune salvată.',
+  'A configuration variable with this name already exists.': 'Există deja o variabilă cu acest nume. Alege un nume diferit.',
+  'Configuration variable not found': 'Variabila de configurare nu a fost găsită.',
+  'This configuration variable changed during editing. Reload the latest configuration variable and try again.': 'Variabila a fost modificată în timpul editării. Reîncarcă ultima versiune și încearcă din nou.',
+  'Configuration variables changed during this request. Refresh and try again.': 'Variabilele s-au modificat în timpul cererii. Reîncarcă datele și încearcă din nou.',
   'Unauthorized': 'Autentifică-te din nou pentru a continua.',
   'Invalid email or password': 'Adresa de e-mail sau parola este incorectă.',
   'Administrator access is required': 'Este necesar accesul de administrator.',

@@ -33,6 +33,7 @@ Production has no localhost fallback. For a local production preview, build with
 - `/files/:fileId/edit` opens the administrator-only video editor for one uploaded MP4.
 - `/users` requires administrator access.
 - `/cars` manages persistent fleet inventory and requires administrator access.
+- `/config-variables` manages shared configuration variables and requires administrator access.
 - `/routes` opens the administrator-only route builder.
 - `/profile` lets every signed-in account, whatever its role, set or remove its own profile picture.
 - `/access-denied` explains missing management access and lets Admin accounts retry their access check. Successful revalidation returns to `/users`; sign-out remains available in navigation.
@@ -102,6 +103,32 @@ types/limits live in `src/lib/car.ts`, and session-scoped queries start with
 `carsKey(revision)`. The existing API client handles cancellation and session
 expiry; car queries and mutations send access-denied responses through the shared
 admin-access handler. Cars use no browser persistence or polling.
+
+## Configuration variables
+
+Open **Variabile de configurare** in the sidebar to create, edit, search, and
+delete shared variables through `/config-variables`. The table shows each name,
+value, and description; search matches all three fields. Long content scrolls
+inside its cell, and narrow screens stack rows with visible field labels.
+
+Names are required, case-sensitive, unique, and limited to 200 characters after
+trimming. Values and descriptions may be empty. Names and descriptions are
+trimmed; value whitespace and line breaks are preserved. All fields reject null
+characters. The API enforces its 16 KiB request limit and reports oversized
+requests inline without discarding the editor.
+
+The inline editor owns the loaded record and version independently of background
+refreshes. Conflicts keep entered values until **Reîncarcă variabila** explicitly
+loads the latest version. Successful saves clear search so the saved row is visible.
+Deletion uses a native confirmation dialog; Cancel has initial focus and pending
+actions block repeat submissions and dismissal. A deleted record is removed from
+the list, and missing records receive a specific explanation. Session changes or
+lost administrator access prevent late responses from publishing private data.
+
+This page manages stored variables only; saving one does not automatically change
+existing application settings. Apply the backend's `add_config_variables` migration
+and regenerate its Prisma Client before using the page. No new dependencies or
+environment settings are needed.
 
 ## User management
 

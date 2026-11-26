@@ -110,14 +110,6 @@
   margin-top: 16px;
 }
 
-.car-delete-dialog {
-  width: min(480px, calc(100% - 32px));
-}
-
-.car-delete-dialog .dialog-sub {
-  margin-top: 12px;
-}
-
 @container cars (max-width: 759px) {
   .cars-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));

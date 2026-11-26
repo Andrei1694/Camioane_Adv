@@ -1,0 +1,8 @@
+.dialog.delete-confirmation-dialog {
+  width: min(480px, calc(100% - 32px));
+  overflow-wrap: anywhere;
+}
+
+.delete-confirmation-dialog .dialog-sub {
+  margin-top: 12px;
+}

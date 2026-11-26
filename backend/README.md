@@ -312,7 +312,8 @@ No additional environment settings or dependencies are required.
 `/config-variables` stores shared text configuration. Every operation requires a
 current session and active ADMIN role, rechecked inside a serializable transaction.
 These records provide storage and management only; they do not override environment
-variables or change existing runtime settings. There is no administrator UI yet.
+variables or change existing runtime settings. The admin dashboard provides a
+management page at `/config-variables`.
 
 | Method | Path | Result |
 | --- | --- | --- |

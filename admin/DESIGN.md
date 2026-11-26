@@ -17,6 +17,8 @@ Styling uses plain CSS, with shared primitives and page-scoped selectors. There 
 | Dashboard layout, KPIs, fleet timeline, review queues | [DashboardPage](src/pages/DashboardPage/) |
 | User management, responsive table and inline form | [UsersPage](src/pages/UsersPage/), [UsersPage.css](src/pages/UsersPage/UsersPage.css) |
 | Car inventory, its inline form and delete dialog | [CarsPage](src/pages/CarsPage/) |
+| Configuration variable table and editor | [ConfigVariablesPage](src/pages/ConfigVariablesPage/) |
+| Shared destructive confirmation | [DeleteConfirmationDialog.tsx](src/components/DeleteConfirmationDialog.tsx), [DeleteConfirmationDialog.css](src/components/DeleteConfirmationDialog.css) |
 | Files table and preview | [FilesPage](src/pages/FilesPage/) |
 | Credit balances, purchases and ledger | [CreditsPage](src/pages/CreditsPage/) |
 | Profile screen | [ProfilePage](src/pages/ProfilePage/) |
@@ -130,7 +132,7 @@ Management links depend on verified administrator access. Profile and Redare pe 
 | Users | Maximum 1100px | Shell default |
 | Dashboard | Full available width | 24px |
 | Files, Credits, video editor, van-screen video and display playback | Full available width | Shell default |
-| Cars and campaign list | Maximum 1100px | 28px 24px |
+| Cars, configuration variables and campaign list | Maximum 1100px | 28px 24px |
 | Campaign creator and route builder | Maximum 1600px | 28px 24px |
 
 Wide pages opt in through `.app-content:has(...)` selectors in their page stylesheet. Keep their grids shrinkable with `minmax(0, 1fr)` and `min-width: 0` where needed.
@@ -204,7 +206,7 @@ Preview and review flows use native `<dialog>` with `showModal()`. The shared `.
 
 Use `.dialog-head`, a named `h2`, a close button and an optional `.dialog-sub`. Review facts use `.review-checks`: an 88px label column beside the value, stacking on phones; `.check-fail` highlights a failed fact. Place errors and blocked-action explanations near the relevant action. Existing dialogs support Escape and backdrop dismissal. Preserve focus return to the opener, or a meaningful surviving control when that opener is removed.
 
-For new destructive confirmations, follow the Cars delete dialog (`DeleteCarDialog.tsx`). The frame narrows to 480px, the title names the object (“Delete <plate>?”) and the description states the permanent effect. Cancel receives initial focus, and Escape or a backdrop click cancels while the dialog is idle. While the action runs, both buttons are disabled, the destructive label becomes “Deleting…” and dismissal is blocked. Failures stay inside the dialog; if the object has already gone, the destructive action is disabled and Cancel becomes Close. Older screens still use the browser's confirmation, as listed under [current inconsistencies](#current-inconsistencies).
+For new destructive confirmations, reuse `DeleteConfirmationDialog`, shared by Cars and configuration variables. The frame narrows to 480px, the title names the object and the description states the permanent effect. Cancel receives initial focus, and Escape or a backdrop click cancels while the dialog is idle. While the action runs, both buttons are disabled, the destructive label becomes “Deleting…” and dismissal is blocked. Failures stay inside the dialog; if the object has already gone, the destructive action is disabled and Cancel becomes Close. Older screens still use the browser's confirmation, as listed under [current inconsistencies](#current-inconsistencies).
 
 ### Avatars and upload progress
 
@@ -242,6 +244,28 @@ Cars (admin-only at `/cars`) answers which cars are in the fleet and runs on the
 The editor reuses the Users form frame and shared fields. While it is open, its Save takes the primary style and Add car and the row actions are disabled. Field errors sit beside their fields and focus moves to the first invalid one; request failures show in a focused inline alert. A pending save shows “Saving…”. A conflicting save keeps the entered values and offers Reload car, with a hint that reloading replaces them. Saving clears the filters so the record is visible, and closing returns focus to the opener, or to Add car when the opener has gone. Delete uses the confirmation dialog described under [Dialogs](#dialogs), and successful actions use success toasts.
 
 Loading, an empty fleet, no filter matches, request failure and retry each have their own message. A failed background refresh labels the visible rows as the last loaded inventory, and the count shows “Refreshing…” while one runs.
+
+### Configuration variables
+
+The administrator-only `/config-variables` page follows the Cars management layout:
+a 24px heading, one primary Add action, an inline editor, labelled search and a
+semantic table. Columns are name, value, description and named Edit/Delete actions.
+The table caption announces the filtered count and provides Reset search. Empty,
+loading, failed-refresh and no-match states each explain the next action.
+
+The editor has a full-width Name field, then Value and Description textareas side
+by side. Names are unique and case-sensitive; help text explains that value
+whitespace is preserved. Save becomes the primary action while the editor is open.
+Conflicts retain edits and offer explicit Reload with a replacement warning.
+Deletion uses the shared confirmation dialog. Successful changes use session-bound
+notifications and return focus to the opener or Add if the opener was removed.
+
+Below 760px of content width, the form becomes one column and table rows stack
+with Value and Description labels and 44px row actions. Long values/descriptions
+wrap and scroll within keyboard-focusable regions capped at 140px high. Empty
+values, whitespace-only values and absent descriptions have distinct text labels.
+Content is capped at 1100px, with 28px/24px sheet padding and 24px/16px on phones.
+The heading wraps so the title and Add action fit without horizontal page scrolling.
 
 ### Users and Profile
 
@@ -376,6 +400,6 @@ These are verified source-level differences to account for, not changes requeste
 
 For documentation-only changes, compare descriptions and values with the linked source, check relative links and review whitespace. Run `git diff --check`; check a newly created, untracked document separately because ordinary Git diff excludes it. Application builds and browser checks are unnecessary for prose-only updates.
 
-For application changes, follow [AGENTS.md](AGENTS.md): run `npm run build` and `npm run lint` from `admin/`, then exercise the changed UI in a browser when available. There is no frontend test runner; do not describe build/lint as passing tests. Write or modify tests, and inspect logs, only when explicitly requested.
+For application changes, follow [AGENTS.md](AGENTS.md): run `npm run build` and `npm run lint` from `admin/`, then exercise the changed UI in a browser when available. Existing frontend tests run with Vitest through `npm test`; do not describe build/lint as passing tests. Write or modify tests, and inspect logs, only when explicitly requested.
 
 For visual and interaction checks, use 1440px, 768px and 390px widths plus the affected component's breakpoint. Check keyboard operation, focus return, loading/empty/error/pending states, long filenames and emails, right-aligned figures, container scrolling and touch controls. Confirm that sample notices, draft/save semantics and formatting units remain accurate. Update this guide in the same change when a documented frontend pattern changes; coordinate shared token changes through the root guide.

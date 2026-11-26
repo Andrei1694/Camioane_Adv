@@ -104,6 +104,16 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
             Credite
           </Link>
         )}
+        {canManage && (
+          <Link to="/config-variables" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M4 7h4m4 0h8M4 17h8m4 0h4" />
+              <circle cx="10" cy="7" r="2" />
+              <circle cx="14" cy="17" r="2" />
+            </svg>
+            Variabile de configurare
+          </Link>
+        )}
         {canManage ? (
           <Link to="/users" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

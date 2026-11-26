@@ -40,6 +40,15 @@ following the package-specific rules as well.
   The complete inventory is filtered locally, IDs survive plate changes, and
   status is administrative rather than connectivity. The dashboard still uses
   its separate sample fleet; never seed fictional cars into the database.
+- Configuration variables live under `src/pages/ConfigVariablesPage/` (admin-only
+  at `/config-variables`) and use the real API. Shared types, normalization and
+  query keys live in `src/lib/configVariable.ts`. Keep queries under
+  `configVariablesKey(revision)`, route 403s through `handleAdminError`, and retain
+  a separate editor snapshot/version until explicit reload after a conflict.
+  Names are case-sensitive and unique; preserve value whitespace and allow empty
+  values/descriptions. Search matches all three fields; saves clear it. Deletion
+  reuses `DeleteConfirmationDialog`, also used by Cars, with pending dismissal
+  protection and focus return. No runtime configuration integration is implied.
 - The Files page lives under `src/pages/FilesPage/` (admin-only at `/files`) and
   uses the real `/files` API. Uploads go through the XHR path in `src/lib/api.ts`
   so they can report progress; keep its session, abort and 401 handling aligned

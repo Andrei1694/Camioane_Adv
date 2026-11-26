@@ -3,7 +3,7 @@ name: camioane
 services:
   postgres:
     build:
-      context: .
+      context: ./docker/postgres
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:

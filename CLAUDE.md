@@ -24,6 +24,7 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 **backend/** (Express 5 + Prisma 7 + PostgreSQL; Node runs `.ts` directly, so there is no build step)
 - First-time setup: `npm ci` (its `postinstall` runs `prisma generate`). If `.env` is missing, copy it from `.env.example`. Startup requires a random `JWT_SECRET` of at least 32 bytes; `backend/README.md` has the command to generate one. Startup also requires FFmpeg's `ffprobe` on `PATH` or at `FFPROBE_PATH`.
 - `docker compose up --build -d --wait`: start PostgreSQL only (needs Docker Desktop with Linux containers). The API runs separately.
+- Railway API deployment: follow [Deploying to Railway](backend/README.md#deploying-to-railway) for the API Dockerfile and dashboard settings.
 - `npm run dev`: start the API watcher and `tsc --watch` together. Type errors don't stop the server, so a successful startup doesn't mean the code type-checks.
 - `npm run typecheck`: run after any code change.
 - `npm test`: run all `tests/*.test.ts` with `node:test`, one file at a time, against the development database. PostgreSQL (migrated, with an active ADMIN role) must be running and FFmpeg installed. Each test file sets its own random `JWT_SECRET`; fixtures create and delete their own uniquely named users and rows, and uploads go to temporary directories. The unit files (`auth-config`, `config`, `validation`, `storage`, `media`, `app`) never query the database.
@@ -50,7 +51,7 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 ## Architecture
 
 **Backend request flow:** `src/app.ts` builds the Express app with `createApp()`, which tests also use to spin up servers. Inside `createApp()` the stack runs in this order: CORS restricted to `FRONTEND_ORIGIN` (admin app) and `WEBSITE_ORIGIN` (website), routers, a JSON 404, then the central `error-handler.ts`. Every error is returned as `{ "error": "message" }`. To raise errors, throw `AppError` from `src/lib/app-error.ts`. The code is layered:
-- `routes/*.routes.ts` defines routes and attaches middleware to each route. That includes the login rate limiter (in memory, 20 requests per IP per 15 minutes), `authenticate` and `requireAdmin`, and the 16 KB JSON body parser. There is no global `express.json()`, so a new route that takes a body needs its own parser. The `/users` router also sets `Cache-Control: no-store` on every response; do the same for any new router that returns private data.
+- `routes/*.routes.ts` defines routes and attaches middleware to each route. That includes the login rate limiter (in memory, 20 requests per IP per 15 minutes; set `CLIENT_IP_HEADER=x-real-ip` only behind an overwriting proxy such as Railway, leaving `trust proxy` off), `authenticate` and `requireAdmin`, and the 16 KB JSON body parser. There is no global `express.json()`, so a new route that takes a body needs its own parser. The `/users` router also sets `Cache-Control: no-store` on every response; do the same for any new router that returns private data.
 - `controllers/` validates input at runtime and shapes HTTP responses.
 - `services/` handles Prisma and password work and never touches Express objects. Use the shared client from `src/lib/prisma.ts` (`@prisma/adapter-pg`). Never create a client per request.
 

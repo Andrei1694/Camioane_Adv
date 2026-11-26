@@ -3,6 +3,7 @@ import express from 'express';
 import { authConfig } from './config/auth.ts';
 import { loadCreditConfig } from './config/credits.ts';
 import { createFileStorage, loadFileConfig } from './config/files.ts';
+import { loadProxyConfig } from './config/proxy.ts';
 import { errorHandler } from './middleware/error-handler.ts';
 import { createCampaignRouter } from './routes/campaign.routes.ts';
 import { createCarRouter } from './routes/car.routes.ts';
@@ -35,7 +36,7 @@ export function createApp(options: { fileStorage?: FileStorageRegistry; uploadMa
     res.json({ status: 'ok' });
   });
 
-  app.use('/users', createUserRouter(fileStorage));
+  app.use('/users', createUserRouter(fileStorage, loadProxyConfig().clientIpHeader));
   app.use('/files', createFileRouter(
     fileStorage,
     options.uploadMaxFileSizeBytes ?? fileConfig.maxFileSize,

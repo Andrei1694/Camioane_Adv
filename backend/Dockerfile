@@ -1,4 +1,19 @@
-FROM postgres:18-alpine
+FROM node:24-trixie-slim
 
-HEALTHCHECK --interval=5s --timeout=3s --start-period=10s --retries=10 \
-  CMD pg_isready -h 127.0.0.1 -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-${POSTGRES_USER:-postgres}}" || exit 1
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ffmpeg openssl \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production PORT=3000 FILE_STORAGE_ROOT=/data/uploads
+WORKDIR /app
+
+COPY package.json package-lock.json prisma.config.ts ./
+COPY prisma/ ./prisma/
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY src/ ./src/
+RUN mkdir -p /data/uploads && chown node:node /data/uploads
+
+USER node
+EXPOSE 3000
+CMD ["node", "src/server.ts"]

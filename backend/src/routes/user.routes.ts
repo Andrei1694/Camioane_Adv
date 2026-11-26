@@ -1,5 +1,6 @@
+import { isIP } from 'node:net';
 import { json, Router } from 'express';
-import { rateLimit } from 'express-rate-limit';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { createAvatarController } from '../controllers/avatar.controller.ts';
 import { create, createRemoveUser, list, login, me, update } from '../controllers/user.controller.ts';
 import { avatarMaxUploadBytes, renderAvatar } from '../lib/avatar-image.ts';
@@ -9,7 +10,7 @@ import { createUploadMiddleware } from '../middleware/upload.ts';
 import { createAvatarService } from '../services/avatar.service.ts';
 import type { FileStorageRegistry } from '../storage/file-storage.ts';
 
-export function createUserRouter(storage: FileStorageRegistry) {
+export function createUserRouter(storage: FileStorageRegistry, clientIpHeader: string | null = null) {
   const router = Router();
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -17,6 +18,13 @@ export function createUserRouter(storage: FileStorageRegistry) {
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     message: { error: 'Too many authentication requests. Try again later.' },
+    ...(clientIpHeader ? {
+      keyGenerator: (req) => {
+        const value = req.get(clientIpHeader);
+        return ipKeyGenerator(value && isIP(value) ? value : req.ip ?? '');
+      },
+      validate: { xForwardedForHeader: false },
+    } : {}),
   });
   const parseJson = json({ limit: '16kb' });
   const avatars = createAvatarService(storage);

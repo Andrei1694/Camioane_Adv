@@ -40,6 +40,7 @@ The API listens on port 3000 by default. Compose runs PostgreSQL only. `npm run 
 | `JWT_SECRET` | Required random signing secret, at least 32 bytes |
 | `FRONTEND_ORIGIN` | Admin app's HTTP(S) origin for CORS, default `http://localhost:5173`; no path or trailing slash |
 | `WEBSITE_ORIGIN` | Public website's HTTP(S) origin for CORS, default `http://localhost:5174`; no path or trailing slash |
+| `CLIENT_IP_HEADER` | Optional client-IP header for the login limiter, unset by default; trimmed and lowercased, with only letters, digits and hyphens allowed. Set only behind a proxy that overwrites it, such as Railway's `x-real-ip` |
 | `FILE_STORAGE_DRIVER` | Provider for new uploads, default `filesystem`; unknown providers fail startup |
 | `FILE_STORAGE_ROOT` | Private filesystem directory, default `./uploads`; relative to `backend/`, independent of the working directory |
 | `UPLOAD_MAX_FILE_SIZE_BYTES` | Maximum file bytes, default `104857600` (100 MiB); integer from 1 through 2147483647 |
@@ -50,6 +51,78 @@ The API listens on port 3000 by default. Compose runs PostgreSQL only. `npm run 
 Existing environment variables take precedence over `.env`. CORS allows GET, POST, PUT, PATCH, DELETE, JSON, and Authorization headers from the two configured origins, and from no others. Authentication uses bearer tokens, not cookies. Keep private database credentials and signing keys out of frontend `VITE_*` configuration.
 
 Production must set its actual frontend and website origins, configure HTTPS, and supply the actual API URL when building the frontend and the website. When serving the frontend separately, configure its host to serve `index.html` for application routes such as `/users`. Deploy committed migrations with `npx prisma migrate deploy` and generate Prisma Client during installation/build. Do not run `migrate dev` in production.
+
+## Deploying to Railway
+
+This deploys only the API; the admin app and website are hosted separately.
+Configure the service in Railway's dashboard. [Config as Code is deprecated](https://docs.railway.com/config-as-code)
+and unavailable to new services; its successor is TypeScript infrastructure as
+code applied through the CLI. This setup uses dashboard settings and the
+automatically detected `Dockerfile`, with no `railway.toml`.
+
+Add a **Postgres** service to the same Railway project so the API can reach it
+over the private network. Add a GitHub service from `Andrei1694/Camioane_Adv`
+and configure:
+
+| Setting | Value | Reason |
+| --- | --- | --- |
+| Root Directory | `backend` | Railway automatically builds the API `Dockerfile` in this directory |
+| Watch Paths | `/backend/**` | Only backend changes trigger an API deployment |
+| Pre-deploy Command | `npx prisma migrate deploy` | Apply committed migrations before starting the new API |
+| Healthcheck Path | `/health` | Wait for HTTP 200 on the service's `PORT` before accepting the deployment |
+| Restart Policy | On Failure | Restart the API if its process exits with an error |
+| Volume mount path | `/data` | Keep uploads at `/data/uploads` across deployments |
+
+The image installs FFmpeg and OpenSSL, generates Prisma Client during
+`npm ci --omit=dev`, and starts `node src/server.ts` directly so Node receives
+SIGTERM. `prisma` is a runtime dependency so migrations can run from the same
+production image. No `.env` is copied into the image.
+
+The [pre-deploy command](https://docs.railway.com/deployments/pre-deploy-command)
+runs in a separate container from that image, with the service's variables and
+private networking, but without mounted volumes. A failed migration stops the
+deployment. Do not put upload-directory initialization in that command.
+Railway's [healthcheck](https://docs.railway.com/deployments/healthchecks) runs
+only at deploy time, not as ongoing monitoring.
+
+Set these service variables in the dashboard:
+
+| Variable | Value and reason |
+| --- | --- |
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` references the private connection URL of the Postgres service; adjust `Postgres` if the service has another name |
+| `JWT_SECRET` | Generate a random secret with the command in [Local setup](#local-setup); it signs API sessions |
+| `FRONTEND_ORIGIN` | Set the admin app's HTTPS origin once it has a URL, so CORS permits that app; the localhost default stays until then |
+| `WEBSITE_ORIGIN` | Set the website's HTTPS origin once it has a URL, so CORS permits that site; the localhost default stays until then |
+| `CLIENT_IP_HEADER` | `x-real-ip` keeps login limits per client behind Railway's edge, which overwrites this header |
+| `RAILWAY_RUN_UID` | `0` allows access to the root-owned volume mount; the image otherwise runs as the non-root `node` user |
+| `UPLOAD_MAX_FILE_SIZE_BYTES` (optional) | Override the default 100 MiB file limit if needed |
+| `CREDIT_CURRENCY`, `CREDIT_UNIT_PRICE_MINOR` (optional) | Override the default credit currency and unit price |
+
+The image defaults to `NODE_ENV=production`, `PORT=3000`, and
+`FILE_STORAGE_ROOT=/data/uploads`. Railway variables override image defaults;
+keep uploads under the `/data` mount. The volume user setting follows Railway's
+[volume permissions guidance](https://docs.railway.com/volumes#permissions).
+
+After the service is deployed:
+
+1. Generate a Railway domain in the service's networking settings. HTTPS is
+   automatic; no custom TLS configuration is needed.
+2. Use `railway ssh` to open an interactive shell in the API service, then run
+   `node src/scripts/bootstrap-admin.ts` to create the first administrator.
+   This uses the migrated database and the bootstrap command's password and
+   promotion safeguards.
+3. Turn on volume backups for both Postgres and `/data` so database records and
+   their uploaded files can both be recovered.
+4. Build the admin app and website with
+   `VITE_API_BASE_URL=https://<railway-domain>`, and the mobile release with
+   `EXPO_PUBLIC_API_BASE_URL=https://<railway-domain>`, so each client targets
+   the deployed API.
+
+Use a single replica: [services with volumes cannot have replicas](https://docs.railway.com/volumes/reference),
+and the in-memory login limiter also requires a single API instance. Expect
+brief downtime on each redeploy because the volume cannot be mounted by both
+deployments at once. Uploading a 100 MiB file must finish within Railway's
+[five-minute request-body window](https://docs.railway.com/networking/public-networking/specs-and-limits).
 
 ## API
 
@@ -128,7 +201,7 @@ email/UUID patterns, and each field's Unicode or UTF-16 length rules; Zod defaul
 must not change the API contract. Service business rules and upload inspection
 remain separate from request schemas.
 
-Login is limited to 20 requests per IP per 15 minutes, including successful and invalid attempts. The limit is in memory and returns `Retry-After`. Multi-instance hosting requires a shared limiter store; configure proxy trust to match the actual trusted proxy topology before deployment.
+Login is limited to 20 requests per IP per 15 minutes, including successful and invalid attempts. The limit is in memory and returns `Retry-After`. Multi-instance hosting requires a shared limiter store. Set `CLIENT_IP_HEADER` only behind a proxy that overwrites it (`x-real-ip` on Railway); valid IP values use the limiter's IPv6-aware key generator, while missing or invalid values fall back to `req.ip`. Express `trust proxy` stays off. With no header configured, the limiter retains its default IP handling.
 
 ## Account status and provenance
 
@@ -416,7 +489,7 @@ Logout discards the browser's token; a copied token remains valid until expiry o
 
 ## Database and migrations
 
-The local Compose defaults are database/user `camioane`, password `camioane_dev_password`, and port `5432` bound to localhost. The image extends PostgreSQL 18 Alpine with a readiness check. Keep `DATABASE_URL` aligned with `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_PORT`. Credentials apply only when initializing a new volume.
+The local Compose defaults are database/user `camioane`, password `camioane_dev_password`, and port `5432` bound to localhost. The development database image in `docker/postgres/` extends PostgreSQL 18 Alpine with a readiness check; the top-level `Dockerfile` builds the API. Keep `DATABASE_URL` aligned with `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_PORT`. Credentials apply only when initializing a new volume. The Compose project name `camioane` and `postgres_data` volume are unchanged.
 
 `docker compose down` stops the database while preserving its named data volume. Do not use `down -v`, Prisma resets, or truncation for routine setup.
 

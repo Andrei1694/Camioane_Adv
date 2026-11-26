@@ -21,10 +21,16 @@ following the package-specific rules as well.
   Prisma 7, and PostgreSQL. Use Node.js 24 or newer.
 - Use npm. Keep `package.json` and `package-lock.json` in sync when dependencies
   change; those files are authoritative for installed versions.
+- `prisma` is a runtime dependency because deployments run `prisma migrate deploy`
+  from the production image; installation also runs `prisma generate`.
 - Node.js runs the `.ts` source directly. There is no compilation or build step.
+- `Dockerfile` builds the API image. The local development PostgreSQL image lives
+  in `docker/postgres/`; Compose builds only that database image.
 - CORS permits `FRONTEND_ORIGIN` (admin app) and `WEBSITE_ORIGIN` (public
-  website); login has an in-memory
-  limit of 20 requests per IP per 15 minutes. `pino` is not configured.
+  website); login has an in-memory limit of 20 requests per IP per 15 minutes.
+  Set `CLIENT_IP_HEADER` only behind a proxy that overwrites it (Railway:
+  `x-real-ip`). Valid header IPs key the limiter; missing or invalid IPs fall
+  back to `req.ip`. Leave Express `trust proxy` off. `pino` is not configured.
 - User authentication uses Argon2id password hashes and one-hour HS256 JWT
   bearer tokens. Require a random `JWT_SECRET` of at least 32 bytes at startup.
 - The Prisma schema defines `User` with an immutable UUID primary key, unique

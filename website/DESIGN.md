@@ -10,7 +10,7 @@ Design direction: `DESIGN_VARIANCE: 5`, `MOTION_INTENSITY: 3`, `VISUAL_DENSITY: 
 
 | What | File |
 | --- | --- |
-| Shared tokens (the source the copies come from) | `../DESIGN.md`, `../frontend/src/index.css` |
+| Shared tokens (the source the copies come from) | `../DESIGN.md`, `../admin/src/index.css` |
 | Tokens as the site uses them, base styles, link buttons, focus ring, skip link, scroll padding | `src/index.css` |
 | Layout: sticky header, hero, split and stacked sections, column grids, example chart, price table, contact band, footer, breakpoints | `src/App.css` |
 | Section frame and its two layouts | `src/components/Section.tsx` |
@@ -48,7 +48,7 @@ Design direction: `DESIGN_VARIANCE: 5`, `MOTION_INTENSITY: 3`, `VISUAL_DENSITY: 
 
 ### Colour (`src/index.css`, on `:root`)
 
-These are copies of the shared tokens. Change a value in `../DESIGN.md` and `../frontend/src/index.css` first, then here. The site carries only the tokens it uses: when it needs a status, pill or danger colour, copy that token from `../DESIGN.md` rather than inventing a new one.
+These are copies of the shared tokens. Change a value in `../DESIGN.md` and `../admin/src/index.css` first, then here. The site carries only the tokens it uses: when it needs a status, pill or danger colour, copy that token from `../DESIGN.md` rather than inventing a new one.
 
 | Token | Value | Role on the site |
 | --- | --- | --- |
@@ -282,4 +282,4 @@ Use the helpers in `src/lib/format.ts`, with `ro-RO` number and plural rules; do
    - Tab through the page and check that the focus ring shows on every control, with nothing hidden under the header.
    - Check the clipboard success/failure feedback, table header wrapping and reduced-motion styles.
    - Run Lighthouse against the production build for accessibility and performance.
-3. When a token, size or pattern changes, update this file in the same commit. When a shared token changes, update `../DESIGN.md` and `../frontend/src/index.css` too.
+3. When a token, size or pattern changes, update this file in the same commit. When a shared token changes, update `../DESIGN.md` and `../admin/src/index.css` too.

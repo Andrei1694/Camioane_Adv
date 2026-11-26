@@ -40,7 +40,7 @@ There is no test runner and there are no tests. To check a change, run lint and 
 - `src/lib/format.ts` copies the admin app's en-GB formats: counts, one-decimal hours, en-dash time windows and plurals.
 - `src/lib/api.ts` is a cut-down copy of the admin app's fetch client, without a session or token. `apiBase()` reads `VITE_API_BASE_URL` (typed in `src/vite-env.d.ts`) and falls back to `http://localhost:3000` only in development. `request()` adds a 15 s timeout, turns `{ error }` bodies into `ApiError`, and runs a decoder on every response. `api.health()` is the only call, and nothing on the page uses it yet. The backend's CORS allows this site through `WEBSITE_ORIGIN` (default `http://localhost:5174`).
 - Styling is plain CSS, light theme only.
-  - `src/index.css` holds tokens and primitives copied from `../frontend/src/index.css` and `App.css`: `.button`, `.button-primary`, `.num`, `.unit`, `.sr-only`, `.text-link` and the skip link.
+  - `src/index.css` holds tokens and primitives copied from `../admin/src/index.css` and `App.css`: `.button`, `.button-primary`, `.num`, `.unit`, `.sr-only`, `.text-link` and the skip link.
   - `src/App.css` holds the layout, the hero chart and the price table.
   - At 959px the split layouts and the hero stack, three-column grids drop to two (three points drop to one), and the hero title shrinks to 40px. At 767px the gutters narrow for phones, every grid is one column, titles shrink, and the header nav collapses to the Contact button.
 - `components/BrandMark.tsx` and `public/favicon.svg` copy the admin app's mark. The SVG outlines its wheels in `currentColor`, so the parent sets `color` to match the background behind it.

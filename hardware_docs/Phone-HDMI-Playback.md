@@ -69,7 +69,7 @@ The two candidate layouts side by side (all 512 px high):
 | Segments (128 × 256), left / back / right | cannot be a full grid | 8 × 2 / 4 × 2 / 6 × 2 = 36 |
 | Status | evidence from ViPlex photos | inferred from measured cm sizes, unconfirmed |
 
-This is a hypothesis, not a measurement. Confirm it from the receiving-card or screen configuration (NovaLCT or ViPlex) before changing the layout in `frontend/src/pages/ScreenVideoPage/screenLayout.ts` or the mobile app, and keep the photographed widget values as evidence until then. If it holds, each screen is 128 × 256 segments in a grid: 8 × 2, 4 × 2 and 6 × 2 segments (16, 8 and 12, 36 in total, matching the 36 segments computed above for 2304 × 512).
+This is a hypothesis, not a measurement. Confirm it from the receiving-card or screen configuration (NovaLCT or ViPlex) before changing the layout in `admin/src/pages/ScreenVideoPage/screenLayout.ts` or the mobile app, and keep the photographed widget values as evidence until then. If it holds, each screen is 128 × 256 segments in a grid: 8 × 2, 4 × 2 and 6 × 2 segments (16, 8 and 12, 36 in total, matching the 36 segments computed above for 2304 × 512).
 
 ## Photos of the car (2026-11-19)
 

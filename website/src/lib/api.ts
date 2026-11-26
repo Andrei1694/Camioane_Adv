@@ -1,4 +1,4 @@
-// The typed fetch client for the backend, cut down from the admin app's (frontend/src/lib/api.ts).
+// The typed fetch client for the backend, cut down from the admin app's (admin/src/lib/api.ts).
 // The website has no sign-in, so it sends no token and keeps no session. No section calls it yet;
 // add calls only for endpoints that exist in backend/README.md, each with a runtime decoder.
 

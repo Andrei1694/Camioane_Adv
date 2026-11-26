@@ -15,7 +15,7 @@ const previewUser: User = {
   phone: null, status: 'ACTIVE', createdAt: new Date().toISOString(), lastLoginAt: null,
 }
 
-// Mirrors frontend/src/auth/Authenticated.tsx: every session is checked with GET /users/me
+// Mirrors admin/src/auth/Authenticated.tsx: every session is checked with GET /users/me
 // before any signed-in screen renders, and again whenever the app returns to the foreground.
 function VerifiedApp({ revision }: { revision: number }) {
   const current = useQuery({
@@ -68,7 +68,7 @@ function VerifiedApp({ revision }: { revision: number }) {
 
 export default function AppLayout() {
   const signedIn = useSession((state) => state.session !== null)
-  const preview = useSession((state) => __DEV__ && state.preview)
+  const preview = useSession((state) => state.preview)
   const revision = useSession((state) => state.revision)
   if (preview) {
     return (

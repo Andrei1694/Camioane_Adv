@@ -33,7 +33,7 @@ following the package-specific rules as well.
   nullable `endDate`, and `activ`. Names are ADMIN, OPERATOR, DRIVER, and USER.
   Only ADMIN grants administrator access; other roles currently have profile access.
   Hash passwords before persisting them; Prisma does not hash automatically.
-- The browser frontend lives in `../frontend/`. Check its API consumers when
+- The browser frontend lives in `../admin/`. Check its API consumers when
   changing response contracts, and document new endpoints in `README.md`.
 
 ## Commands

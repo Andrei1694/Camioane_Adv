@@ -5,7 +5,7 @@ import type { TextInputInstance, TextInputProps } from 'react-native'
 import { useMutation } from '@tanstack/react-query'
 import Button from '../components/Button'
 import Screen from '../components/Screen'
-import { signIn, signInDevelopmentPreview, useSession } from '../auth/session'
+import { signIn, signInOffline, useSession } from '../auth/session'
 import { api, errorMessage } from '../lib/api'
 import { colors, radius, touchTarget, type } from '../lib/theme'
 import { getEmailError, getPasswordError, normalizeEmail } from '../lib/user'
@@ -24,7 +24,7 @@ export default function SignInScreen() {
   async function submit() {
     if (login.isPending) return
     const normalized = normalizeEmail(email)
-    if (signInDevelopmentPreview(normalized, password)) {
+    if (signInOffline(normalized, password)) {
       setPassword('')
       return
     }

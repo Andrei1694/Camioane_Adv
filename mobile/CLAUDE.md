@@ -59,7 +59,7 @@ npm install <package>            # Add plain JS dependencies only
    - **Browser:** `npm run web` at port 5173 (conflicts with admin dashboard port)
    - **Development build:** `npm run build:ios|android -- --device` for HDMI test
 
-4. **Development preview account:** In dev mode only, `admin` / `admin` opens a local Operator preview with no backend token. This is memory-only, blocks API calls, and never becomes a real credential.
+4. **Offline preview account:** In every build, Release included, `admin` / `admin` opens a local Operator preview with no backend token, so the app runs without Metro or the API. This is memory-only, blocks API calls, and never becomes a real credential. Only dev builds prefill and mention it on the sign-in screen.
 
 ## Architecture
 

@@ -1,10 +1,10 @@
-# Camioane App frontend
+# Camioane App admin
 
 React, TypeScript, and Vite administrator dashboard connected to the Express API and PostgreSQL. Administrators can list, create, edit, and delete accounts and assign Admin, Operator, Driver, and User roles. Management access requires a currently valid Admin role; the other roles currently have account/profile access.
 
 ## Development
 
-Start the backend and provision an administrator using `npm run admin:bootstrap` from `../backend/`; see its README. Then, from `frontend/`:
+Start the backend and provision an administrator using `npm run admin:bootstrap` from `../backend/`; see its README. Then, from `admin/`:
 
 ```sh
 npm ci
@@ -174,7 +174,7 @@ For production, configure a routing service with suitable capacity and availabil
 ## Verification
 
 Use Node.js 24+ and install the locked dependencies with `npm ci`. Run these
-commands from `frontend/`:
+commands from `admin/`:
 
 ```sh
 npm test

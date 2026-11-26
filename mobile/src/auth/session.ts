@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import { queryClient } from '../lib/queryClient'
 import * as storage from './storage'
 
-// Port of frontend/src/auth/session.ts. The token lives in the Keychain (iOS) or the
+// Port of admin/src/auth/session.ts. The token lives in the Keychain (iOS) or the
 // Keystore (Android), or sessionStorage in the browser, behind an asynchronous API.
 interface Session {
   accessToken: string
@@ -12,7 +12,7 @@ interface Session {
 
 interface SessionState {
   session: Session | null
-  /** Development preview is memory-only and never grants a backend session. */
+  /** Offline preview (admin / admin) is memory-only and never grants a backend session. */
   preview: boolean
   revision: number
   /** The saved session has been read from platform storage. */
@@ -87,12 +87,15 @@ function replaceSession(session: Session | null, message = '', preview = false) 
   void queryClient.cancelQueries()
   queryClient.clear()
   persist(session)
-  useSession.setState((state) => ({ session, preview: __DEV__ && preview, revision: state.revision + 1, message }))
+  useSession.setState((state) => ({ session, preview, revision: state.revision + 1, message }))
 }
 
-/** Local screen preview only: no token, saved credentials, or API login. */
-export function signInDevelopmentPreview(username: string, password: string) {
-  if (!__DEV__ || username !== 'admin' || password !== 'admin') return false
+/**
+ * Offline sign-in for local conversion and HDMI playback in every build, Release included:
+ * no token, saved credentials, or API login, so it never reaches server data.
+ */
+export function signInOffline(username: string, password: string) {
+  if (username !== 'admin' || password !== 'admin') return false
   replaceSession(null, '', true)
   return true
 }

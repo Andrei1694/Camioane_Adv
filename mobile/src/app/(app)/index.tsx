@@ -9,7 +9,7 @@ import { roleLabels } from '../../lib/user'
 
 export default function HomeScreen() {
   const user = useCurrentUser()
-  const preview = useSession((state) => __DEV__ && state.preview)
+  const preview = useSession((state) => state.preview)
   const router = useRouter()
   return (
     <Screen>

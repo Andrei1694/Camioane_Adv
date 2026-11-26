@@ -9,7 +9,7 @@ following the package-specific rules as well.
 Camioane App is the admin side of a business that sells advertising campaigns on LED-screen trucks running predefined routes. `BUSINESS_PLAN.md` (Romanian) holds the product requirements. So far the code covers authentication, user management with profile pictures, file uploads, a browser-side video editor for uploaded MP4s, a client-side route builder, and an admin dashboard UI that runs on sample data. `mobile/` holds an Expo app for drivers and operators that so far only signs in. `website/` holds the public presentation site for advertisers, a static landing page. Campaigns, credits, and payments are not built yet.
 
 
-Detailed rules live in `AGENTS.md` (root), `backend/AGENTS.md`, `frontend/AGENTS.md`, `mobile/AGENTS.md`, and `website/AGENTS.md`. **Read the AGENTS.md for a package before changing it.** The package READMEs document the API contract, environment variables, and setup. `DESIGN.md` (root) holds the visual system for the frontend and the mobile app (tokens, type, layout, components, and data formatting) and the shared tokens the website copies. `website/DESIGN.md` holds the website's own layout, type sizes and components.
+Detailed rules live in `AGENTS.md` (root), `backend/AGENTS.md`, `admin/AGENTS.md`, `mobile/AGENTS.md`, and `website/AGENTS.md`. **Read the AGENTS.md for a package before changing it.** The package READMEs document the API contract, environment variables, and setup. `DESIGN.md` (root) holds the visual system for the frontend and the mobile app (tokens, type, layout, components, and data formatting) and the shared tokens the website copies. `website/DESIGN.md` holds the website's own layout, type sizes and components.
 
 ## User workflow preferences (apply everywhere)
 
@@ -31,7 +31,7 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - To run one test file: `node --env-file-if-exists=.env --test --experimental-test-module-mocks tests/auth-config.test.ts`. Add `--test-name-pattern="<regex>"` to filter by test name.
 - Prisma: `npm run prisma:validate`, `npm run prisma:generate`, `npm run db:migrate -- --name <name> --create-only` (create), `npm run db:migrate` (apply), `npm run db:check`, and `npm run admin:bootstrap` (interactive). `backend/AGENTS.md` has the full schema-change procedure.
 
-**frontend/** (React 19, Vite, and TypeScript; there is no test runner)
+**admin/** (React 19, Vite, and TypeScript; there is no test runner)
 - `npm run dev`: start Vite on port 5173 with strict port selection. That port matches the backend's default CORS origin.
 - `npm run build` (`tsc -b` + `vite build`) and `npm run lint` (Oxlint): run both after any code change. When a browser is available, also check the changed interactions in it.
 - `VITE_API_BASE_URL` falls back to `http://localhost:3000` only in dev. Production builds need it set explicitly.
@@ -42,7 +42,7 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - Add Expo and React Native dependencies with `npx expo install` so versions match the SDK. If the Expo API is unreachable, set `EXPO_OFFLINE=1`.
 - `EXPO_PUBLIC_API_BASE_URL` falls back to Metro's host on port 3000 only in dev. Release builds need an explicit HTTPS value.
 
-**website/** (React 19, Vite, and TypeScript, set up like `frontend/`; there is no test runner)
+**website/** (React 19, Vite, and TypeScript, set up like `admin/`; there is no test runner)
 - `npm run dev`: start Vite on port 5174 with strict port selection, beside the admin app on 5173.
 - `npm run build` and `npm run lint` (Oxlint): run both after any code change. The build needs `VITE_CONTACT_EMAIL`; `vite.config.ts` fails without it. Development falls back to `hello@example.com`. When a browser is available, check the page at 1440, 768 and 390px.
 - `VITE_API_BASE_URL` falls back to `http://localhost:3000` only in dev, as in the admin app. Builds don't require it, but API calls fail without it.
@@ -63,7 +63,7 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - Password hashing happens outside the transaction.
 - Public registration doesn't exist. Admins are created with the local `admin:bootstrap` script.
 
-**Frontend:**
+**Admin:**
 - Zustand (`src/auth/session.ts`) owns session state. It persists only the token and its expiry, under `camioane.session.v1`. Every session change goes through `replaceSession`, which does four things:
   - aborts the global request signal
   - clears the TanStack Query cache
@@ -87,7 +87,7 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - The Credits page (`src/pages/CreditsPage/`, admin-only at `/credits`) runs on the real `/credits` API. It leads with every pending purchase, oldest first: `creditsData.ts` pages through `GET /credits/purchases?status=PENDING`, because the API lists newest first, 100 at a time. Admins confirm (with an optional payment reference), mark failed or cancel each one in a review dialog, and adjust balances by hand. The ledger and purchase history page by 50 and filter by account; there is no endpoint listing every account's balance, so a balance shows only for the account picked. All its queries sit under `['credits', revision]`, which each action invalidates.
 - The route builder (`src/pages/RouteBuilderPage/`, admin-only at `/routes`) is lazy-loaded. It uses MapLibre GL with the Directions plugin and a public OSRM demo endpoint, configured through `VITE_MAP_STYLE_URL` and `VITE_ROUTING_API_URL`. Routes exist only on the client: there is no save API yet, and routing doesn't account for truck-specific restrictions.
 
-- Van-screen video (`frontend/src/pages/ScreenVideoPage/`, admin-only at `/screen` and `/files/$fileId/screen`) previews and converts a local or stored MP4 into three copies on an editable canvas. Shared admin presets (`/screen-presets`) persist canvas dimensions, three regions and their framing, with version conflicts preserving local edits. `screenLayout.ts` holds the unconfirmed ViPlex Version A fallback (2304 × 512, all contain) and placement maths shared by preview and rendering; both consume the same layout. Conversion snapshots the layout/preset name and includes the name in the exported filename. Mobile doesn't use these presets: each phone saves its own output resolutions and scales the Version A regions to them (`mobile/src/features/screen/`). The browser uploads only the converted result as a new file; the original is unchanged. `RenderProgress` is shared with the editor from `src/components/`.
+- Van-screen video (`admin/src/pages/ScreenVideoPage/`, admin-only at `/screen` and `/files/$fileId/screen`) previews and converts a local or stored MP4 into three copies on an editable canvas. Shared admin presets (`/screen-presets`) persist canvas dimensions, three regions and their framing, with version conflicts preserving local edits. `screenLayout.ts` holds the unconfirmed ViPlex Version A fallback (2304 × 512, all contain) and placement maths shared by preview and rendering; both consume the same layout. Conversion snapshots the layout/preset name and includes the name in the exported filename. Mobile doesn't use these presets: each phone saves its own output resolutions and scales the Version A regions to them (`mobile/src/features/screen/`). The browser uploads only the converted result as a new file; the original is unchanged. `RenderProgress` is shared with the editor from `src/components/`.
 
 **Mobile (`mobile/`):**
 - It is for the `DRIVER` and `OPERATOR` roles. `appRoles` in `src/lib/user.ts` decides this; other roles see an explanation and a sign-out button.
@@ -111,11 +111,11 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - `ios/` and `android/` are generated by `expo prebuild` or EAS, and Git ignores them.
 
 **Website (`website/`):**
-- One English landing page with anchored sections in `src/sections/`; no router or data libraries. `src/lib/api.ts` is a typed fetch client for the backend (no session or token); no section calls it yet. It's a separate package: copy what it needs from `frontend/`, never import across packages.
+- One English landing page with anchored sections in `src/sections/`; no router or data libraries. `src/lib/api.ts` is a typed fetch client for the backend (no session or token); no section calls it yet. It's a separate package: copy what it needs from `admin/`, never import across packages.
 - The only call to action is a `mailto:` link built from `VITE_CONTACT_EMAIL` in `src/lib/contact.ts`. There is no contact or lead API.
 - Copy follows the confirmed rules in `BUSINESS_PLAN.md`. Don't invent cities, fleet sizes, rates, prices or clients. The pricing example (the plan's §7.2) lives in `src/lib/pricing.ts`, which computes every figure the hero and the pricing table show.
 
-When you change a backend response contract, also update its consumers in `frontend/src/lib/` and `mobile/src/lib/` and document the change in `backend/README.md`. Don't invent endpoints the backend doesn't have.
+When you change a backend response contract, also update its consumers in `admin/src/lib/` and `mobile/src/lib/` and document the change in `backend/README.md`. Don't invent endpoints the backend doesn't have.
 
 ## Conventions and gotchas
 

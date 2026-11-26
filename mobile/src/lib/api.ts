@@ -8,7 +8,7 @@ import { downloadVideo, uploadVideo } from './fileTransport'
 import { deleteVideo } from '../features/screen/videoFiles'
 import type { LocalVideo } from '../features/screen/types'
 
-// Port of frontend/src/lib/api.ts, limited to the endpoints this app uses.
+// Port of admin/src/lib/api.ts, limited to the endpoints this app uses.
 export class ApiError extends Error {
   readonly status: number
 

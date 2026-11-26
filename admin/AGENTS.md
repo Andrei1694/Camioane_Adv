@@ -1,6 +1,6 @@
-# Frontend agent guidance
+# Admin agent guidance
 
-These instructions apply to `frontend/` and its descendants. Keep frontend work
+These instructions apply to `admin/` and its descendants. Keep admin work
 scoped here unless the requested feature also requires changes elsewhere.
 
 Read and follow [CLEAN_CODE.md](../CLEAN_CODE.md) when writing or changing code.
@@ -116,7 +116,7 @@ following the package-specific rules as well.
 
 ## Commands
 
-Run these commands from `frontend/` with Node.js 24+:
+Run these commands from `admin/` with Node.js 24+:
 
 | Command | Purpose |
 | --- | --- |

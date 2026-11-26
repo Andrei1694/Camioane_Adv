@@ -6,9 +6,9 @@ Expo SDK 58, React Native 0.88, React 19, TypeScript, Expo Router, TanStack Quer
 
 ## Accounts
 
-There is no registration. An administrator creates accounts on the web dashboard's Users page (`../frontend`). ADMIN, OPERATOR, DRIVER and USER can all open the mobile app, including **Ecrane camioane**. File visibility and saving remain controlled by the server's existing permissions; enabling a mobile role grants no access to another account's files.
+There is no registration. An administrator creates accounts on the web dashboard's Users page (`../admin`). ADMIN, OPERATOR, DRIVER and USER can all open the mobile app, including **Ecrane camioane**. File visibility and saving remain controlled by the server's existing permissions; enabling a mobile role grants no access to another account's files.
 
-Development mode prefills `admin` / `admin`. Press **Sign in** to open an Operator screen preview without a backend login. This is a local preview identity, not a real administrator account: it creates no token, cannot call protected APIs, and ends on sign-out or a full reload. The shortcut and prefilled values are disabled in production builds. Replace the fields with your real account details to use normal sign-in.
+Sign in with `admin` / `admin` to open an offline Operator preview without a backend login. It works in every build, including a Release build installed on a phone with no Metro server or API. This is a local preview identity, not a real administrator account: it creates no token, cannot call protected APIs, and ends on sign-out or a full reload, so sign in again after the app restarts. Development mode prefills these values and mentions them on the sign-in screen; Release builds show empty fields. Replace the fields with your real account details to use normal sign-in.
 
 ## Development
 
@@ -97,7 +97,7 @@ After conversion, **Redă pe HDMI** opens the existing player with a separate te
 
 Conversion runs in the foreground and keeps the screen awake. Backgrounding, confirmed navigation away, sign-out and expiry cancel unfinished work. Native readers are released before temporary files are removed. The editor's source, framing and results last only for that editor/session; successfully uploaded files persist on the server. A killed app or failed cleanup can leave cache files until OS eviction. Physical truck mapping is still unconfirmed: this canvas does not establish which physical side each region drives or the phone's HDMI output resolution.
 
-The `admin` / `admin` development preview supports local selection, conversion and HDMI. It cannot list, download or save server files. Browser conversion uses canvas and a lazily loaded mediabunny encoder; browser codec availability is required, and HDMI remains unavailable.
+The `admin` / `admin` offline preview supports local selection, conversion and HDMI. It cannot list, download or save server files. Browser conversion uses canvas and a lazily loaded mediabunny encoder; browser codec availability is required, and HDMI remains unavailable.
 
 ### Converter implementation and verification
 
@@ -134,7 +134,7 @@ Imported files are copied into app cache; your original file is not modified or 
 
 Replacing a file or leaving the test removes its imported copy only after native detachment is confirmed. Disposal waits for startup, releases the player, and retries release once if it fails. If release still fails, copies are retained and a cleanup warning appears on the next visit to the HDMI test. An unexpected preparation or teardown failure requires leaving and reopening the test; its copies are retained until release succeeds. File choice and playback do not persist across launches; every new HDMI test starts with the sample selected by its home-screen button and never autoplays. If the app is terminated abruptly or cache deletion fails, the OS may retain the temporary copy until cache eviction.
 
-On both platforms, `start(sessionId, expiresAt)` accepts the login expiry in epoch milliseconds, or null for the development preview. The native `prepare(sessionId, uris, startIndex = 0)` promise resolves on playable readiness, rejects after media failure cleanup, and is cancelled by replacement, release, or module destruction. Status events reserve `loading` for initial preparation and report `buffering` only while an explicit Play request is waiting for media. Pause, Stop, interruption, disconnection, and backgrounding on Android below API 30 clear that request; late native events cannot resume it or replace the stopped/error state. Rebuild the development app after changing this native contract; a JavaScript reload alone is insufficient.
+On both platforms, `start(sessionId, expiresAt)` accepts the login expiry in epoch milliseconds, or null for the offline preview. The native `prepare(sessionId, uris, startIndex = 0)` promise resolves on playable readiness, rejects after media failure cleanup, and is cancelled by replacement, release, or module destruction. Status events reserve `loading` for initial preparation and report `buffering` only while an explicit Play request is waiting for media. Pause, Stop, interruption, disconnection, and backgrounding on Android below API 30 clear that request; late native events cannot resume it or replace the stopped/error state. Rebuild the development app after changing this native contract; a JavaScript reload alone is insufficient.
 
 The HDMI test uses one local video and one external display; Playlist HDMI uses an ordered list on the same native player. Neither streams from the API, sets custom HDMI timings, nor configures TB60 mapping or scaling. Use **Ecrane camioane** to compose the three regions before opening the player. The displayed resolution is the output mode negotiated by the phone and adapter, not the dimensions of the video file. USB-C alone does not guarantee video-output support; screen-mirroring-only adapters may not expose a separate display.
 

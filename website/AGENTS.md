@@ -19,9 +19,9 @@ following the package-specific rules as well.
 
 - This is the public presentation site for advertisers: one Romanian landing page
   with anchored sections (`#booking`, `#how-it-works`, `#pricing`,
-  `#confirmation`, `#content`, `#contact`). It is set up like `../frontend/`
+  `#confirmation`, `#content`, `#contact`). It is set up like `../admin/`
   (React, TypeScript, Vite, Oxlint, plain CSS) but is a separate package with its
-  own dependencies; never import from `../frontend/`.
+  own dependencies; never import from `../admin/`.
 - `src/lib/api.ts` is the typed fetch client for the backend: base URL from
   `VITE_API_BASE_URL` (development falls back to `http://localhost:3000`), a 15 s
   timeout, `{ error }` messages and a runtime decoder for every response. No
@@ -76,7 +76,7 @@ passing when only the build and lint checks were run.
   pieces used by more than one section (`Section`, `BrandMark`); `src/lib/` holds
   formatting, pricing and contact helpers and the API client.
 - Tokens and primitives in `src/index.css` are copied from
-  `../frontend/src/index.css` and `App.css`. When a shared token changes in
+  `../admin/src/index.css` and `App.css`. When a shared token changes in
   `../DESIGN.md`, change it in `src/index.css` and in the token table of
   `DESIGN.md` too. Page layout lives in `src/App.css`.
 

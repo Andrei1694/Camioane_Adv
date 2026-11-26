@@ -97,9 +97,9 @@ Documentația proiectului consultată în timpul analizei descrie:
 
 Referințe relevante din proiect:
 
-- [Documentația frontendului](frontend/README.md)
+- [Documentația frontendului](admin/README.md)
 - [Documentația backendului](backend/README.md)
-- [Instrucțiuni pentru contribuții la frontend](frontend/AGENTS.md)
+- [Instrucțiuni pentru contribuții la frontend](admin/AGENTS.md)
 - [Instrucțiuni pentru contribuții la backend](backend/AGENTS.md)
 
 Aceste afirmații se bazează pe documentația proiectului, nu pe un nou audit al implementării sau pe o verificare în execuție. Verificarea apartenenței datelor la fiecare client, gestionarea campaniilor, programarea, creditele, plățile, integrarea cu controlerele și raportarea trebuie evaluate ca funcționalități noi.

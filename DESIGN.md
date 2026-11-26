@@ -8,21 +8,21 @@ The system follows one idea: the admin screens are tools people work in every da
 
 | What | File |
 | --- | --- |
-| Global tokens (including the data and status colours), base element styles, focus ring | `frontend/src/index.css` |
-| Shell: sidebar, sheet, mobile header and navigation | `frontend/src/components/AppShell.css`, `AppShell.tsx` |
-| Buttons, forms, page headings, the Users table, and the shared primitives: `.num`, `.unit`, `.sr-only`, `.cell-sub`, `.missing`, ghost, text and icon buttons, `.empty-state`, pills, tabs, pagination, the dialog frame and the checks box | `frontend/src/App.css` |
-| Dashboard layout tokens and the data patterns (KPIs, timeline, rows, tables, the review dialog's contents) | `frontend/src/pages/DashboardPage/DashboardPage.css` |
-| Files page: files table, preview dialog | `frontend/src/pages/FilesPage/FilesPage.css` |
-| Credits page: pending queue, ledger and purchase tables, review and adjust dialogs | `frontend/src/pages/CreditsPage/CreditsPage.css` |
-| Shared row pieces: the owner's email (`OwnerLabel`), "1–50 of 132" paging (`Pagination`) | `frontend/src/components/OwnerLabel.tsx`, `Pagination.tsx` |
-| Profile pictures: the circle (`Avatar`) and the upload/remove block (`AvatarEditor`) | `frontend/src/components/Avatar.css`, `Avatar.tsx`, `AvatarEditor.css`, `AvatarEditor.tsx` |
-| Profile page | `frontend/src/pages/ProfilePage/ProfilePage.css` |
-| Upload progress (Files page and video editor) | `frontend/src/components/UploadProgress.css`, `UploadProgress.tsx` |
-| Video editor: preview frame, toolbar, the re-themed timeline, segments table | `frontend/src/pages/VideoEditorPage/VideoEditorPage.css` |
-| Fonts | `frontend/src/main.tsx` (`@fontsource` imports) |
-| Counts, signed changes, plurals, money, file sizes, durations and local timestamps (shared) | `frontend/src/lib/format.ts` |
-| Car-hours, sample-data times and dates, waiting times at the sample's moment | `frontend/src/pages/DashboardPage/dashboardData.ts` |
-| Video timecodes | `frontend/src/pages/VideoEditorPage/edit.ts` |
+| Global tokens (including the data and status colours), base element styles, focus ring | `admin/src/index.css` |
+| Shell: sidebar, sheet, mobile header and navigation | `admin/src/components/AppShell.css`, `AppShell.tsx` |
+| Buttons, forms, page headings, the Users table, and the shared primitives: `.num`, `.unit`, `.sr-only`, `.cell-sub`, `.missing`, ghost, text and icon buttons, `.empty-state`, pills, tabs, pagination, the dialog frame and the checks box | `admin/src/App.css` |
+| Dashboard layout tokens and the data patterns (KPIs, timeline, rows, tables, the review dialog's contents) | `admin/src/pages/DashboardPage/DashboardPage.css` |
+| Files page: files table, preview dialog | `admin/src/pages/FilesPage/FilesPage.css` |
+| Credits page: pending queue, ledger and purchase tables, review and adjust dialogs | `admin/src/pages/CreditsPage/CreditsPage.css` |
+| Shared row pieces: the owner's email (`OwnerLabel`), "1–50 of 132" paging (`Pagination`) | `admin/src/components/OwnerLabel.tsx`, `Pagination.tsx` |
+| Profile pictures: the circle (`Avatar`) and the upload/remove block (`AvatarEditor`) | `admin/src/components/Avatar.css`, `Avatar.tsx`, `AvatarEditor.css`, `AvatarEditor.tsx` |
+| Profile page | `admin/src/pages/ProfilePage/ProfilePage.css` |
+| Upload progress (Files page and video editor) | `admin/src/components/UploadProgress.css`, `UploadProgress.tsx` |
+| Video editor: preview frame, toolbar, the re-themed timeline, segments table | `admin/src/pages/VideoEditorPage/VideoEditorPage.css` |
+| Fonts | `admin/src/main.tsx` (`@fontsource` imports) |
+| Counts, signed changes, plurals, money, file sizes, durations and local timestamps (shared) | `admin/src/lib/format.ts` |
+| Car-hours, sample-data times and dates, waiting times at the sample's moment | `admin/src/pages/DashboardPage/dashboardData.ts` |
+| Video timecodes | `admin/src/pages/VideoEditorPage/edit.ts` |
 | Brand artwork | `assets/app-icon/` |
 | Mobile tokens, type scale and touch sizes | `mobile/src/lib/theme.ts` |
 | Mobile buttons and screen frame | `mobile/src/components/Button.tsx`, `Screen.tsx` |
@@ -300,7 +300,7 @@ These layout tokens are scoped to the dashboard until a second page needs them. 
 
 ## Formatting data
 
-Use the helpers in `frontend/src/lib/format.ts` (shared) and `dashboardData.ts` (dashboard only); don't format inline. `dashboardData.ts` re-exports `formatCount` and `plural`.
+Use the helpers in `admin/src/lib/format.ts` (shared) and `dashboardData.ts` (dashboard only); don't format inline. `dashboardData.ts` re-exports `formatCount` and `plural`.
 
 | Value | Format | Helper |
 | --- | --- | --- |
@@ -364,13 +364,13 @@ These are inconsistencies in the current code, recorded here until someone decid
 
 - There are two reds: `--danger` `#b42318` (forms, `App.css`) and `--negative` `#c4242a` (data, dashboard).
 - Older pages use a 24px `h1`; the dashboard uses 22px. The Users table's headers (13px/500 over a rule) don't match the dashboard tables'.
-- `frontend/public/favicon.svg` is still Vite's violet bolt, not the brand mark.
-- `frontend/index.html` still has the title "Users · Camioane App" and a "user management demo" description.
+- `admin/public/favicon.svg` is still Vite's violet bolt, not the brand mark.
+- `admin/index.html` still has the title "Users · Camioane App" and a "user management demo" description.
 - The Users table's empty row uses the class `empty-state` on a `<td>`, so it picks up the dashed box border meant for blocks.
 
 ## Checking a UI change
 
-1. From `frontend/`, run `npm run build` and `npm run lint`.
+1. From `admin/`, run `npm run build` and `npm run lint`.
 2. Look at the changed screen in a browser at 1440, 768 and 390px wide.
    - Check that the page never scrolls sideways.
    - Check that row-mates end level.

@@ -17,7 +17,7 @@ void SplashScreen.preventAutoHideAsync()
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({ IBMPlexSans_400Regular, IBMPlexSans_500Medium, IBMPlexSans_600SemiBold })
   const hydrated = useSession((state) => state.hydrated)
-  const signedIn = useSession((state) => state.session !== null || (__DEV__ && state.preview))
+  const signedIn = useSession((state) => state.session !== null || state.preview)
   // A font that fails to load falls back to the system face rather than blocking the app.
   const ready = hydrated && (fontsLoaded || fontError !== null)
 

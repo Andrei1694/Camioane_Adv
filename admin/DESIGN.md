@@ -1,6 +1,6 @@
-# Frontend design
+# Admin design
 
-This guide describes the current Camioane App admin frontend and the conventions to follow when extending it. It is for developers and agents working in `frontend/`. The [root design guide](../DESIGN.md) remains the reference for shared brand, tokens and cross-platform rules; the [website guide](../website/DESIGN.md) describes the presentation site.
+This guide describes the current Camioane App admin frontend and the conventions to follow when extending it. It is for developers and agents working in `admin/`. The [root design guide](../DESIGN.md) remains the reference for shared brand, tokens and cross-platform rules; the [website guide](../website/DESIGN.md) describes the presentation site.
 
 The values and component descriptions below come from the frontend source. Requirements describe how new work should behave, not a claim that every existing screen already meets them. Verified differences are recorded under [Current inconsistencies](#current-inconsistencies). Update this guide when a frontend token, size or pattern changes; update the root guide too when shared design rules change.
 
@@ -352,6 +352,6 @@ These are verified source-level differences to account for, not changes requeste
 
 For documentation-only changes, compare descriptions and values with the linked source, check relative links and review whitespace. Run `git diff --check`; check a newly created, untracked document separately because ordinary Git diff excludes it. Application builds and browser checks are unnecessary for prose-only updates.
 
-For application changes, follow [AGENTS.md](AGENTS.md): run `npm run build` and `npm run lint` from `frontend/`, then exercise the changed UI in a browser when available. There is no frontend test runner; do not describe build/lint as passing tests. Write or modify tests, and inspect logs, only when explicitly requested.
+For application changes, follow [AGENTS.md](AGENTS.md): run `npm run build` and `npm run lint` from `admin/`, then exercise the changed UI in a browser when available. There is no frontend test runner; do not describe build/lint as passing tests. Write or modify tests, and inspect logs, only when explicitly requested.
 
 For visual and interaction checks, use 1440px, 768px and 390px widths plus the affected component's breakpoint. Check keyboard operation, focus return, loading/empty/error/pending states, long filenames and emails, right-aligned figures, container scrolling and touch controls. Confirm that sample notices, draft/save semantics and formatting units remain accurate. Update this guide in the same change when a documented frontend pattern changes; coordinate shared token changes through the root guide.

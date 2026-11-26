@@ -1,4 +1,4 @@
-// Mirrors frontend/src/lib/user.ts. Keep the role list and validation rules in step with the backend.
+// Mirrors admin/src/lib/user.ts. Keep the role list and validation rules in step with the backend.
 export const roles = ['ADMIN', 'OPERATOR', 'DRIVER', 'USER'] as const
 export type Role = typeof roles[number]
 

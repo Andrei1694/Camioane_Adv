@@ -1,4 +1,4 @@
-// Tokens from DESIGN.md, shared with the web admin (frontend/src/index.css). Change both together.
+// Tokens from DESIGN.md, shared with the web admin (admin/src/index.css). Change both together.
 export const colors = {
   surface: '#ffffff',
   text: '#202020',

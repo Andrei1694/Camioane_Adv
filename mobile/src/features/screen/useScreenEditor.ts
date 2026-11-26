@@ -20,7 +20,7 @@ type Phase = '' | 'Alege un MP4…' | 'Se descarcă…' | 'Se pregătește…' |
 
 export function useScreenEditor(fileId?: string) {
   const revision = useSession((state) => state.revision)
-  const preview = useSession((state) => __DEV__ && state.preview)
+  const preview = useSession((state) => state.preview)
   const focused = useIsFocused()
   const queryClient = useQueryClient()
   const [fits, setFits] = useState({ ...defaultFits })

@@ -1,4 +1,4 @@
-// The admin app's mark (BrandMark in frontend/src/components/AppShell.tsx): a car carrying a
+// The admin app's mark (BrandMark in admin/src/components/AppShell.tsx): a car carrying a
 // rooftop LED screen. The wheels are outlined in currentColor, so set `color` to the ground.
 export default function BrandMark({ className = 'brand-mark' }: { className?: string }) {
   return (

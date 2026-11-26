@@ -1,4 +1,4 @@
-/* Tokens and base styles, copied from the admin app (frontend/src/index.css) so both read as one
+/* Tokens and base styles, copied from the admin app (admin/src/index.css) so both read as one
    brand. The root DESIGN.md is the source of truth for shared tokens; when one changes there, change
    it here and in website/DESIGN.md too. */
 :root {

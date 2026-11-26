@@ -6,12 +6,12 @@ following the package-specific rules as well.
 
 ## Project Structure & Module Organization
 
-- `frontend/`: React/TypeScript/Vite dashboard. Pages: `src/pages/<PageName>/`; shared components: `src/components/`; authentication: `src/auth/`; API helpers: `src/lib/`; assets: `src/assets/` and `public/`.
+- `admin/`: React/TypeScript/Vite dashboard. Pages: `src/pages/<PageName>/`; shared components: `src/components/`; authentication: `src/auth/`; API helpers: `src/lib/`; assets: `src/assets/` and `public/`.
 - `backend/`: Express/TypeScript API organized into routes, controllers, services, and middleware under `src/`. Prisma schema/migrations live in `prisma/`; tests in `tests/`.
 - `mobile/`: Expo (React Native) app for drivers and operators. Expo Router routes: `src/app/`; session: `src/auth/`; API client, theme and shared types: `src/lib/`; shared components: `src/components/`. Native `ios/` and `android/` folders are generated, not committed.
 - `website/`: React/TypeScript/Vite presentation site for advertisers, one static landing page. Sections: `src/sections/`; shared pieces: `src/components/`; formatting, pricing example, contact link and API client: `src/lib/`.
 - `hardware_docs/`: NovaStar TB60 controller documentation (vendor manuals, NovaCloud API snapshots, developer notes in `developer/`) and photos of the truck's screens in `evidence/`. `Phone-HDMI-Playback.md` records the screen sizes, canvas layout and HDMI test findings.
-- Follow directory-specific instructions in `frontend/AGENTS.md`, `backend/AGENTS.md`, `mobile/AGENTS.md`, and `website/AGENTS.md`.
+- Follow directory-specific instructions in `admin/AGENTS.md`, `backend/AGENTS.md`, `mobile/AGENTS.md`, and `website/AGENTS.md`.
 
 ## Build, Test, and Development Commands
 
@@ -25,10 +25,10 @@ Use Node.js 24+ and npm inside each package.
 | `backend/` | `npm run typecheck` | Check TypeScript |
 | `backend/` | `npm test` | Run Node tests |
 | `backend/` | `npm run test:coverage` | Run Node tests with the 100% line coverage gate |
-| `frontend/` | `npm run dev` | Start Vite on port 5173 |
-| `frontend/` | `npm run build` | Type-check and produce `dist/` |
-| `frontend/` | `npm run lint` | Run Oxlint |
-| `frontend/` | `npm run preview` | Preview the production build |
+| `admin/` | `npm run dev` | Start Vite on port 5173 |
+| `admin/` | `npm run build` | Type-check and produce `dist/` |
+| `admin/` | `npm run lint` | Run Oxlint |
+| `admin/` | `npm run preview` | Preview the production build |
 | `mobile/` | `npm start` | Start Metro for Expo Go or a development build |
 | `mobile/` | `npm run build:ios -- --device` | Build, sign, and install the development app on a physical iPhone |
 | `mobile/` | `npm run typecheck` | Check TypeScript |
@@ -94,8 +94,8 @@ installation with `xcrun devicectl device info apps --device "<device-id>"
 before reporting launch success. Do not inspect device or Metro logs unless
 requested.
 
-The development-only `admin` / `admin` shortcut opens a local Operator preview
-without a backend session. It can open the HDMI test, but physical playback still
+The `admin` / `admin` offline sign-in opens a local Operator preview without a
+backend session, in development and Release builds alike. It can open the HDMI test, but physical playback still
 requires a compatible adapter and display. Rebuild after native dependency or
 native code changes; JavaScript-only changes use the running Metro server.
 Keep generated `mobile/ios/` and `mobile/android/` folders untracked and configure

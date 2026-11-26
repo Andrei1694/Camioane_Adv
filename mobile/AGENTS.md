@@ -94,10 +94,12 @@ following the package-specific rules as well.
   copy, waits for Play and must not delete the editor's result on return.
 - Use npm. `package.json` and `package-lock.json` are authoritative for versions.
   Keep them in sync.
-- In development only, `admin` / `admin` opens an in-memory Operator preview.
-  It has no access token, skips the server session check, blocks protected API
-  calls, and ends on sign-out or a full reload. Keep this behind `__DEV__`;
-  never turn these preview values into real backend credentials.
+- In every build, Release included, `admin` / `admin` signs in offline to an
+  in-memory Operator preview (`signInOffline`), so the app works without Metro or
+  the API. It has no access token, skips the server session check, blocks
+  protected API calls, and ends on sign-out or a full reload. Only development
+  builds prefill and mention these values on the sign-in screen. Never turn them
+  into real backend credentials.
   Local conversion and HDMI work in this preview; server Files access does not.
 
 ## Local setup and running the app
@@ -111,7 +113,7 @@ following the package-specific rules as well.
   the API, the current database schema, and an existing account. Do not describe
   a visible sign-in screen as a verified sign-in flow.
 - Browser preview: run `npm run web`, then open `http://localhost:5173`.
-  This is the driver app; the separate admin dashboard lives in `../frontend/`.
+  This is the driver app; the separate admin dashboard lives in `../admin/`.
   Both default to port 5173. Check for an existing server before starting another,
   and do not terminate an unrelated process to free the port.
 - Native preview: run `npm start`, then open the project in Expo Go or a
@@ -242,7 +244,7 @@ above ran.
 - `src/lib/api.ts` is the single typed fetch client. It runtime-decodes every
   response, times out after 15 s (10 minutes for file transfers), drops responses that arrive after a session
   change, and signs out on a 401. Mirror changes to the web client's shared
-  logic (`../frontend/src/lib/api.ts`, `../frontend/src/auth/session.ts`) when
+  logic (`../admin/src/lib/api.ts`, `../admin/src/auth/session.ts`) when
   they apply here.
 - `EXPO_PUBLIC_API_BASE_URL` is public: Metro inlines it into the bundle. In
   development it falls back to Metro's host on port 3000, or the page's host

@@ -2,7 +2,7 @@
 
 The public presentation site for advertisers: one Romanian landing page that explains what a campaign books (routes, slots, cars, dates), how a campaign runs, pricing in credits per car-hour with a worked example, the all-or-nothing confirmation, and how creatives reach the screens. Its call to action is a `mailto:` link.
 
-It is a static React, TypeScript and Vite app, set up like `../frontend/`, with plain CSS and IBM Plex Sans self-hosted through `@fontsource`. It has no router, state or data libraries. `src/lib/api.ts` is a typed client for the backend API, but no section calls it yet, so the page works without a running API.
+It is a static React, TypeScript and Vite app, set up like `../admin/`, with plain CSS and IBM Plex Sans self-hosted through `@fontsource`. It has no router, state or data libraries. `src/lib/api.ts` is a typed client for the backend API, but no section calls it yet, so the page works without a running API.
 
 ## Development
 

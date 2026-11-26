@@ -124,6 +124,8 @@ The signed-in desktop shell is a 232px sidebar beside a white sheet. The sidebar
 
 Navigation links use neutral `--border` fills for hover and the active page; the active label is weight 600. Outline icons are 20px. The account block contains a 40px avatar, email, role, Profile and Sign out. The email includes a preferred break before `@` and can wrap further to avoid overflow.
 
+The account block ends with “Versiune” and the version from `package.json`, in muted 12px text with a 16px top gap. It appears at the bottom of both the desktop sidebar and mobile navigation.
+
 Management links depend on verified administrator access. Profile and Redare pe ecran are available to every signed-in role. Failed access verification offers retry; denied accounts receive the account-access view. Do not use the displayed role label alone to decide whether to show management UI.
 
 | Page | Content width | Desktop sheet padding |

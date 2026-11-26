@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
+import { version } from '../../package.json'
 import { signOut, useSession } from '../auth/session'
 import { roleLabels } from '../lib/user'
 import type { User } from '../lib/user'
@@ -154,6 +155,7 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
           </svg>
           Deconectare
         </button>
+        <p className="sidebar-version">Versiune {version}</p>
       </div>
     </>
   )

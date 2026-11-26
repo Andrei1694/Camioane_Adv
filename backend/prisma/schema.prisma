@@ -147,6 +147,7 @@ model User {
   /// Cached sum of this user's credit ledger. Only applyCreditChange changes it.
   creditBalance             Int                 @default(0)
   avatar                    UserAvatar?
+  billing                   UserBilling?
   files                     UploadedFile[]
   creditPurchases           CreditPurchase[]    @relation("CreditPurchaseUser")
   settledCreditPurchases    CreditPurchase[]    @relation("CreditPurchaseSettler")
@@ -169,6 +170,18 @@ model UserAvatar {
   updatedAt       DateTime @updatedAt @db.Timestamptz(3)
 
   @@unique([storageProvider, storageKey])
+}
+
+/// A user's invoicing details. No row means none have been saved yet.
+model UserBilling {
+  userId      String   @id @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName String   @db.VarChar(200)
+  /// Romanian CUI: digits, with an RO prefix for VAT payers.
+  cui         String   @db.VarChar(12)
+  address     String   @db.VarChar(500)
+  email       String   @db.VarChar(254)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 }
 
 model UploadedFile {

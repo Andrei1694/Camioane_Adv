@@ -17,25 +17,42 @@ following the package-specific rules as well.
 
 ## Project context
 
-- This is the public presentation site for advertisers: one Romanian landing page
+- This is the public presentation site for advertisers: a Romanian landing page
   with anchored sections (`#booking`, `#how-it-works`, `#pricing`,
   `#confirmation`, `#content`, `#contact`). It is set up like `../admin/`
   (React, TypeScript, Vite, Oxlint, plain CSS) but is a separate package with its
-  own dependencies; never import from `../admin/`.
+  own dependencies; never import from `../admin/`. `/login` and `/account` add
+  sign-in and read-only account details for all active account roles.
+- `@tanstack/react-query`, `@tanstack/react-router`, and `zustand` are installed
+  with the same declared version ranges as `admin`. `src/router.tsx` configures
+  code-based routes and providers; `src/lib/queryClient.ts` owns server data;
+  `src/auth/session.ts` owns the session. The landing page keeps its native
+  section anchors and works without a backend or router context in tests.
 - `src/lib/api.ts` is the typed fetch client for the backend: base URL from
   `VITE_API_BASE_URL` (development falls back to `http://localhost:3000`), a 15 s
-  timeout, `{ error }` messages and a runtime decoder for every response. No
-  section calls it yet. Add calls only for endpoints listed in
+  timeout, `{ error }` messages and a runtime decoder for every response. Login
+  uses `POST /users/login`; the protected account page uses `GET /users/me`.
+  The landing sections make no API requests. Add calls only for endpoints listed in
   `../backend/README.md`; never invent one. The backend allows this site's origin
   through `WEBSITE_ORIGIN`.
-- The call to action is a `mailto:` link built in `src/lib/contact.ts` from
+- The landing call to action is a `mailto:` link built in `src/lib/contact.ts` from
   `VITE_CONTACT_EMAIL`; `vite.config.ts` fails a build without it. Do not add
-  forms or lead capture until the backend has an endpoint for them.
+  lead capture until the backend has an endpoint for it. Accounts are created
+  by administrators; there is no registration, password reset, profile editing,
+  avatar management, credits, files, or campaign booking in this package.
+- Session storage uses `camioane.website.session.v1`, separate from admin. Persist
+  only the token and expiry. On every session change, abort pending requests,
+  clear Query data and remount route content by session revision. Revalidate
+  account details on entry, focus and reconnection; a protected 401 signs out.
+  Network/server failures allow retry without clearing the session. Never trust
+  a saved token or its decoded claims as proof of authentication.
 - Railway builds `website/Dockerfile`; follow [Deploying to Railway](README.md#deploying-to-railway)
   for dashboard settings. Declare build-time `VITE_*` variables as `ARG`s in its
   build stage. Keep `Caddyfile`'s cache rules in sync with asset changes: existing
   hashed assets are immutable, HTML uses `no-cache`, and missing files return
-  404. Do not add an SPA fallback.
+  404. Only `/login`, `/account` and their trailing-slash variants rewrite to
+  `index.html`. Do not add a catch-all SPA fallback. `/index.html` redirects in
+  the client to `/`, retaining its hash.
 - Copy comes from `../BUSINESS_PLAN.md`, confirmed rules only. Do not invent
   cities, fleet sizes, rates, credit prices, client names, testimonials or other
   figures. Use the Romanian terms from `DESIGN.md`: mașini, ore-mașină, credite,
@@ -77,9 +94,18 @@ passing when only the build and lint checks were run.
   type-only imports, relative imports only. Function components with hooks;
   `.tsx` for JSX, `.ts` otherwise. Keep `erasableSyntaxOnly` and the unused-code
   checks; do not weaken compiler checks.
-- `src/sections/` holds one component per page section; `src/components/` holds
-  pieces used by more than one section (`Section`, `BrandMark`); `src/lib/` holds
-  formatting, pricing and contact helpers and the API client.
+- `src/sections/` holds landing sections; `src/pages/<PageName>/` holds account
+  pages; `src/auth/` holds session state and Romanian authentication feedback.
+  `src/components/` holds shared pieces; `src/lib/` holds formatting, pricing,
+  contact, user types, the API client and the Query client.
+- Use TanStack Query for server data and caching when adding API-backed features;
+  query and mutation functions should call `src/lib/api.ts`. Keep server data
+  in the Query cache rather than duplicating it in Zustand.
+- Use Zustand for shared client state when needed. Keep component-local state
+  in React; do not introduce a global store solely because Zustand is installed.
+- Add page routes in `src/router.tsx`. Keep the landing `App` independently
+  renderable and preserve its native links. Account pages use Router links;
+  local form and clipboard state stay in React.
 - Tokens and primitives in `src/index.css` are copied from
   `../admin/src/index.css` and `App.css`. When a shared token changes in
   `../DESIGN.md`, change it in `src/index.css` and in the token table of

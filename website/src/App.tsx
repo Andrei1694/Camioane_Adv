@@ -1,5 +1,6 @@
 import './App.css'
-import BrandMark from './components/BrandMark'
+import Brand from './components/Brand'
+import SiteFooter from './components/SiteFooter'
 import Booking from './sections/Booking'
 import Confirmation from './sections/Confirmation'
 import Contact from './sections/Contact'
@@ -14,26 +15,20 @@ const navigation = [
   { href: '#pricing', label: 'Tarife' },
 ]
 
-// Read once when the page loads; the footer needs no live clock.
-const year = new Date().getFullYear()
-
-function Brand() {
-  return <><BrandMark />Camioane App</>
-}
-
 export default function App() {
   return (
     <>
       <a className="skip-link" href="#main">Sari la conținut</a>
       <header className="site-header">
         <div className="container header-inner">
-          <a className="brand" href="#top"><Brand /></a>
+          <a className="brand" href="#top" aria-label="Camioane App"><Brand /></a>
           <nav aria-label="Secțiuni">
             <ul className="site-nav">
               {navigation.map(({ href, label }) => (
                 <li key={href} className="nav-section"><a href={href}>{label}</a></li>
               ))}
               <li><a className="button" href="#contact">Contact</a></li>
+              <li><a className="button" href="/account">Contul meu</a></li>
             </ul>
           </nav>
         </div>
@@ -47,12 +42,7 @@ export default function App() {
         <Content />
         <Contact />
       </main>
-      <footer className="site-footer">
-        <div className="container footer-inner">
-          <p className="brand"><Brand /></p>
-          <p>© {year} Camioane App · Publicitate pe mașini cu ecrane LED</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </>
   )
 }

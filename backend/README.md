@@ -140,10 +140,13 @@ Public users are `{ id, email, role, avatar, displayName, phone, status, created
 | `GET /users` | Admin | `{ users }`, all accounts ordered by email |
 | `POST /users` | Admin | `201 { user }`; does not change the acting admin's session |
 | `PATCH /users/:id` | Admin | `{ user }` |
-| `DELETE /users/:id` | Admin | `204`, no response body; also deletes the user's profile picture |
+| `DELETE /users/:id` | Admin | `204`, no response body; also deletes the user's profile picture and billing details |
 | `PUT /users/:id/avatar` | Self or active admin | Multipart `file` (JPEG, PNG, or WebP); `{ user }` |
 | `GET /users/:id/avatar` | Self or active admin | The picture as `image/webp`; `404` when there is none |
 | `DELETE /users/:id/avatar` | Self or active admin | `204`, also when there is no picture |
+| `GET /users/:id/billing` | Self or active admin | `{ billing }`, with `null` when none have been saved |
+| `PUT /users/:id/billing` | Self or active admin | Full billing input; `{ billing }` |
+| `DELETE /users/:id/billing` | Self or active admin | `204`, also when no billing details exist |
 | `POST /files` | Signed in | Multipart `file`; `201 { file }` |
 | `GET /files` | Signed in | `{ files, total }`; own files, or all files for an active admin |
 | `GET /files/:id/download` | Owner or active admin | Binary attachment with the detected MIME type |
@@ -289,6 +292,52 @@ The response is `{ user }` with the new `avatar`. In every public user, `avatar`
 Access is checked before the upload is read: a malformed ID returns `400`, and a non-administrator naming another user gets `403`. A missing user returns `404`. Other upload errors match file uploads: `400` for malformed multipart, `413` over 10 MiB, and `415` for unsupported request or content types.
 
 Pictures use the provider selected for new uploads (`FILE_STORAGE_DRIVER`) under their own UUID keys, persist their provider and key, and never appear in `/files`. A replacement is saved in one serializable transaction, and the old object is deleted after it commits. Removing a picture deletes the object first, then the row, so a failed database delete can be retried. Deleting a user cascades to their picture's row, and the API deletes the object after the deletion commits. Those after-commit deletions are best effort: a failure is logged without details and leaves an orphaned object, never a broken picture. Concurrent changes to one user's picture are serialized; after three conflicting attempts the request returns `409`. Re-encoding happens in memory, so each upload in progress holds the original (up to 10 MiB) plus libvips' working memory. The image code lives in `src/lib/avatar-image.ts`.
+
+## Billing details
+
+Billing details are saved separately from the public user object. An active user
+can read and edit their own details; a currently valid administrator can manage
+any user's details. All three endpoints require a bearer token and recheck the
+session, account status, and self-or-admin access inside a serializable
+transaction. Responses use `Cache-Control: no-store` and
+`X-Content-Type-Options: nosniff`.
+
+- `GET /users/:id/billing` returns `{ billing: null }` before details are saved,
+  otherwise `{ billing: { companyName, cui, address, email, updatedAt } }`.
+- `PUT /users/:id/billing` creates or fully replaces the details and returns
+  `{ billing }` with the same five fields. `updatedAt` is a server-managed ISO
+  timestamp. Send JSON with all four input fields and no additional keys:
+
+  ```json
+  {
+    "companyName": "Example SRL",
+    "cui": "RO12345678",
+    "address": "Strada Exemplu 10, București",
+    "email": "facturi@example.com"
+  }
+  ```
+
+- `DELETE /users/:id/billing` returns `204` without a response body, including
+  when the user has no saved details. Deleting the user also deletes their billing
+  row through `ON DELETE CASCADE`.
+
+Every input field must be a string. Company names and addresses are trimmed,
+required, limited to 200 and 500 characters respectively, and cannot contain null
+characters. CUI values are trimmed, uppercased, and stripped of whitespace before
+matching `^(RO)?[1-9]\d{1,9}$`: 2–10 digits starting with a nonzero digit, with an
+optional `RO` prefix. For example, ` ro 12345678 ` becomes `RO12345678`. This is
+format validation only; no checksum or tax-registry lookup is performed. Billing
+emails reuse account email validation: trim, lowercase, at most 254 characters,
+and the existing simple email pattern. They need not match the account email or
+be unique. There is no partially saved billing row.
+
+Errors are `{ "error": "message" }`: `400` for malformed IDs/JSON, missing or
+invalid fields, or unknown keys; `401` for missing, stale, invalid, or disabled
+sessions; `403` for another user's details without a currently valid ADMIN role;
+`404` for a missing user; `409` after three transaction conflicts, with
+`"Billing details changed during this request. Try again."`; `413` for JSON bodies
+over 16 KiB; and `415` for unsupported encoding. Billing changes do not increment
+`sessionVersion` or sign anyone out. Public user responses remain unchanged.
 
 ## Credits
 
@@ -502,6 +551,12 @@ The local Compose defaults are database/user `camioane`, password `camioane_dev_
 
 `UserAvatar` stores at most one profile picture per user: the user ID as primary key and foreign key (`ON DELETE CASCADE`), a unique provider/key pair, the MIME type, the byte count, and the time of the last upload. The user-avatars migration adds this table without changing existing data.
 
+`UserBilling` stores at most one set of invoicing details per user: the user ID as
+primary key and foreign key (`ON DELETE CASCADE`), required company name, CUI,
+address and email, and a server-managed update timestamp. No row means no details
+have been saved. The `add_user_billing` migration adds only this table and its
+foreign key, without changing `User` columns or existing data.
+
 `CreditPurchase` stores the owner (`ON DELETE SET NULL`), credits, unit price and total in minor units, currency, status (`PENDING`, `PAID`, `FAILED`, `CANCELED`), provider and provider payment ID (unique together), the settling admin, and timestamps. `CreditTransaction` is the append-only ledger: owner (`ON DELETE SET NULL`), signed amount, balance after the movement, type, an optional unique purchase link (one ledger row per purchase), the creating admin, a note, and a timestamp. `User.creditBalance` defaults to zero. The credits migration adds database CHECK constraints that Prisma schema syntax can't express: non-negative balances, positive purchase credits and prices, `amountMinor = credits × unitPriceMinor`, uppercase three-letter currencies, non-zero ledger amounts, and a purchase link on exactly the `PURCHASE` rows. Keep them in future migrations.
 
 `Role` has a UUID primary key, unique `name` constrained by the Prisma/PostgreSQL `RoleName` enum (`ADMIN`, `OPERATOR`, `DRIVER`, `USER`), `startDate` defaulting to creation time, nullable `endDate` for no expiry, and `activ` defaulting to `true`. Dates use PostgreSQL `TIMESTAMPTZ(3)` to represent instants with millisecond precision. The migration enforces `endDate > startDate` when an end date exists through the `Role_date_range_check` database constraint, which is not represented by Prisma schema syntax. Adding another role name requires a schema migration and corresponding API/frontend support.
@@ -525,7 +580,7 @@ npm run test:coverage
 
 Tests use Node's runner and the migrated development PostgreSQL database, with the built-in roles present and the shared ADMIN role currently active. FFmpeg must be installed: the media and upload tests run the real `ffprobe` (and `ffmpeg -version`). Test files run one at a time. Each one seeds uniquely named accounts and removes only the accounts and rows it created; uploads go to temporary directories. Tests do not modify shared roles or existing accounts. Run only against a development database.
 
-`npm run test:coverage` reports coverage of `src/` (the generated Prisma client excluded) and fails below 100% line coverage. Branch and function coverage are reported but not enforced. One test needs POSIX signals and is skipped on Windows, so the gate passes on Linux and macOS.
+`npm run test:coverage` reports coverage of `src/` (the generated Prisma client excluded) and fails below 100% line coverage. Branch and function coverage are reported but not enforced. One test needs POSIX signals and is skipped on Windows. Billing endpoints were verified with a disposable session script; no billing tests were added to the suite, so the new code leaves this coverage gate below 100%.
 
 The suite covers:
 

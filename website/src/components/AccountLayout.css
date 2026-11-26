@@ -1,0 +1,131 @@
+.account-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+.account-main {
+  flex: 1;
+  width: min(640px, calc(100% - 64px));
+  margin-inline: auto;
+  padding-block: 80px;
+}
+
+.account-main-compact {
+  max-width: 448px;
+}
+
+.account-main h1 {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.account-lead {
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.account-form {
+  display: grid;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.account-field {
+  display: grid;
+  gap: 8px;
+}
+
+.account-field label {
+  font-weight: 500;
+}
+
+.account-field input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+  scroll-margin-block: 88px 16px;
+}
+
+.account-field input[aria-invalid='true'] {
+  border-color: var(--text);
+  border-width: 2px;
+  padding: 9px 11px;
+}
+
+.account-field-error {
+  font-size: 14px;
+}
+
+.account-notice {
+  margin-top: 24px;
+  padding: 16px;
+  border-left: 3px solid var(--primary);
+  background: var(--frame);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.account-form .account-notice {
+  margin-top: 0;
+}
+
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.account-details {
+  margin-top: 32px;
+}
+
+.account-details > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 24px;
+  padding-block: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.account-details dt {
+  color: var(--muted);
+}
+
+.account-details dd {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.account-layout :disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 767px) {
+  .account-main {
+    width: calc(100% - 32px);
+    padding-block: 48px;
+  }
+
+  .account-main h1 {
+    font-size: 28px;
+  }
+
+  .account-details > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}

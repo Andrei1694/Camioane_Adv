@@ -121,7 +121,7 @@ shutdown and script tests run the entry points in child processes, with the
   use appropriate HTTP status codes, except for streamed file downloads. Endpoints are `GET /` (API name),
   `GET /health` (`{ "status": "ok" }`), `POST /users/login`, protected
   `GET /users/me`, admin-only GET/POST `/users` and PATCH/DELETE `/users/:id`,
-  GET/PUT/DELETE `/users/:id/avatar` for the user or an active admin,
+  GET/PUT/DELETE `/users/:id/avatar` and `/users/:id/billing` for the user or an active admin,
   the `/files`, `/credits`, and admin-only `/campaigns` and `/cars` routes listed in `README.md`.
   Public registration is removed. The health route does not query the database.
 - CRUD services recheck the actor and administrator invariants in serializable
@@ -187,6 +187,21 @@ shutdown and script tests run the entry points in child processes, with the
   the object first, then the row matched by key.
 - `deleteUser` returns the avatar location so the controller can discard the
   object; keep that cleanup when changing account deletion.
+
+### Billing details
+
+- GET/PUT/DELETE `/users/:id/billing` use `authenticate` and `requireSelfOrAdmin`.
+  Billing and avatar services share `requireSelfOrAdministrator` from
+  `src/lib/access.ts` to recheck the session and current ADMIN validity inside
+  serializable transactions, then verify the target user exists.
+- `UserBilling` has one complete row per user (`ON DELETE CASCADE`), or no row.
+  GET returns `{ billing }` with null when absent; PUT upserts all four fields;
+  DELETE returns 204 even when no details exist. Keep billing out of public user
+  objects and never increment session versions for billing changes.
+- Validation lives in `src/lib/billing-validation.ts`: require company name, CUI,
+  address and email, reject unknown fields, trim company/address and reject null
+  characters, normalize CUI to uppercase without whitespace and check format only.
+  Reuse the account email schema; JSON bodies use the existing 16 KiB limit.
 
 ### Credits
 

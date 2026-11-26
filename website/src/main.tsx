@@ -4,10 +4,10 @@ import '@fontsource/ibm-plex-sans/400.css'
 import '@fontsource/ibm-plex-sans/500.css'
 import '@fontsource/ibm-plex-sans/600.css'
 import './index.css'
-import App from './App.tsx'
+import WebsiteRouter from './router'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <WebsiteRouter />
   </StrictMode>,
 )

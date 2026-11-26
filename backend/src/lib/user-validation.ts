@@ -3,7 +3,7 @@ import { RoleName, UserStatus } from '../generated/prisma/enums.ts';
 import { allowedKeysSchema, objectSchema, parse, uuidSchema } from './validation.ts';
 import type { CreateUserData, UpdateUserData, UserCredentials } from '../types/user.ts';
 
-const emailSchema = z.string({ error: 'Email must be a string' }).trim().toLowerCase()
+export const emailSchema = z.string({ error: 'Email must be a string' }).trim().toLowerCase()
   .refine((email) => email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), { error: 'A valid email address is required' });
 const passwordSchema = z.string({ error: 'Password must be a string' }).refine((password) => {
   const length = Array.from(password).length;

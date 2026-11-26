@@ -20,6 +20,13 @@
 		file_server
 	}
 
+	@accountPages path /login /login/ /account /account/
+	handle @accountPages {
+		header Cache-Control no-cache
+		rewrite * /index.html
+		file_server
+	}
+
 	handle {
 		header Cache-Control no-cache
 		file_server

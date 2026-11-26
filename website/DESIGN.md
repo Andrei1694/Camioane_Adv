@@ -2,7 +2,7 @@
 
 This file describes the visual system of the public website (`website/`) as it is built. The site shares the admin app's brand, tokens and type. The shared tokens are defined in [`../DESIGN.md`](../DESIGN.md) and copied into `src/index.css`. Everything else here (layout, type sizes, components and patterns) belongs to the website alone. When the code changes a size or a pattern listed here, update this file in the same commit.
 
-The site is one Romanian landing page for advertisers. Its layout follows the Camioane ADS Figma prototype (file `t2oAkHf41txQ1STA5TLoDc`, node `1:65`), adapted to the current content and credits-per-car-hour model. The wide split hero, compact booking summary, horizontal process and closing contact band preserve the admin app's brand. The prototype's packages, market statistics, original copy and empty media placeholder are not site content; the hero uses the existing computed booking graphic. The Romanian copy translates the existing confirmed business rules.
+The site contains a Romanian landing page for advertisers plus sign-in and read-only account pages. The landing layout follows the Camioane ADS Figma prototype (file `t2oAkHf41txQ1STA5TLoDc`, node `1:65`), adapted to the current content and credits-per-car-hour model. The wide split hero, compact booking summary, horizontal process and closing contact band preserve the admin app's brand. The prototype's packages, market statistics, original copy and empty media placeholder are not site content; the hero uses the existing computed booking graphic. The Romanian copy translates the existing confirmed business rules.
 
 Design direction: `DESIGN_VARIANCE: 5`, `MOTION_INTENSITY: 3`, `VISUAL_DENSITY: 3`. The Romanian translation preserves the layout, light theme, brand assets and existing functionality, with only text-fit adjustments where needed. No extra imagery, dependency or design system is needed.
 
@@ -22,7 +22,7 @@ Design direction: `DESIGN_VARIANCE: 5`, `MOTION_INTENSITY: 3`, `VISUAL_DENSITY: 
 
 ## Principles
 
-- **One action.** The page's job is to start a conversation, so it has one primary button, "Planifică o campanie". Every other call to action is secondary.
+- **One primary action per view.** The landing page starts a conversation through "Planifică o campanie". Login uses "Autentificare"; account recovery uses "Reîncearcă". A verified account uses a secondary sign-out button. Navigation remains secondary.
 - **Colour goes on data and the one primary action.** The only colour on the page is the example booking's `--data` bars and the navy primary button. Headers, sections and the footer stay neutral.
 - **Surfaces are flat.** The hero, process and contact band use `--frame`; the other sections use `--surface`. Thin rules organize assurances, creative explanations and table rows. Nothing has a shadow.
 - **Use consistent Romanian terms:** mașini (cars), ore-mașină (car-hours), credite (credits), intervale (slots), trasee (routes), materiale publicitare (creatives).
@@ -162,8 +162,8 @@ These are copies of the shared tokens. Change a value in `../DESIGN.md` and `../
 ### Header and navigation (`App.tsx`)
 
 - The brand (the mark and "Camioane App") on the left links to `#top` on the hero. Keep that anchor on the non-sticky hero, not the sticky header, so the link always returns to the start of the page.
-- On the right are the section links "Ce rezervi", "Cum funcționează" and "Tarife": grey 16px/500, 44px tall, 12px of side padding and a 6px radius. They get the `--hover` fill and ink on hover. Then comes Contact, a secondary button 8px further along.
-- Under 768px only Contact stays. The sticky header keeps it on screen.
+- On the right are the section links "Ce rezervi", "Cum funcționează" and "Tarife": grey 16px/500, 44px tall, 12px of side padding and a 6px radius. They get the `--hover` fill and ink on hover. Then come Contact and "Contul meu", both secondary buttons.
+- Below 1024px the section links hide; Contact and "Contul meu" remain. Below 480px the header shows only the brand mark, retaining its accessible name, and button padding narrows to 12px. The header stays 72px tall, or 64px below 768px.
 - Each section's `id` must match a link's `href`.
 
 ### Hero (`sections/Hero.tsx`)
@@ -216,10 +216,34 @@ These are copies of the shared tokens. Change a value in `../DESIGN.md` and `../
   - "Copiază adresa": a secondary `<button>` for visitors without a mail app. It is hidden where the browser has no clipboard API.
 - A grey 14px `role="status"` line, 12px below, reports "Adresa a fost copiată." or "Adresa nu a putut fi copiată. Selecteaz-o și copiaz-o manual." It takes no space while empty.
 
-### Footer (`App.tsx`)
+### Footer (`components/SiteFooter.tsx`)
 
 - 24px of padding on the page surface, 14px grey: the brand (16px) on the left, and "© {year} Camioane App · Publicitate pe mașini cu ecrane LED" on the right. The two wrap with gaps of 8px down and 24px across.
 - The year is read once when the page loads.
+
+### Sign-in and account (`components/AccountLayout.css`)
+
+- `/login` uses a single-column form, at most 448px wide. `/account` uses a
+  640px-wide content column. Both use 80px vertical padding, 48px below 768px,
+  and a full-height layout that places the shared footer after the main content.
+- Account headings are 32px/600 (28px below 768px), with 1.2 line height and
+  −0.01em tracking. The heading receives focus on page entry; validation instead
+  focuses the first invalid input. Body text stays 16px.
+- Forms use 24px between fields and 8px between labels and controls. Inputs have
+  a 44px minimum height, 12px horizontal padding, a 6px radius and the existing
+  control-border/focus tokens. Invalid controls use a 2px ink border plus a
+  linked, announced explanation; no new color token is needed.
+- Pending requests disable the form and change the submit label. Notices use
+  `--frame`, a 3px navy left rule and 16px padding. Authentication errors and
+  unavailable-service feedback are Romanian; no configuration names appear in
+  visitor-facing text.
+- Account details use a definition list with 120px labels, a 24px column gap,
+  20px row padding and thin border rules. Below 768px, labels sit above values
+  with a 4px gap. Long email addresses wrap; missing name/phone values show
+  “Necompletat”. All active roles use this same read-only view.
+- Contact and account links remain available in the header. The account pages
+  share `Brand` and `SiteFooter` with the landing page; native landing anchors
+  remain unchanged. There are no avatar controls or profile-editing fields.
 
 ## Formatting data
 
@@ -240,7 +264,7 @@ Use the helpers in `src/lib/format.ts`, with `ro-RO` number and plural rules; do
 - The copy comes from `../BUSINESS_PLAN.md`, confirmed rules only. Things the plan lists as still unknown (cities, fleet size, real rates, the credit price, cancellation terms) don't appear.
 - There are no invented clients, testimonials, logos, vanity figures, stock photos or placeholder people.
 - Lists of terms, steps and points sit in arrays at the top of their section's file. Titles and leads are written inline.
-- The only call to action is the `mailto:` link built from `VITE_CONTACT_EMAIL`. Don't add forms or lead capture until the backend has an endpoint for them.
+- The landing page's primary call to action remains the `mailto:` link built from `VITE_CONTACT_EMAIL`. The separate login form uses the existing authentication endpoint; do not add registration or lead capture without backend support.
 
 ## States and accessibility
 
@@ -256,8 +280,8 @@ Use the helpers in `src/lib/format.ts`, with `ro-RO` number and plural rules; do
 
 ## Don'ts
 
-- A second primary button.
-- Forms, lead capture, chat widgets or anything else that calls an API.
+- More than one primary button in a view.
+- Lead capture, registration, chat widgets or unsupported API features. Authentication and read-only account verification are the only account features.
 - Typing a figure by hand, or showing the pricing example without its "nu reprezintă o listă de prețuri" label.
 - Invented cities, fleet sizes, prices, clients, testimonials, logos or vanity figures. Stock photos or placeholder people.
 - Gradients, glows, glass or backdrop blur. Shadows, including on the sticky header.
@@ -273,7 +297,7 @@ Use the helpers in `src/lib/format.ts`, with `ro-RO` number and plural rules; do
 
 ## Checking a change
 
-1. From `website/`, run `npm run lint` and `VITE_CONTACT_EMAIL=you@example.com npm run build`. There is no test runner.
+1. From `website/`, run `npm test`, `npm run lint` and `VITE_CONTACT_EMAIL=you@example.com npm run build`. Existing tests cover the landing page and public API client; do not add or modify tests unless requested.
 2. Look at the page in a browser at 1440, 1024, 768 and 390px wide. Compare the desktop composition to the Figma reference while preserving this site's content.
    - Check that the page never scrolls sideways.
    - Check that there is exactly one `.button-primary`, and that the calls to action are `mailto:` links.
@@ -282,4 +306,7 @@ Use the helpers in `src/lib/format.ts`, with `ro-RO` number and plural rules; do
    - Tab through the page and check that the focus ring shows on every control, with nothing hidden under the header.
    - Check the clipboard success/failure feedback, table header wrapping and reduced-motion styles.
    - Run Lighthouse against the production build for accessibility and performance.
+   - Check login/account at 1440, 768 and 390px: form keyboard access, validation,
+     pending/error feedback, account fields, sign-out and no horizontal overflow.
+     The landing page has one primary button; a verified account needs none.
 3. When a token, size or pattern changes, update this file in the same commit. When a shared token changes, update `../DESIGN.md` and `../admin/src/index.css` too.

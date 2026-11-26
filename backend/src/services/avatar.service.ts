@@ -1,7 +1,7 @@
 import type { Prisma } from '../generated/prisma/client.ts';
+import { requireSelfOrAdministrator } from '../lib/access.ts';
 import { AppError } from '../lib/app-error.ts';
 import { prisma } from '../lib/prisma.ts';
-import { isRoleValid } from '../lib/role.ts';
 import { serializable } from '../lib/transaction.ts';
 import { StorageNotFoundError } from '../storage/file-storage.ts';
 import type { FileStorageRegistry } from '../storage/file-storage.ts';
@@ -15,14 +15,7 @@ const locationSelect = { storageProvider: true, storageKey: true } as const;
 // Users manage their own picture; a currently valid ADMIN manages anyone's.
 // Rechecked inside each transaction, after the route-level check.
 async function authorize(tx: Prisma.TransactionClient, actor: SessionIdentity, userId: string) {
-  const current = await tx.user.findUnique({
-    where: { id: actor.id },
-    select: { sessionVersion: true, status: true, role: true },
-  });
-  if (!current || current.status !== 'ACTIVE' || current.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
-  if (userId !== actor.id && (current.role.name !== 'ADMIN' || !isRoleValid(current.role))) {
-    throw new AppError(403, 'Administrator access is required');
-  }
+  await requireSelfOrAdministrator(tx, actor, userId);
   const target = await tx.user.findUnique({ where: { id: userId }, select: { avatar: { select: locationSelect } } });
   if (!target) throw new AppError(404, 'User not found');
   return target.avatar;

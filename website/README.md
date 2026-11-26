@@ -2,7 +2,32 @@
 
 The public presentation site for advertisers: one Romanian landing page that explains what a campaign books (routes, slots, cars, dates), how a campaign runs, pricing in credits per car-hour with a worked example, the all-or-nothing confirmation, and how creatives reach the screens. Its call to action is a `mailto:` link.
 
-It is a static React, TypeScript and Vite app, set up like `../admin/`, with plain CSS and IBM Plex Sans self-hosted through `@fontsource`. It has no router, state or data libraries. `src/lib/api.ts` is a typed client for the backend API, but no section calls it yet, so the page works without a running API.
+It is a React, TypeScript and Vite app served as static files, with plain CSS and IBM Plex Sans self-hosted through `@fontsource`. TanStack Router handles `/`, `/login`, and `/account`; TanStack Query handles login and verified account data; Zustand holds the session. The public landing page makes no API requests and works without a running backend.
+
+## Sign-in and account
+
+“Contul meu” opens the account page, redirecting signed-out visitors to login.
+Use an existing administrator-created account. All active roles (`USER`, `ADMIN`,
+`OPERATOR`, `DRIVER`) can view their own name, email, phone and role and sign out.
+There is no registration, password reset, profile editing, avatar management,
+credits, files or campaign booking in the website.
+
+Login calls `POST /users/login`; account verification calls `GET /users/me` with
+the bearer token. The client validates both responses. No details are displayed
+until the server verifies the session. Verification runs again on account entry,
+focus and reconnection. Network failures offer retry; expired or revoked sessions
+return to login. Login requests are never retried automatically.
+
+Only the token and expiration persist in `localStorage` under
+`camioane.website.session.v1`, separate from admin. User details stay in Query's
+memory cache; passwords stay transient. Sign-in, logout and cross-tab changes
+abort pending requests, discard cached account data, and prevent old responses
+from restoring an earlier session. When storage is unavailable, the session works
+in memory and a notice explains that reloading may require another sign-in.
+
+The pages use Romanian feedback and the existing visual system. Missing account
+fields display “Necompletat”. Contact links and the landing page remain available
+if authentication is unavailable.
 
 ## Development
 
@@ -20,7 +45,7 @@ Open `http://localhost:5174`. Development and preview use port 5174 with strict 
 | Variable | Required | Use |
 | --- | --- | --- |
 | `VITE_CONTACT_EMAIL` | For builds | The address behind "Planifică o campanie" and "Scrie-ne", and shown as text in the contact section. `vite build` fails when it's missing or not an address. Development falls back to `hello@example.com`. |
-| `VITE_API_BASE_URL` | For API calls | The backend's base URL, or a same-origin proxy path, for `src/lib/api.ts`. Development falls back to `http://localhost:3000`. Production has no fallback: a build without it still succeeds, but every API call fails with "The API address is not configured." |
+| `VITE_API_BASE_URL` | For sign-in and account | The backend's base URL, or a configured same-origin proxy path, for `src/lib/api.ts`. Development falls back to `http://localhost:3000`. Production has no fallback: the build and landing page work without it, but account routes display an authentication-unavailable message. |
 
 Copy `.env.example` to `.env.local` to set them, and restart Vite after changes. The values ship to the browser, like every `VITE_*` variable.
 
@@ -67,7 +92,7 @@ Set these service variables in the dashboard before building:
 | Variable | Value and reason |
 | --- | --- |
 | `VITE_CONTACT_EMAIL` | Required: the address visitors should contact, for example `contact@example.com`. The existing Vite configuration rejects missing or invalid addresses |
-| `VITE_API_BASE_URL` (optional) | `https://${{<api service>.RAILWAY_PUBLIC_DOMAIN}}`, replacing `<api service>` with the API service name (for example, `backend`). No section calls the API yet, so it can remain unset. When set, the Dockerfile requires it to start with `https://`; there is no same-origin proxy |
+| `VITE_API_BASE_URL` (required for sign-in) | `https://${{<api service>.RAILWAY_PUBLIC_DOMAIN}}`, replacing `<api service>` with the API service name (for example, `backend`). It may remain unset for a landing-only deployment. When set, the Dockerfile requires it to start with `https://`; there is no same-origin proxy |
 
 All `VITE_*` values are public and baked into the JavaScript at build time; never
 put secrets in them. Applying variable changes in Railway triggers a new build
@@ -96,10 +121,12 @@ Deploy in this order:
 The multi-stage image builds with Node.js 24 and all locked dependencies,
 including the development dependencies needed to type-check `tests/` through
 `tsconfig.test.json`. Its runtime uses Caddy as a non-root user to serve only
-`dist/`, with gzip and Zstandard compression. There is no SPA fallback: `/`,
-`/index.html` and `/favicon.svg` serve files; unknown paths such as `/pricing`
-and missing assets return a plain 404. Navigation uses section anchors such as
-`/#pricing`. HTML and other non-hashed files use `Cache-Control: no-cache`;
+`dist/`, with gzip and Zstandard compression. `/login`, `/account`, and their
+trailing-slash variants explicitly serve `index.html` so direct loads and refreshes
+work. `/index.html` redirects in the browser to `/`, preserving its hash. There
+is no catch-all SPA fallback: unknown paths such as `/pricing` and missing assets
+return a plain 404. Landing navigation keeps section anchors such as `/#pricing`.
+HTML and other non-hashed files use `Cache-Control: no-cache`;
 existing hashed `/assets/*` files are immutable for one year.
 
 For a local container check, run from `website/`:
@@ -122,6 +149,13 @@ Tests use reserved example addresses, mocked fetch responses, and a simulated cl
 `npm run test:coverage` prints coverage and creates an HTML report at `coverage/index.html`. Coverage includes application TypeScript/TSX, including untested modules, but excludes type declarations and `src/main.tsx`. It is informational: no percentage threshold is enforced. Reports are ignored by Git.
 
 These are logic and component tests, not browser layout tests. Check the page in a browser at 1440, 768, and 390px when changing code, dependencies, or build configuration.
+
+The existing suite covers the landing page and public health client; it does not
+provide automated coverage for the new authentication flow. Check login errors,
+successful login with an existing account, account loading/retry, reload,
+expiration, logout, cross-tab changes and Back navigation in a browser. Also
+verify direct account-route loads and missing-asset 404s with the production
+Caddy configuration. Do not add or modify tests unless explicitly requested.
 
 ## Content
 

@@ -2,6 +2,7 @@ import { isIP } from 'node:net';
 import { json, Router } from 'express';
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { createAvatarController } from '../controllers/avatar.controller.ts';
+import * as billing from '../controllers/billing.controller.ts';
 import { create, createRemoveUser, list, login, me, update } from '../controllers/user.controller.ts';
 import { avatarMaxUploadBytes, renderAvatar } from '../lib/avatar-image.ts';
 import { imageUploadTypes } from '../lib/file-validation.ts';
@@ -48,6 +49,9 @@ export function createUserRouter(storage: FileStorageRegistry, clientIpHeader: s
   router.get('/:id/avatar', authenticate, requireSelfOrAdmin, avatar.download);
   router.put('/:id/avatar', authenticate, requireSelfOrAdmin, parseAvatar, avatar.upload);
   router.delete('/:id/avatar', authenticate, requireSelfOrAdmin, avatar.remove);
+  router.get('/:id/billing', authenticate, requireSelfOrAdmin, billing.show);
+  router.put('/:id/billing', authenticate, requireSelfOrAdmin, parseJson, billing.save);
+  router.delete('/:id/billing', authenticate, requireSelfOrAdmin, billing.remove);
 
   return router;
 }

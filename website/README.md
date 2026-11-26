@@ -36,7 +36,82 @@ npm run test:coverage
 npm run preview
 ```
 
-`npm run build` runs `tsc -b` (including the tests and their configuration), then `vite build` into `dist/`. The output is static files with a single `index.html`, so any static host works; serve it over HTTPS.
+`npm run build` runs `tsc -b` (including the tests and their configuration), then `vite build` into `dist/`. The output is static files with a single `index.html`; see [Deploying to Railway](#deploying-to-railway) for production hosting over HTTPS.
+
+## Deploying to Railway
+
+Deploy the website as a third service from the same repository, alongside the
+[API service](../backend/README.md#deploying-to-railway) and
+[admin service](../admin/README.md#deploying-to-railway). Configure it in Railway's
+dashboard using the automatically detected `Dockerfile`; no `railway.toml` is
+needed. [Config as Code is deprecated](https://docs.railway.com/config-as-code)
+and unavailable to new services.
+
+Add a GitHub service from `Andrei1694/Camioane_Adv` and configure:
+
+| Setting | Value | Reason |
+| --- | --- | --- |
+| Root Directory | `website` | Railway automatically builds the website `Dockerfile` in this directory |
+| Watch Paths | `/website/**` | Only website changes trigger a website deployment |
+| Healthcheck Path | `/` | Wait for HTTP 200 on the service's `PORT` before accepting the deployment |
+| Restart Policy | On Failure | Restart Caddy if its process exits with an error |
+| Pre-deploy Command | None | The website has no migrations or runtime setup |
+| Volume | None | All served files are built into the image; the service is stateless |
+
+Leave Build and Start Command overrides unset; the Dockerfile supplies both.
+Multiple replicas are supported. The image defaults to `PORT=8080`; use **8080**
+for the public domain's target port, or match `PORT` if you override it.
+
+Set these service variables in the dashboard before building:
+
+| Variable | Value and reason |
+| --- | --- |
+| `VITE_CONTACT_EMAIL` | Required: the address visitors should contact, for example `contact@example.com`. The existing Vite configuration rejects missing or invalid addresses |
+| `VITE_API_BASE_URL` (optional) | `https://${{<api service>.RAILWAY_PUBLIC_DOMAIN}}`, replacing `<api service>` with the API service name (for example, `backend`). No section calls the API yet, so it can remain unset. When set, the Dockerfile requires it to start with `https://`; there is no same-origin proxy |
+
+All `VITE_*` values are public and baked into the JavaScript at build time; never
+put secrets in them. Applying variable changes in Railway triggers a new build
+and deployment; restarting an existing image cannot change its contact address
+or API URL.
+[Railway requires build variables to be declared as `ARG`s](https://docs.railway.com/builds/dockerfiles#using-variables-at-build-time),
+so keep new `VITE_*` variables declared in the Dockerfile's build stage.
+Local `.env` files are excluded from the image.
+
+Deploy in this order:
+
+1. Add the website service, apply the settings and variables above, and deploy it.
+   If setting `VITE_API_BASE_URL`, first generate the API service's public domain
+   as described in the [API guide](../backend/README.md#deploying-to-railway).
+2. Generate the website service's Railway domain with target port **8080**.
+   Railway's edge provides HTTPS; Caddy serves HTTP inside the container.
+3. Set the API service's `WEBSITE_ORIGIN` to
+   `https://${{<website service>.RAILWAY_PUBLIC_DOMAIN}}`, replacing
+   `<website service>` with the website service name (for example, `website`).
+   Apply the change to redeploy the API so CORS allows the website origin. For a
+   custom website domain, use that exact HTTPS origin instead, without a trailing
+   slash.
+4. Open the website HTTPS URL and confirm the contact links use the configured
+   email address.
+
+The multi-stage image builds with Node.js 24 and all locked dependencies,
+including the development dependencies needed to type-check `tests/` through
+`tsconfig.test.json`. Its runtime uses Caddy as a non-root user to serve only
+`dist/`, with gzip and Zstandard compression. There is no SPA fallback: `/`,
+`/index.html` and `/favicon.svg` serve files; unknown paths such as `/pricing`
+and missing assets return a plain 404. Navigation uses section anchors such as
+`/#pricing`. HTML and other non-hashed files use `Cache-Control: no-cache`;
+existing hashed `/assets/*` files are immutable for one year.
+
+For a local container check, run from `website/`:
+
+```sh
+docker build --build-arg VITE_CONTACT_EMAIL=contact@example.com -t camioane-website .
+docker run --rm -p 8080:8080 camioane-website
+```
+
+Open `http://localhost:8080` and confirm the call to action uses
+`mailto:contact@example.com`. This check needs no API. Stop the container with
+Ctrl+C when finished.
 
 ## Tests
 

@@ -31,6 +31,11 @@ following the package-specific rules as well.
 - The call to action is a `mailto:` link built in `src/lib/contact.ts` from
   `VITE_CONTACT_EMAIL`; `vite.config.ts` fails a build without it. Do not add
   forms or lead capture until the backend has an endpoint for them.
+- Railway builds `website/Dockerfile`; follow [Deploying to Railway](README.md#deploying-to-railway)
+  for dashboard settings. Declare build-time `VITE_*` variables as `ARG`s in its
+  build stage. Keep `Caddyfile`'s cache rules in sync with asset changes: existing
+  hashed assets are immutable, HTML uses `no-cache`, and missing files return
+  404. Do not add an SPA fallback.
 - Copy comes from `../BUSINESS_PLAN.md`, confirmed rules only. Do not invent
   cities, fleet sizes, rates, credit prices, client names, testimonials or other
   figures. Use the Romanian terms from `DESIGN.md`: mașini, ore-mașină, credite,

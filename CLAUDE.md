@@ -48,6 +48,7 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - `npm run dev`: start Vite on port 5174 with strict port selection, beside the admin app on 5173.
 - `npm run build` and `npm run lint` (Oxlint): run both after any code change. The build needs `VITE_CONTACT_EMAIL`; `vite.config.ts` fails without it. Development falls back to `hello@example.com`. When a browser is available, check the page at 1440, 768 and 390px.
 - `VITE_API_BASE_URL` falls back to `http://localhost:3000` only in dev, as in the admin app. Builds don't require it, but API calls fail without it.
+- Railway website deployment: follow [Deploying to Railway](website/README.md#deploying-to-railway) for the website Dockerfile and dashboard settings.
 
 ## Architecture
 

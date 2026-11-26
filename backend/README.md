@@ -55,7 +55,7 @@ Production must set its actual frontend and website origins, configure HTTPS, an
 ## Deploying to Railway
 
 This deploys only the API. Deploy the [admin app as a second Railway service](../admin/README.md#deploying-to-railway);
-the website is hosted separately.
+deploy the [website as a third Railway service](../website/README.md#deploying-to-railway).
 Configure the service in Railway's dashboard. [Config as Code is deprecated](https://docs.railway.com/config-as-code)
 and unavailable to new services; its successor is TypeScript infrastructure as
 code applied through the CLI. This setup uses dashboard settings and the
@@ -93,7 +93,7 @@ Set these service variables in the dashboard:
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` references the private connection URL of the Postgres service; adjust `Postgres` if the service has another name |
 | `JWT_SECRET` | Generate a random secret with the command in [Local setup](#local-setup); it signs API sessions |
 | `FRONTEND_ORIGIN` | `https://${{admin.RAILWAY_PUBLIC_DOMAIN}}` references the admin service's HTTPS origin so CORS permits that app; adjust `admin` to its service name, or use the exact HTTPS origin for a custom domain. Set this after generating the admin domain; the localhost default stays until then |
-| `WEBSITE_ORIGIN` | Set the website's HTTPS origin once it has a URL, so CORS permits that site; the localhost default stays until then |
+| `WEBSITE_ORIGIN` | `https://${{website.RAILWAY_PUBLIC_DOMAIN}}` references the website service's HTTPS origin so CORS permits that site; adjust `website` to its service name, or use the exact HTTPS origin for a custom domain. Set this after generating the website domain; the localhost default stays until then |
 | `CLIENT_IP_HEADER` | `x-real-ip` keeps login limits per client behind Railway's edge, which overwrites this header |
 | `RAILWAY_RUN_UID` | `0` allows access to the root-owned volume mount; the image otherwise runs as the non-root `node` user |
 | `UPLOAD_MAX_FILE_SIZE_BYTES` (optional) | Override the default 100 MiB file limit if needed |
@@ -116,9 +116,10 @@ After the service is deployed:
    their uploaded files can both be recovered.
 4. Deploy the [admin service](../admin/README.md#deploying-to-railway) with its own
    Railway build variable `VITE_API_BASE_URL` referencing the API's public domain.
-   Build the website with `VITE_API_BASE_URL=https://<railway-domain>`, and the mobile release with
-   `EXPO_PUBLIC_API_BASE_URL=https://<railway-domain>`, so each client targets
-   the deployed API.
+   The [website service](../website/README.md#deploying-to-railway) has its own
+   optional `VITE_API_BASE_URL` build variable referencing the same public domain;
+   no section calls the API yet. Build the mobile release with
+   `EXPO_PUBLIC_API_BASE_URL=https://<railway-domain>` so it targets the deployed API.
 
 Use a single replica: [services with volumes cannot have replicas](https://docs.railway.com/volumes/reference),
 and the in-memory login limiter also requires a single API instance. Expect

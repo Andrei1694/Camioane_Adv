@@ -307,6 +307,48 @@ using `contain`. This is not demo data and still needs physical truck verificati
 Production applies committed migrations with `npx prisma migrate deploy`.
 No additional environment settings or dependencies are required.
 
+## Configuration variables
+
+`/config-variables` stores shared text configuration. Every operation requires a
+current session and active ADMIN role, rechecked inside a serializable transaction.
+These records provide storage and management only; they do not override environment
+variables or change existing runtime settings. There is no administrator UI yet.
+
+| Method | Path | Result |
+| --- | --- | --- |
+| GET | `/config-variables` | `{ configVariables }`, all rows ordered by name then UUID, ascending |
+| GET | `/config-variables/:id` | `{ configVariable }` |
+| POST | `/config-variables` | `{ configVariable }`, 201 |
+| PATCH | `/config-variables/:id` | `{ configVariable }`, 200 |
+| DELETE | `/config-variables/:id` | Permanent deletion, 204 |
+
+Create bodies require all three string fields `{ name, value, description }`.
+For example:
+
+```json
+{ "name": "SUPPORT_EMAIL", "value": "support@example.com", "description": "Contact address" }
+```
+
+Names are trimmed, case-sensitive, unique, and contain 1–200 characters.
+Descriptions are trimmed; values preserve whitespace exactly. Values and
+descriptions may be empty strings. All fields reject null characters. Numbers,
+booleans, arrays, objects, and JSON null are not accepted as field values.
+Unknown fields and all query parameters return 400. JSON bodies are limited to
+16 KiB; responses use `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
+There is no pagination or automatic conversion of stored text to other types.
+
+Each record contains `{ id, name, value, description, version, createdAt, updatedAt }`.
+Updates require the complete form plus the loaded positive integer `version`;
+they atomically match and increment it, starting from 1. Names can be changed
+without changing the UUID. Stale updates and duplicate names return 409, missing
+records return 404, malformed bodies or UUIDs return 400, missing or revoked
+sessions return 401, and insufficient administrator access returns 403. Oversized
+bodies return 413. Errors use `{ "error": "message" }`.
+
+Apply `add_config_variables` and regenerate Prisma Client before using this API.
+Production applies committed migrations with `npx prisma migrate deploy`.
+No seed data, new dependencies, or environment settings are added.
+
 ## Cars
 
 Cars are persistent inventory shared by all currently active administrators. The

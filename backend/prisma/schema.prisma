@@ -10,6 +10,17 @@ datasource db {
   provider = "postgresql"
 }
 
+/// Shared text configuration managed by active administrators.
+model ConfigVariable {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique @db.VarChar(200)
+  value       String
+  description String
+  version     Int      @default(1)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+}
+
 enum CarStatus {
   active
   maintenance

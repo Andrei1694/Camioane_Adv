@@ -243,6 +243,19 @@ shutdown and script tests run the entry points in child processes, with the
   configuration, not demo data. Presets are for the web administrator converter;
   mobile keeps its fixed layout. No environment settings are added.
 
+### Configuration variables
+
+- `/config-variables` provides shared admin-only list, detail, create, full-form
+  update and permanent delete operations. Recheck the session and active ADMIN
+  role in every serializable transaction; atomically match/increment update versions.
+- `ConfigVariable` stores required string fields `name`, `value`, and `description`.
+  Names are trimmed, case-sensitive, unique and 1–200 characters. Trim descriptions,
+  preserve value whitespace, allow empty values/descriptions, and reject null
+  characters in all fields. Duplicate names and stale updates return 409.
+- Lists return every row ordered by name then UUID, ascending. Reject all query
+  parameters and unsupported fields; JSON bodies are limited to 16 KiB. Responses
+  use `no-store`. No seed data or environment/runtime configuration integration.
+
 ### Campaign drafts
 
 - `/campaigns` provides shared admin-only list, detail, create and update operations.

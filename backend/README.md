@@ -54,7 +54,8 @@ Production must set its actual frontend and website origins, configure HTTPS, an
 
 ## Deploying to Railway
 
-This deploys only the API; the admin app and website are hosted separately.
+This deploys only the API. Deploy the [admin app as a second Railway service](../admin/README.md#deploying-to-railway);
+the website is hosted separately.
 Configure the service in Railway's dashboard. [Config as Code is deprecated](https://docs.railway.com/config-as-code)
 and unavailable to new services; its successor is TypeScript infrastructure as
 code applied through the CLI. This setup uses dashboard settings and the
@@ -91,7 +92,7 @@ Set these service variables in the dashboard:
 | --- | --- |
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` references the private connection URL of the Postgres service; adjust `Postgres` if the service has another name |
 | `JWT_SECRET` | Generate a random secret with the command in [Local setup](#local-setup); it signs API sessions |
-| `FRONTEND_ORIGIN` | Set the admin app's HTTPS origin once it has a URL, so CORS permits that app; the localhost default stays until then |
+| `FRONTEND_ORIGIN` | `https://${{admin.RAILWAY_PUBLIC_DOMAIN}}` references the admin service's HTTPS origin so CORS permits that app; adjust `admin` to its service name, or use the exact HTTPS origin for a custom domain. Set this after generating the admin domain; the localhost default stays until then |
 | `WEBSITE_ORIGIN` | Set the website's HTTPS origin once it has a URL, so CORS permits that site; the localhost default stays until then |
 | `CLIENT_IP_HEADER` | `x-real-ip` keeps login limits per client behind Railway's edge, which overwrites this header |
 | `RAILWAY_RUN_UID` | `0` allows access to the root-owned volume mount; the image otherwise runs as the non-root `node` user |
@@ -113,8 +114,9 @@ After the service is deployed:
    promotion safeguards.
 3. Turn on volume backups for both Postgres and `/data` so database records and
    their uploaded files can both be recovered.
-4. Build the admin app and website with
-   `VITE_API_BASE_URL=https://<railway-domain>`, and the mobile release with
+4. Deploy the [admin service](../admin/README.md#deploying-to-railway) with its own
+   Railway build variable `VITE_API_BASE_URL` referencing the API's public domain.
+   Build the website with `VITE_API_BASE_URL=https://<railway-domain>`, and the mobile release with
    `EXPO_PUBLIC_API_BASE_URL=https://<railway-domain>`, so each client targets
    the deployed API.
 

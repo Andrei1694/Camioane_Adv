@@ -23,7 +23,80 @@ npm run lint
 npm run preview
 ```
 
-Production has no localhost fallback. For a local production preview, build with `VITE_API_BASE_URL=http://localhost:3000` in `.env.local`. Configure the backend's `FRONTEND_ORIGIN` to the actual frontend origin. Production hosting must provide SPA fallback to `index.html` for application routes, and use HTTPS for the frontend and API.
+Production has no localhost fallback. For a local production preview, build with `VITE_API_BASE_URL=http://localhost:3000` in `.env.local`. Configure the backend's `FRONTEND_ORIGIN` to the actual frontend origin. See [Deploying to Railway](#deploying-to-railway) for production hosting with HTTPS and SPA fallback.
+
+## Deploying to Railway
+
+Deploy the admin app as a second service from the same repository, alongside the
+[API service](../backend/README.md#deploying-to-railway). Configure it in Railway's
+dashboard using the automatically detected `Dockerfile`; no `railway.toml` is
+needed. [Config as Code is deprecated](https://docs.railway.com/config-as-code)
+and unavailable to new services.
+
+Add a GitHub service from `Andrei1694/Camioane_Adv` and configure:
+
+| Setting | Value | Reason |
+| --- | --- | --- |
+| Root Directory | `admin` | Railway automatically builds the admin `Dockerfile` in this directory |
+| Watch Paths | `/admin/**` | Only admin changes trigger an admin deployment |
+| Healthcheck Path | `/` | Wait for HTTP 200 on the service's `PORT` before accepting the deployment |
+| Restart Policy | On Failure | Restart Caddy if its process exits with an error |
+| Pre-deploy Command | None | The app has no migrations or runtime setup |
+| Volume | None | All served files are built into the image; the service is stateless |
+
+Leave Build and Start Command overrides unset; the Dockerfile supplies both.
+Multiple replicas are supported. The image defaults to `PORT=8080`; if you
+override it, use the same port for the public domain's target port.
+
+Set these service variables in the dashboard before building:
+
+| Variable | Value and reason |
+| --- | --- |
+| `VITE_API_BASE_URL` | Required: `https://${{<api service>.RAILWAY_PUBLIC_DOMAIN}}`, replacing `<api service>` with the API service name (for example, `backend`). The browser calls this public API directly; there is no same-origin proxy. The build rejects missing values and values that do not start with `https://` |
+| `VITE_MAP_STYLE_URL` (optional) | Public map style URL; unset or empty uses `https://tiles.openfreemap.org/styles/positron` |
+| `VITE_ROUTING_API_URL` (optional) | Public OSRM-compatible route URL; unset or empty uses `https://router.project-osrm.org/route/v1`. The default OSRM demo server is not intended for production traffic; configure a suitable provider for production |
+
+All `VITE_*` values are public and baked into the JavaScript at build time; never
+put secrets in them. Applying variable changes in Railway triggers a new build
+and deployment; restarting an existing image cannot change its API URL.
+[Railway requires build variables to be declared as `ARG`s](https://docs.railway.com/builds/dockerfiles#using-variables-at-build-time),
+so keep new `VITE_*` variables declared in the Dockerfile's build stage.
+Local `.env` files are excluded from the image.
+
+Deploy in this order:
+
+1. Deploy the API, generate its public Railway domain, and bootstrap an
+   administrator as described in the [API guide](../backend/README.md#deploying-to-railway).
+2. Add the admin service, apply the settings and variables above, and deploy it.
+3. Generate the admin service's Railway domain with target port **8080**. Railway's
+   edge provides HTTPS; Caddy serves HTTP inside the container.
+4. Set the API service's `FRONTEND_ORIGIN` to
+   `https://${{<admin service>.RAILWAY_PUBLIC_DOMAIN}}`, replacing `<admin service>`
+   with the admin service name (for example, `admin`). Apply the change to redeploy
+   the API so CORS allows the admin origin. For a custom admin domain, use that
+   exact HTTPS origin instead, without a trailing slash.
+5. Open the admin HTTPS URL and sign in with the bootstrapped administrator.
+
+The multi-stage image builds with Node.js 24 and all locked dependencies,
+including the development dependencies needed to type-check `tests/`. Its
+runtime uses Caddy as a non-root user to serve only `dist/`, with gzip and Zstandard
+compression. Application routes such as `/users` and `/files/<id>/edit` fall back
+to `index.html`. HTML and other non-hashed files use `Cache-Control: no-cache`;
+existing hashed `/assets/*` files are immutable for one year. Removed assets
+return 404 instead of HTML, allowing TanStack Router's existing lazy-load
+recovery to reload an open tab once after a redeploy.
+
+For a local container check, run from `admin/`:
+
+```sh
+docker build --build-arg VITE_API_BASE_URL=https://api.example.test -t camioane-admin .
+docker run --rm -p 8080:8080 camioane-admin
+```
+
+Open `http://localhost:8080/routes` to check the app's SPA entry point. API calls
+will fail against the example URL; use a reachable HTTPS API with the matching
+`FRONTEND_ORIGIN` to check sign-in and authenticated pages. Stop the container
+with Ctrl+C when finished.
 
 ## Authentication and navigation
 

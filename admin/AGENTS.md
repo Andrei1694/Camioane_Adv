@@ -244,6 +244,11 @@ passing when only the build and lint checks were run.
 - `VITE_API_BASE_URL` defaults to localhost:3000 only in development; production
   builds require an explicit value. Dev and preview use port 5173 with strict
   port selection. Match the backend CORS origin when changing frontend hosting.
+- Railway builds `admin/Dockerfile`; follow [Deploying to Railway](README.md#deploying-to-railway)
+  for dashboard settings. Declare build-time `VITE_*` variables as `ARG`s in its
+  build stage. Keep `Caddyfile`'s SPA fallback and `/assets/*` cache rules in sync
+  with routing and asset changes: missing assets must return 404, existing hashed
+  assets are immutable, and HTML must use `no-cache`.
 
 ## UI and verification
 

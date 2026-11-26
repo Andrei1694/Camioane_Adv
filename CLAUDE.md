@@ -36,6 +36,7 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - `npm run dev`: start Vite on port 5173 with strict port selection. That port matches the backend's default CORS origin.
 - `npm run build` (`tsc -b` + `vite build`) and `npm run lint` (Oxlint): run both after any code change. When a browser is available, also check the changed interactions in it.
 - `VITE_API_BASE_URL` falls back to `http://localhost:3000` only in dev. Production builds need it set explicitly.
+- Railway admin deployment: follow [Deploying to Railway](admin/README.md#deploying-to-railway) for the admin Dockerfile and dashboard settings.
 
 **mobile/** (Expo SDK 58, React Native 0.88, and TypeScript; there is no test runner)
 - `npm start`: start Metro; open the app in Expo Go or a simulator. The backend must be running and reachable from the device.

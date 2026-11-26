@@ -146,6 +146,31 @@ Open it with **Edit** on a video row in Files, or visit `/files/<file id>/edit` 
 
 The API has no `GET /files/:id`, so the editor finds the file's name and type in the Files pages already cached, or else pages through `GET /files?limit=100` until it finds the ID. A missing or malformed ID shows "This file isn't in Files any more, or the link is wrong."
 
+## Display playback
+
+**Redare pe ecran** at `/display` is available to every signed-in role. Open a
+second window on an extended monitor or the truck's HDMI input, then use its
+**Ecran complet** button. Play one MP4 from the computer or Files, or build an
+ordered, muted, looping playlist. Files and saved truck-screen conversions link
+directly to `/files/<file id>/display`. The file picker shows non-admins only their
+own files; the management Files page remains admin-only.
+
+Playlists and copied videos persist in IndexedDB separately for each account in
+this browser. Sign-out keeps them; clearing site data removes them, and browsers
+may reclaim storage unless persistence is granted. The test video is temporary.
+X/Y offsets and 10–400% scale are saved for the browser, with fit/reset controls,
+clipping warnings and a temporary calibration grid. At 100%, one video pixel maps
+to one output-frame device pixel. Stop clears the grid, returns to item zero and
+blacks out the video. List changes require Play again. Closing the page or signing
+out closes the output window. A wake-lock warning appears if the browser cannot
+keep the output awake.
+
+Screen enumeration and automatic window placement require a browser supporting
+Window Management (Chrome or Edge) and permission. Otherwise move the popup by
+hand. The operating system chooses the HDMI mode; browsers cannot enumerate it.
+Mobile screen dimming and bundled sample videos are omitted. Actual TB60 output,
+monitor scaling, and continuity between files need verification on the hardware.
+
 ## Route builder
 
 Open **Route builder** in the sidebar, or visit `/routes` while signed in as an administrator. The page lazy-loads MapLibre GL JS 6 and the MapLibre Directions 0.10 plugin, including MapLibre's Vite worker and CSS.

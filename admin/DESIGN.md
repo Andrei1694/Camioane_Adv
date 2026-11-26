@@ -22,6 +22,7 @@ Styling uses plain CSS, with shared primitives and page-scoped selectors. There 
 | Profile screen | [ProfilePage](src/pages/ProfilePage/) |
 | Campaign list, calendar, working hours and review | [CampaignPage](src/pages/CampaignPage/) |
 | Preview, editing timeline and segment list | [VideoEditorPage](src/pages/VideoEditorPage/) |
+| External-screen playback, playlist and placement | [DisplayPage](src/pages/DisplayPage/) |
 | Truck-screen composition and per-region framing | [ScreenVideoPage](src/pages/ScreenVideoPage/) |
 | Stop editor, routing summary and map | [RouteBuilderPage](src/pages/RouteBuilderPage/) |
 | Shared row identity and pagination | [OwnerLabel.tsx](src/components/OwnerLabel.tsx), [Pagination.tsx](src/components/Pagination.tsx) |
@@ -121,14 +122,14 @@ The signed-in desktop shell is a 232px sidebar beside a white sheet. The sidebar
 
 Navigation links use neutral `--border` fills for hover and the active page; the active label is weight 600. Outline icons are 20px. The account block contains a 40px avatar, email, role, Profile and Sign out. The email includes a preferred break before `@` and can wrap further to avoid overflow.
 
-Management links depend on verified administrator access. Profile is available to every signed-in role. Failed access verification offers retry; denied accounts receive the account-access view. Do not use the displayed role label alone to decide whether to show management UI.
+Management links depend on verified administrator access. Profile and Redare pe ecran are available to every signed-in role. Failed access verification offers retry; denied accounts receive the account-access view. Do not use the displayed role label alone to decide whether to show management UI.
 
 | Page | Content width | Desktop sheet padding |
 | --- | --- | --- |
 | Profile and access views | Maximum 760px | Shell default |
 | Users | Maximum 1100px | Shell default |
 | Dashboard | Full available width | 24px |
-| Files, Credits, video editor and van-screen video | Full available width | Shell default |
+| Files, Credits, video editor, van-screen video and display playback | Full available width | Shell default |
 | Cars and campaign list | Maximum 1100px | 28px 24px |
 | Campaign creator and route builder | Maximum 1600px | 28px 24px |
 
@@ -250,7 +251,7 @@ Profile stays in the 760px reading column and is available to every signed-in ro
 
 ### Files
 
-Files uses the real API and a full-width table. Identity includes filename and file type, followed by owner, upload timestamp, right-aligned size and row actions. Preview opens media in a dialog; Edit and Ecran camion are links for video files; Download and Delete are text actions. Actions wrap within their column. Narrow rows keep the owner on its own line so long emails remain readable. Upload feedback sits beneath the page heading; preview loading, unsupported media and retrieval failure remain in the preview frame.
+Files uses the real API and a full-width table. Identity includes filename and file type, followed by owner, upload timestamp, right-aligned size and row actions. Preview opens media in a dialog; Edit and Ecran camion are links for video files, and Redă pe ecran links MP4s to display playback; Download and Delete are text actions. Actions wrap within their column. Narrow rows keep the owner on its own line so long emails remain readable. Upload feedback sits beneath the page heading; preview loading, unsupported media and retrieval failure remain in the preview frame.
 
 ### Credits
 
@@ -279,6 +280,29 @@ The preview uses the current layout's canvas dimensions and intrinsic aspect rat
 Above the preview, a bordered preset panel contains the “Configurație” select, “Numele presetului” field and secondary Save, Save as new and Delete actions. The select marks unsaved changes with “(modificat)”. Names and geometry are part of the independent editor snapshot; refreshing the shared list never overwrites edits or the loaded version. Switching with unsaved edits and permanent deletion use native confirmations. Conflicts retain edits and offer explicit reload or saving as new; request failures show inline retry actions. Preset operations and conversion disable conflicting controls. The fields stack below 800px; action buttons wrap. Conversion remains the page's only primary action.
 
 `screenLayout.ts` holds `defaultLayout` (2304 × 512, unconfirmed ViPlex Version A, all `contain`) and the placement maths shared by preview and encoding. The first saved preset applies only while the editor is untouched. An empty or failed initial list leaves the fallback available. The output snapshots the current layout and includes the preset name in its filename. Keep the visible note that the chosen layout, physical-side mapping and HDMI output still need truck verification. Rendering is dynamically loaded and produces H.264 video with the original audio re-encoded. Shared `RenderProgress` and `UploadProgress` provide cancellation, retry and dismissal; navigation warns while work is running.
+
+### Display playback
+
+The full-width `/display` and `/files/$fileId/display` page is available to all
+signed-in roles. It follows the existing 14px working-screen type, 16px section
+headings and flat 8px-radius panels. Sections are ordered as external output,
+source radios and test/playlist controls, transport, and HDMI placement. Redă is
+the primary action. Output status includes a text pill, fullscreen state and
+physical frame pixels. The native Files picker reuses the shared dialog and
+pagination; selected rows retain a textual marker.
+
+Playlist rows show ordinal, wrapping name, source, size and named move/remove
+actions. The current row has a pale data fill, left rule and “Curent” text. At
+900px of content width, row actions wrap and placement fields use two columns;
+at 560px, placement becomes one column. Numeric fields apply on Enter or Aplică;
+X/Y step buttons retain 44px targets. Cropping and wake-lock warnings use the
+existing warning colours with a left rule and explanatory text.
+
+The popup has a black, marginless, clipped surface, two absolutely positioned
+muted videos, and a fullscreen button while windowed. Placement converts device
+pixels to CSS pixels using the popup's DPR. The temporary calibration canvas is
+independent of placement: 64px lines, 128px labels, coloured 512px lines and a
+white 2px border. Stop clears the grid and video; closing the page closes output.
 
 ### Route builder
 

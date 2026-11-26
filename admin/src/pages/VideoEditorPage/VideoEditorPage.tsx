@@ -19,7 +19,7 @@ import {
 } from './edit'
 import type { Segment } from './edit'
 import { ExportError } from './exportError'
-import { findFile } from './findFile'
+import { findFile } from '../../lib/findFile'
 import { usePlayback } from './usePlayback'
 import { fittingZoom, zoomLevels } from './zoom'
 import './VideoEditorPage.css'

@@ -21,6 +21,7 @@ import './App.css'
 // Reloads once when a deployment has replaced the page's chunk.
 const RouteBuilderPage = lazyRouteComponent(() => import('./pages/RouteBuilderPage/RouteBuilderPage'))
 const VideoEditorPage = lazyRouteComponent(() => import('./pages/VideoEditorPage/VideoEditorPage'))
+const DisplayPage = lazyRouteComponent(() => import('./pages/DisplayPage/DisplayPage'))
 const ScreenVideoPage = lazyRouteComponent(() => import('./pages/ScreenVideoPage/ScreenVideoPage'))
 
 function Layout() {
@@ -44,6 +45,7 @@ function AccessDenied() {
       <p className="page-description">{user.role === 'ADMIN'
         ? 'Accesul tău de administrator nu este disponibil momentan. Rolul poate fi inactiv, încă neactivat sau expirat.'
         : 'Contul tău nu are acces de administrator.'} Panoul de control, campaniile, mașinile, fișierele, creditele, gestionarea utilizatorilor și planificatorul de trasee necesită acces activ de administrator. Contactează administratorul dacă ai nevoie de acces.</p>
+      {user.role !== 'ADMIN' && <p className="page-description">Poți folosi <Link to="/display">Redare pe ecran</Link> pentru videoclipurile și playlistul tău.</p>}
       {user.role === 'ADMIN' && <button type="button" disabled={access.isFetching} onClick={access.retry}>
         {access.isFetching ? 'Se verifică…' : 'Reverifică accesul'}
       </button>}
@@ -77,6 +79,16 @@ const fileScreenVideoRoute = createRoute({
   path: '/files/$fileId/screen',
   component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Se încarcă pagina pentru ecranul camionului…</p>}><ScreenVideoPage /></Suspense></Authenticated>,
 })
+const displayRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/display',
+  component: () => <Authenticated><Suspense fallback={<p role="status">Se încarcă redarea pe ecran…</p>}><DisplayPage /></Suspense></Authenticated>,
+})
+const fileDisplayRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/files/$fileId/display',
+  component: () => <Authenticated><Suspense fallback={<p role="status">Se încarcă redarea pe ecran…</p>}><DisplayPage /></Suspense></Authenticated>,
+})
 const usersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/users', component: () => <Authenticated adminOnly><UsersPage /></Authenticated> })
 const routeBuilderRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -85,7 +97,7 @@ const routeBuilderRoute = createRoute({
 })
 const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profile', component: () => <Authenticated><ProfilePage /></Authenticated> })
 const deniedRoute = createRoute({ getParentRoute: () => rootRoute, path: '/access-denied', component: () => <Authenticated><AccessDenied /></Authenticated> })
-const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, campaignRoute, carsRoute, filesRoute, videoEditorRoute, screenVideoRoute, fileScreenVideoRoute, creditsRoute, usersRoute, routeBuilderRoute, profileRoute, deniedRoute]) })
+const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, campaignRoute, carsRoute, filesRoute, videoEditorRoute, screenVideoRoute, fileScreenVideoRoute, displayRoute, fileDisplayRoute, creditsRoute, usersRoute, routeBuilderRoute, profileRoute, deniedRoute]) })
 
 declare module '@tanstack/react-router' {
   interface Register {

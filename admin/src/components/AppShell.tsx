@@ -88,6 +88,13 @@ function SidebarContent({ user, canManage, onNavigate }: { user: User, canManage
             Ecran camion
           </Link>
         )}
+        <Link to="/display" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <rect x="2" y="3" width="20" height="14" rx="2" />
+            <path d="m10 7 5 3-5 3ZM8 21h8m-4-4v4" />
+          </svg>
+          Redare pe ecran
+        </Link>
         {canManage && (
           <Link to="/credits" className="sidebar-link" activeOptions={{ exact: true }} onClick={onNavigate}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

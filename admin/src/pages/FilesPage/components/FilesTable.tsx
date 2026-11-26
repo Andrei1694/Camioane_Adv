@@ -91,6 +91,9 @@ export default function FilesTable({ view, offset, pageSize, downloading, deleti
                         </Link>
                       </>
                     )}
+                    {file.mimeType === 'video/mp4' && <Link to="/files/$fileId/display" params={{ fileId: file.id }} className="ghost-button">
+                      Redă pe ecran<span className="sr-only"> {name}</span>
+                    </Link>}
                     <button type="button" className="text-button" disabled={downloading.has(file.id)} onClick={() => onDownload(file)}>
                       {downloading.has(file.id) ? 'Se descarcă…' : 'Descarcă'}<span className="sr-only"> {name}</span>
                     </button>

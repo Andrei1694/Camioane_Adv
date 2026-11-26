@@ -8,13 +8,14 @@ import UploadProgress from '../../components/UploadProgress'
 import type { Upload } from '../../components/UploadProgress'
 import { api, ApiError, errorMessage } from '../../lib/api'
 import { declaredTypeError, fileTypeLabel } from '../../lib/file'
+import type { StoredFile } from '../../lib/file'
 import { screenLayoutError } from '../../lib/screenPreset'
 import type { ScreenLayout, ScreenPreset } from '../../lib/screenPreset'
 import { formatByteSize } from '../../lib/format'
 import { useNotify } from '../../lib/useNotify'
 import { formatTimecode } from '../VideoEditorPage/edit'
 import { ExportError } from '../VideoEditorPage/exportError'
-import { findFile } from '../VideoEditorPage/findFile'
+import { findFile } from '../../lib/findFile'
 import { defaultLayout, regionIds, regionLabels, screenFileName } from './screenLayout'
 import PresetPanel from './components/PresetPanel'
 import LayoutFields from './components/LayoutFields'
@@ -43,6 +44,7 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
   const picker = useRef<HTMLInputElement>(null)
   const jobAbort = useRef<AbortController | null>(null)
   const [local, setLocal] = useState<File>()
+  const [saved, setSaved] = useState<StoredFile | null>(null)
   const [selectionError, setSelectionError] = useState<string>()
   const [layout, setLayout] = useState<ScreenLayout>(() => structuredClone(defaultLayout))
   const [selectedPreset, setSelectedPreset] = useState<ScreenPreset | null>(null)
@@ -111,6 +113,7 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
     setSelectionError(error)
     if (error) return
     setLocal(selected)
+    setSaved(null)
     setJob(null)
   }
 
@@ -168,6 +171,7 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
       controller.signal.throwIfAborted()
       if (!isCurrent(controller)) return
       setJob(null)
+      setSaved(stored)
       notify({
         variant: 'success', message: `Salvat ${stored.originalName} (${formatByteSize(stored.size)}) în Fișiere.`,
         action: { label: 'Vezi fișierele', onClick: () => { void navigate({ to: '/files' }) } },
@@ -220,6 +224,9 @@ function ScreenVideoWorkspace({ fileId }: { fileId?: string }) {
           onRetry={() => void uploadExport(job.upload.file, job.conversion)} onDismiss={() => setJob(null)} />
       )}
 
+      {saved && <p className="screen-note">Rezultat salvat: <strong>{saved.originalName}</strong>{' · '}
+        <Link to="/files/$fileId/display" params={{ fileId: saved.id }}>Redă pe ecran</Link>
+      </p>}
       <div className="screen-source">
         <div className="screen-source-row">
           <button type="button" disabled={busy} onClick={() => picker.current?.click()}

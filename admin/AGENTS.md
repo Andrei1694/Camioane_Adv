@@ -63,6 +63,17 @@ following the package-specific rules as well.
   explicit reload or saving as new. Conversion snapshots the layout and preset
   name, creates an MP4 in the browser and uploads only that result as a new file. `RenderProgress` in `src/components/`
   is shared with the video editor; never replace the source file.
+- Display playback lives under `src/pages/DisplayPage/`, lazy-loaded at `/display`
+  and `/files/$fileId/display` for every signed-in role. A same-origin popup hosts
+  a React portal with two muted video elements, preloading the next playlist item;
+  leaving the page or changing session closes it and revokes media URLs. IndexedDB
+  `camioane-display` stores playlists and blobs per user, with serialized atomic
+  transactions across both stores. Sign-out retains them. Validated X/Y/scale are
+  per browser in `camioane.display-placement.v1`; the calibration grid is temporary.
+  Window Management screen selection is optional, with manual placement otherwise.
+  Browsers cannot enumerate HDMI modes, dim a phone or ship the mobile sample videos.
+  Files and saved converter results link directly to playback. `src/lib/findFile.ts`
+  is shared by all three video pages.
 - The Profile page lives under `src/pages/ProfilePage/` (`/profile`, every role)
   and sets or removes the signed-in account's picture. `AvatarEditor` in
   `src/components/` does the work and is also used by the Users edit form, where

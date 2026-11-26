@@ -73,34 +73,62 @@ This is a hypothesis, not a measurement. Confirm it from the receiving-card or s
 
 ## Photos of the car (2026-11-19)
 
-The owner photographed the car's screens at an auto-wash while testing video and measuring with a tape. **ViPlex was not used for these tests**: the video came from our phone app over HDMI into the TB60, so the [ViPlex layout](#working-viplex-layout) below does not apply to them. The app version used in those photos fitted and centred video inside the negotiated HDMI mode. The updated player defaults to top-left 1:1 pixels, with explicit X/Y/scale controls; the TB60's screen configuration still decides which part of that HDMI frame reaches each panel. The files are in [evidence/truck](evidence/truck/), renamed from the original WhatsApp names. The descriptions below only say what each photo shows; the numbers on the tape are legible in the photos but are not transcribed here.
+The owner photographed the car's screens at an auto-wash while testing video and measuring with a tape. **ViPlex was not used for these tests**: the video came from our phone app over HDMI into the TB60, so the [ViPlex layout](#working-viplex-layout) below does not apply to them. The app version used in those photos fitted and centred video inside the negotiated HDMI mode. The updated player defaults to top-left 1:1 pixels, with explicit X/Y/scale controls; the TB60's screen configuration still decides which part of that HDMI frame reaches each panel. The files are in [evidence/truck](evidence/truck/), renamed from the original WhatsApp names. The table says what each photo shows; [Photo measurements](#photo-measurements) transcribes the tape readings and estimates sizes from the photos. `PHOTO-2026-11-19-15-14-50.jpg` at the top of `hardware_docs/` is a byte-identical copy of photo 02.
 
 | Photo | Shows |
 | --- | --- |
 | [01](evidence/truck/01-side-rear-phone-mirror.jpeg) | Side and rear screens showing the phone's own interface (a share and an edit button, "You on 19/11/2026, 00:25") with visible glitching. It looks like system screen mirroring rather than the app's player, which shows only the video. |
-| [02](evidence/truck/02-side-rear-open-cabinet.jpeg) | Side and rear screens with a video playing only in the lower part. The rear cabinet door is open, showing a black tank inside. |
-| [03](evidence/truck/03-side-rear-lower-band.jpeg), [04](evidence/truck/04-side-rear-large-video.jpeg) | Side and rear screens with a video lit only in a lower band. The upper part is dark. |
+| [02](evidence/truck/02-side-rear-open-cabinet.jpeg) | Right side and rear screens, seen from behind the right rear corner, with a video playing only in the lower part. A cabinet door at the cab end of the right side is open, showing a black tank inside. |
+| [03](evidence/truck/03-side-rear-lower-band.jpeg), [04](evidence/truck/04-side-rear-large-video.jpeg) | Left side and rear screens, seen from behind the left rear corner, with a video lit only in a lower band. The upper part is dark. |
 | [05](evidence/truck/05-rear-head-on.jpeg) | Rear screen head-on. The video fills only the lower left, with a dark area above and to the right. |
-| [06](evidence/truck/06-side-rear-test-blocks.jpeg) | Side and rear corner with two lit blocks in the lower half and a dark gap between them. |
+| [06](evidence/truck/06-side-rear-test-blocks.jpeg) | The rear end of the left side, with two lit blocks in the lower half and a dark band between them. The rear screen is seen edge-on at the right. |
 | [07](evidence/truck/07-rear-white-margin-test.jpeg) | Rear screen head-on with a tape against the right block. The large lit block reads "WHITE MARGIN TEST \| 1920 x 1080", with a narrower block to its right, both only in the lower part. |
-| [08](evidence/truck/08-tape-vertical-lit-area.jpeg), [09](evidence/truck/09-tape-vertical-bottom-edge.jpeg) | A vertical tape along the lit area's height, and a close-up of its lower end at the panel's bottom frame. |
-| [10](evidence/truck/10-tape-horizontal-lit-edge.jpeg), [11](evidence/truck/11-tape-horizontal-panel-edge.jpeg), [12](evidence/truck/12-tape-across-dark-gap.jpeg), [13](evidence/truck/13-tape-narrow-strip-edge.jpeg) | Horizontal tape measurements across lit and dark areas and near the panel frame. Photo 11 also shows the tank behind the open cabinet. |
-| [14](evidence/truck/14-led-pixel-closeup-tape.jpeg) | Close-up of the LED pixels with a tape, usable for reading the pixel pitch. |
-| [15](evidence/truck/15-tape-dark-square.jpeg) | A person measuring a dark square inside a lit area, along the panel's lower edge. |
+| [08](evidence/truck/08-tape-vertical-lit-area.jpeg), [09](evidence/truck/09-tape-vertical-bottom-edge.jpeg) | A vertical tape on the rear screen's narrow right strip, from the top of the lit area to the panel's bottom frame. |
+| [10](evidence/truck/10-tape-horizontal-lit-edge.jpeg) | A horizontal tape across the rear screen's narrow right strip, from the right edge to the dark band. |
+| [11](evidence/truck/11-tape-horizontal-panel-edge.jpeg) | A horizontal tape over dark LEDs at the cab end of the right side, next to the open cabinet and its tank. |
+| [12](evidence/truck/12-tape-across-dark-gap.jpeg) | A horizontal tape across the dark band on the left side from photo 06. |
+| [13](evidence/truck/13-tape-narrow-strip-edge.jpeg) | A horizontal tape from the left side's front edge, next to the cab, to where the lit area starts. |
+| [14](evidence/truck/14-led-pixel-closeup-tape.jpeg) | Close-up of the LED pixels with a tape, probably along the top edge of the dark square from photo 15. |
+| [15](evidence/truck/15-tape-dark-square.jpeg) | A person measuring a dark square of about 25 cm inside a lit area, along the panel's lower edge. |
 | [Video 1](evidence/truck/16-video-1.mp4), [video 2](evidence/truck/17-video-2.mp4) | 576 × 1024 (about 28 s) and 832 × 464 (about 12 s). I have not reviewed their content. |
 
 What the photos suggest, none of it confirmed:
 
 - **The phone-to-HDMI path reaches the screens.** Both the phone's mirrored interface (01) and test videos (02–07) appear on the panels.
-- **Only the lower part of each screen is lit.** On the rear screen the lit region is roughly 40–45% of the screen's height, and the vertical tape in photos 08 and 09 appears to read in the mid-80s of centimetres, against 200 cm for the screen.
+- **Only the lower part of each screen is lit.** On the rear screen the lit region is roughly 40–45% of the screen's height, and the vertical tape in photos 08 and 09 reads about 86 cm, against 200 cm for the screen.
 - **App-side cause confirmed in the old players:** centred aspect-fit scaled a 2304 × 512 composite in a 1920 × 1080 mode to about 1920 × 427 and moved it about 327 rows down. Its 49 px gap became about 41 px. Photos 05 and 07 show the same geometry with different content: on the rear panel, a lit block at approximately x 0–389, a 41 px gap, then a strip at x 430–512, rows 287–511. That repeated geometry points to the playback pipeline. The actual negotiated mode and TB60 offsets/scaling were not recorded, so these photos do not establish the exact controller transform. The updated players remove automatic fit/centring and expose calibration.
-- **The horizontal offsets are also unverified for HDMI.** The editor places its copies at x = 0, 1024 and 1585 (from the ViPlex photos), and `contain` centres each copy inside its region. ViPlex was not involved in HDMI playback, so these positions do not necessarily match where the TB60 reads each physical screen from the HDMI frame.
+- **The horizontal offsets are also unverified for HDMI.** The editor places its copies at x = 0, 1024 and 1585 (from the ViPlex photos), and `contain` centres each copy inside its region. ViPlex was not involved in HDMI playback, so these positions do not necessarily match where the TB60 reads each physical screen from the HDMI frame. The [photo measurements](#photo-measurements) suggest the rear screen reads from about x 891, not 1024.
 - **Rear screen layout (photo 07, estimated from the photo).** A large lit block about 150 × 85–89 cm, about 16:9, labelled "WHITE MARGIN TEST | 1920 x 1080"; a dark gap of about 16 cm; and a narrow lit block about 32 cm wide. Together they span the screen's full width, bottom-aligned.
 - **Test video.** The "WHITE MARGIN TEST" video is not one of the app's bundled samples (`flower.mp4` is 960 × 540 and `truck_screen.mp4` is 2304 × 512), so it was picked from the phone. The negotiated HDMI mode during the test was not recorded.
 - **Photo 07 does not isolate the source-file dimensions or controller transform.** The text “1920 × 1080” belongs to the advertisement and is not evidence of the HDMI mode. In a converted composite, automatic aspect-fit also shrinks region boundaries and gaps, so the narrower block/gap/strip does not on its own prove additional TB60 scaling. Record the negotiated mode and native calibration-grid corner readings to distinguish app placement from controller mapping.
-- **Pixel pitch.** The close-up in photo 14 suggests an LED spacing of about 4 mm by eye, consistent with 2.56 px/cm (P3.91, where a 128 × 256 px segment is 50 × 100 cm). The dots have not been counted.
+- **Pixel pitch.** Measured in photo 14 at about 4.05 mm ± 4%: see [Photo measurements](#photo-measurements). Together with the other evidence this supports 2.56 px/cm (P3.91, where a 128 × 256 px segment is 50 × 100 cm).
 
 A poster for the AUR "Trenul Unirii" event (1 December 2026) from the same day is kept in [evidence/creative](evidence/creative/trenul-unirii-poster.jpeg). It is advertising content, not a hardware photo.
+
+### Photo measurements
+
+Read from the photos on 2026-11-26. Tape readings are measured; sizes taken from a photo against the screen's 200 cm frame are estimates, about ±2–5 cm. "Lit" and "dark" describe the test pictures, which the old player shrank to 1920 px wide.
+
+| Photo | Screen and place | Reading |
+| --- | --- | --- |
+| 01 | Left side and rear | The mirrored phone picture fills the full 200 cm height and runs from the front of the left side, across the corner, onto the rear. |
+| 05, 07 | Rear, head-on (estimated from photo 07) | Lit block about 152 cm, dark band about 17 cm, strip about 32 cm; lit height about 86–89 cm. |
+| 08, 09 | Rear, right strip, vertical tape | Lit height about 86 cm. |
+| 10 | Rear, right strip, horizontal tape | About 32–34 cm from the right edge to the dark band. |
+| 06, 12 | Left side, about 67 cm from the rear corner | Dark band about 21 cm wide. |
+| 13 | Left side, front edge next to the cab | The first 20 cm of LEDs are dark. |
+| 11 | Right side, cab end next to the open cabinet | About 74 cm of dark LEDs; the tape's starting point is out of frame. |
+| 14 | LED close-up | LED spacing of 28.8 photo pixels against 70.8 photo pixels per tape centimetre: about 4.05 mm ± 4%. |
+| 15, 14 | Bottom edge of a lit screen | Dark square about 25 × 25 cm. |
+
+What these suggest, inferred and unconfirmed:
+
+- **2.56 px/cm (P3.91) holds.** Photo 14 alone cannot separate a 3.91 mm pitch from 4 mm. P3.91 fits everything else: 512 rows fill the 200 cm height (photo 01), a 128 × 256 px segment is the standard 500 × 1000 mm cabinet, the 25 cm square is one standard 64 × 64 px module, and the measured 400 + 200 + 300 cm equal 2304 px. A 4 mm pitch would make the screens 204.8 cm high and 921.6 cm around.
+- **The picture runs front-left → rear.** Photo 01 puts the phone's left edge at the front of the left side and continues it onto the rear, so the HDMI frame's x axis runs from the cab end of the left side towards the rear, and presumably on along the right side.
+- **The left side reads the HDMI frame from x 0, and its dark bands are conversion black bars.** At the old player's 1920/2304 scale, a 16:9 video fitted (`contain`) into the 1018 px left region leaves 54 composite px (45 HDMI px, 17.6 cm) of black at each end. That matches the 20 cm of dark LEDs at the front (photo 13). The far bar plus the 6 px gap, about 50 HDMI px or 19.5 cm, matches the 21 cm band (photos 06 and 12). The 67 cm lit block between that band and the rear corner matches the start of the middle region (HDMI x 853–1024).
+- **The rear screen does not read HDMI x 1024–1536.** At the same scale, that window would show 100 cm lit, 16 cm dark and 84 cm lit. The photos show 152, 17 and 32 cm, which fits a window starting near HDMI x 891 if the TB60 does not scale. That window would overlap the last 52 cm of the left side's. If so, the current 1:1 player would show the end of the left copy on the rear and push the rear copy about 52 cm onto the right side. This is the first thing to check with the calibration grid.
+- **The right side** is lit from the rear corner and dark towards the cab (photo 02). The 74 cm of dark LEDs in photo 11 is roughly consistent with a window starting near HDMI x 1403, right after the rear, which leaves about 98 cm past the 1920 px frame. The tape's unknown starting point makes this weak evidence.
+- **Possible dead LED module.** The square in photo 15 is dark inside an otherwise white picture, aligned with the panel's bottom edge and exactly one module in size. Check it with a full-white picture before attributing it to the video.
 
 ## Working ViPlex layout
 
@@ -174,7 +202,8 @@ Sources: [TB60 HDMI and USB limits, page 7](TB60-Specifications-V1.2.5.pdf#page=
 
 1. Confirm the segment units and installed orientation, then record the segment columns, rows and native pixel dimensions for each side. Read the existing NovaLCT screen connection configuration to verify which canvas region reaches each side and whether any canvas areas are unused. Preserve a configuration backup before changes.
 2. Check **ViPlex → Monitor & Control → Current Source → HDMI EDID/Scaling**, installed firmware and the phone/adapter's supported output modes.
-3. Follow [HDMI placement and calibration](#hdmi-placement-and-calibration): use the native grid to record each panel’s corner coordinates, then verify all three regions, proportions and edges with the composite video.
-4. Check charging, extended playback, phone locking, incoming calls, session expiry, app restarts and HDMI disconnection/reconnection.
+3. Follow [HDMI placement and calibration](#hdmi-placement-and-calibration): use the native grid to record each panel’s corner coordinates, then verify all three regions, proportions and edges with the composite video. Read the rear screen's top-left corner first: the [photo measurements](#photo-measurements) suggest x ≈ 891 rather than 1024.
+4. Show a full-white picture and look for dark 25 × 25 cm modules; photo 15 shows one at the bottom edge of a screen.
+5. Check charging, extended playback, phone locking, incoming calls, session expiry, app restarts and HDMI disconnection/reconnection.
 
 ViPlex documents an HDMI Preferred mode, but recovery from a frozen phone app must be tested separately from loss of the HDMI signal. The actual vehicle installation has not yet been validated for this setup.

@@ -19,7 +19,11 @@ export async function createAuthenticationData(user: PublicUser & SessionIdentit
     .sign(authConfig.jwtSecret);
 
   return {
-    user: { id: user.id, email: user.email, role: user.role, avatar: user.avatar },
+    user: {
+      id: user.id, email: user.email, role: user.role, avatar: user.avatar,
+      displayName: user.displayName, phone: user.phone, status: user.status,
+      createdAt: user.createdAt, lastLoginAt: user.lastLoginAt,
+    },
     accessToken,
     tokenType: 'Bearer',
     expiresIn,

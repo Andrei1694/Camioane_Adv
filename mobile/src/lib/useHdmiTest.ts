@@ -8,8 +8,11 @@ import { useSession } from '../auth/session'
 import { deleteVideoCopy, loadSampleVideo, pickVideo } from './hdmiFiles'
 import type { HdmiVideo, SampleVideo } from './hdmiFiles'
 import { takeHdmiResult } from '../features/screen/hdmiResults'
+import { defaultPlacement } from '../features/hdmi-placement/placement'
+import { useHdmiPlacement } from '../features/hdmi-placement/useHdmiPlacement'
 
-const initialStatus: HdmiStatus = { sessionId: '', display: null, playback: 'idle', error: null }
+const initialStatus: HdmiStatus = { sessionId: '', display: null, playback: 'idle', error: null, index: null, count: 0,
+  video: null, placement: defaultPlacement, modes: [], pattern: false }
 const cacheWarning = 'A temporary video could not be removed. Your phone can clear it from the app cache.'
 const releaseWarning = 'The previous HDMI test could not finish cleanup. A temporary video may remain in the app cache.'
 let nextSession = 0
@@ -44,6 +47,8 @@ function preparationDetachedFiles(failure: unknown) {
 }
 
 export function useHdmiTest(initialSample: SampleVideo = 'flower', resultId?: string) {
+  const placement = useHdmiPlacement()
+  const { applySaved } = placement
   const [status, setStatus] = useState(initialStatus)
   const [file, setFile] = useState<HdmiVideo | null>(null)
   const [busy, setBusy] = useState(false)
@@ -92,7 +97,7 @@ export function useHdmiTest(initialSample: SampleVideo = 'flower', resultId?: st
       current.status = { ...current.status, playback: 'loading', error: null }
       setStatus(current.status)
       setWakeWarning(null)
-      await player.prepare(current.id, picked.uri)
+      await player.prepare(current.id, [picked.uri])
       if (!current.alive) return // Disposal owns every file passed to native.
       if (current.status.playback === 'error') {
         // A decoder can fail immediately after readiness, before this continuation.
@@ -142,7 +147,7 @@ export function useHdmiTest(initialSample: SampleVideo = 'flower', resultId?: st
       if (!current.alive || next.sessionId !== current.id) return
       current.status = next
       setStatus(next)
-      if (next.playback !== 'playing' && next.playback !== 'buffering') setWakeWarning(null)
+      if (next.playback !== 'playing' && next.playback !== 'buffering' && !next.pattern) setWakeWarning(null)
       // Native emits a terminal media error only after detaching its readers.
       // Preparation failures are cleaned up by selectVideo after its promise settles.
       if (next.playback === 'error' && current.file) {
@@ -152,15 +157,15 @@ export function useHdmiTest(initialSample: SampleVideo = 'flower', resultId?: st
         removeFile(failed, current)
       }
     })
-    const starting = Platform.OS === 'ios'
-      ? player.start(current.id, useSession.getState().session?.expiresAt ?? null)
-      : player.start(current.id)
-    const startup = starting.then((next) => {
+    const starting = player.start(current.id, useSession.getState().session?.expiresAt ?? null)
+    const startup = starting.then(async (next) => {
+      if (!current.alive) return
+      current.status = next
+      setStatus(next)
+      await applySaved(current.id, () => current.alive)
       if (!current.alive) return
       current.ready = true
-      current.status = next
       setReady(true)
-      setStatus(next)
       // Do not await preparation here: disposal must be able to cancel it.
       void selectVideo(current, () => resultId ? takeHdmiResult(resultId) : loadSampleVideo(initialSample))
     }).catch(() => {
@@ -196,11 +201,11 @@ export function useHdmiTest(initialSample: SampleVideo = 'flower', resultId?: st
     }
 
     return dispose
-  }, [initialSample, resultId, removeFile, selectVideo]))
+  }, [initialSample, resultId, removeFile, selectVideo, applySaved]))
 
   // Every activation has its own tag: a late completion after pause or navigation
   // cannot disable the wake lock of a resumed or newly opened session.
-  const keepingAwake = status.playback === 'playing' || status.playback === 'buffering'
+  const keepingAwake = status.playback === 'playing' || status.playback === 'buffering' || status.pattern
   useEffect(() => {
     const current = session.current
     if (!keepingAwake || !current?.alive || current.id !== status.sessionId) return
@@ -229,7 +234,7 @@ export function useHdmiTest(initialSample: SampleVideo = 'flower', resultId?: st
   async function control(action: 'play' | 'pause' | 'stop') {
     const player = hdmiPlayer
     const current = session.current
-    if (!player || !current?.alive || !current.ready || current.busy || !current.file) return
+    if (!player || !current?.alive || !current.ready || current.busy || (!current.file && action !== 'stop')) return
     current.busy = true
     setBusy(true)
     setError('')
@@ -243,7 +248,22 @@ export function useHdmiTest(initialSample: SampleVideo = 'flower', resultId?: st
     }
   }
 
+  async function setPattern(enabled: boolean) {
+    const current = session.current
+    if (!hdmiPlayer || !current?.alive || !current.ready || current.busy) return
+    current.busy = true
+    setBusy(true)
+    setError('')
+    try { await hdmiPlayer.setPattern(current.id, enabled) } catch {
+      if (current.alive) setError('The calibration grid could not be updated. Check HDMI and try again.')
+    } finally {
+      current.busy = false
+      if (current.alive) setBusy(false)
+    }
+  }
+
   const activeWakeWarning = keepingAwake && wakeWarning?.sessionId === status.sessionId
     ? wakeWarning.message : ''
-  return { status, file, busy, ready, error: status.error || error || cleanupWarning || activeWakeWarning, chooseVideo, control }
+  return { status, file, busy, ready, placement, setPattern,
+    error: status.error || error || cleanupWarning || activeWakeWarning, chooseVideo, control }
 }

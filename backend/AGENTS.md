@@ -3,6 +3,10 @@
 These instructions apply to `backend/` and its descendants. Keep backend work
 scoped here unless the requested feature also requires changes elsewhere.
 
+Read and follow [CLEAN_CODE.md](../CLEAN_CODE.md) when writing or changing code.
+It defines the shared JavaScript/TypeScript function conventions; continue
+following the package-specific rules as well.
+
 ## User workflow preferences
 
 - Do not write new tests or modify existing tests unless the user explicitly
@@ -101,8 +105,8 @@ shutdown and script tests run the entry points in child processes, with the
   in `src/controllers/user.controller.ts`, and Prisma/password operations in
   `src/services/user.service.ts`. Keep Express objects out of services.
 - Reuse `src/middleware/authenticate.ts` for protected routes. It verifies JWT
-  claims and checks that the user and session version still match. Public users contain id, email, role,
-  and avatar (`null` or `{ url, updatedAt }`); never expose password hashes or storage keys. Return errors as `{ "error": "message" }` through
+  claims and checks that the user and session version still match. Public users contain id, email, role, displayName, phone, status, createdAt,
+  lastLoginAt and avatar (`null` or `{ url, updatedAt }`); never expose password hashes or storage keys. Return errors as `{ "error": "message" }` through
   the centralized error handler.
 - `src/server.ts` validates the port, verifies database connectivity, starts the
   HTTP server, and handles shutdown. Preserve startup failure handling and Prisma
@@ -116,7 +120,9 @@ shutdown and script tests run the entry points in child processes, with the
   Public registration is removed. The health route does not query the database.
 - CRUD services recheck the actor and administrator invariants in serializable
   transactions with bounded conflict retries. Keep password hashing outside those
-  transactions. Email/password/role changes increment the session version.
+  transactions. Email/password/role/status changes increment the session version. Disabled
+  accounts are rejected by login, authentication and transactional actor checks.
+  Protect the last active administrator and prevent self-disabling.
 - Administrator access also requires the shared ADMIN role to satisfy
   `activ && startDate <= now && (endDate === null || now < endDate)`.
   Reuse `src/lib/role.ts` in middleware and transactional service checks.

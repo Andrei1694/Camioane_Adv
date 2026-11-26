@@ -16,8 +16,20 @@ public final class HdmiPlayerModule: Module {
       return HdmiPlayback.shared.status()
     }.runOnQueue(.main)
 
-    AsyncFunction("prepare") { (sessionId: String, uri: String, promise: Promise) in
-      HdmiPlayback.shared.prepare(sessionId: sessionId, uri: uri, promise: promise)
+    AsyncFunction("prepare") { (sessionId: String, uris: [String], startIndex: Int?, promise: Promise) in
+      HdmiPlayback.shared.prepare(sessionId: sessionId, uris: uris, startIndex: startIndex ?? 0, promise: promise)
+    }.runOnQueue(.main)
+
+    AsyncFunction("setPlacement") { (sessionId: String, x: Double, y: Double, scale: Double, promise: Promise) in
+      HdmiPlayback.shared.setPlacement(sessionId: sessionId, x: x, y: y, scale: scale, promise: promise)
+    }.runOnQueue(.main)
+
+    AsyncFunction("setPattern") { (sessionId: String, enabled: Bool, promise: Promise) in
+      HdmiPlayback.shared.setPattern(sessionId: sessionId, enabled: enabled, promise: promise)
+    }.runOnQueue(.main)
+
+    AsyncFunction("skip") { (sessionId: String, index: Int) in
+      HdmiPlayback.shared.skip(sessionId: sessionId, index: index)
     }.runOnQueue(.main)
 
     AsyncFunction("play") { (sessionId: String) in

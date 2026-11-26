@@ -15,7 +15,7 @@ Styling uses plain CSS, with shared primitives and page-scoped selectors. There 
 | Buttons, fields, headings, Users table, pills, tabs, pagination, dialog frame | [App.css](src/App.css) |
 | Navigation, brand mark, account block and sheet | [AppShell.tsx](src/components/AppShell.tsx), [AppShell.css](src/components/AppShell.css) |
 | Dashboard layout, KPIs, fleet timeline, review queues | [DashboardPage](src/pages/DashboardPage/) |
-| User management and its inline form | [UsersPage](src/pages/UsersPage/) |
+| User management, responsive table and inline form | [UsersPage](src/pages/UsersPage/), [UsersPage.css](src/pages/UsersPage/UsersPage.css) |
 | Car inventory, its inline form and delete dialog | [CarsPage](src/pages/CarsPage/) |
 | Files table and preview | [FilesPage](src/pages/FilesPage/) |
 | Credit balances, purchases and ledger | [CreditsPage](src/pages/CreditsPage/) |
@@ -125,7 +125,8 @@ Management links depend on verified administrator access. Profile is available t
 
 | Page | Content width | Desktop sheet padding |
 | --- | --- | --- |
-| Users, Profile and access views | Maximum 760px | Shell default |
+| Profile and access views | Maximum 760px | Shell default |
+| Users | Maximum 1100px | Shell default |
 | Dashboard | Full available width | 24px |
 | Files, Credits, video editor and van-screen video | Full available width | Shell default |
 | Cars and campaign list | Maximum 1100px | 28px 24px |
@@ -147,7 +148,7 @@ The unsigned shell uses `.users-page`: a centred column up to 760px, 24px side g
 | Up to 1023px | Dashboard KPIs become a 2 × 2 strip. |
 | Up to 1000px | Route planner sections stack. |
 | Up to 767px | Mobile navigation, larger dense actions, narrower dialogs and phone-specific page layouts. Route map height is 340px. |
-| Up to 600px | Users form becomes one column and Users table becomes stacked rows. |
+| Up to 600px | Users form becomes one column. |
 
 ### Container breakpoints
 
@@ -157,6 +158,7 @@ These measure the component's available width, independently of the viewport.
 | --- | --- | --- |
 | Dashboard fleet timeline | Up to 640px | Timeline keeps a 680px minimum inner width and scrolls within its frame; identity and hour corner remain pinned. |
 | Dashboard routes panel | Up to 720px | Route rows wrap into labelled lines. |
+| `users` | Up to 800px | Users table becomes stacked rows with contact/activity labels. |
 | `files`, `credits`, `campaigns` | Up to 760px | Tables become stacked rows while preserving identity, figures and actions. |
 | `cars` | Up to 759px | Filters become two columns with search spanning both; the form becomes one column. Rows stack with plate and status on the first line, muted 96px inline labels and 44px row actions. |
 | `segments` | Up to 720px | Video segments wrap into labelled fields and actions. |
@@ -242,7 +244,7 @@ Loading, an empty fleet, no filter matches, request failure and retry each have 
 
 ### Users and Profile
 
-Users has a semantic table with email/avatar, role and action columns. Add or Edit opens the form inline above the table; Add user remains visible but disabled while that form is open. Preserve focus entry into the form and return on close. Self-demotion and self-deletion are disabled with an explanation; deletion still uses the browser's confirmation (see current inconsistencies). Role labels come from `src/lib/user.ts`.
+Users has a semantic table with name/email/avatar and phone, role, account status, creation/last-login dates and action columns. It uses an 1100px maximum content width and becomes a stacked list below 800px of available content width, preserving contact and activity labels; dates use the shared local-time formatters. Active/disabled states use the existing positive/negative pills. Add or Edit opens the form inline above the table; Add user remains visible but disabled while that form is open. Preserve focus entry into the form and return on close. The form adds optional name and international phone plus an active/disabled account selector. Self-demotion, self-deactivation and self-deletion are disabled with an explanation; deletion still uses the browser's confirmation (see current inconsistencies). Role labels come from `src/lib/user.ts`.
 
 Profile stays in the 760px reading column and is available to every signed-in role. Its picture section uses `AvatarEditor`; the account section uses the shared facts/check layout. Editing a profile picture must update its representations across the shell and user views.
 

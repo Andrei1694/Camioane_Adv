@@ -4,6 +4,10 @@ These instructions apply to `mobile/` and its descendants. Keep mobile work scop
 here unless the requested feature also requires changes elsewhere. Follow the
 repository-wide guidance in `../AGENTS.md` as well.
 
+Read and follow [CLEAN_CODE.md](../CLEAN_CODE.md) when writing or changing code.
+It defines the shared JavaScript/TypeScript function conventions; continue
+following the package-specific rules as well.
+
 ## User workflow preferences
 
 - Do not write new tests or modify existing tests unless the user explicitly
@@ -29,6 +33,46 @@ repository-wide guidance in `../AGENTS.md` as well.
   unavailable state. Native source and the iOS config plugin live in
   `modules/hdmi-player/`, not the generated app folders. Playback belongs to the
   focused test screen and stops on navigation or session changes.
+- **Playlist HDMI** opens `/playlist`, implemented in `src/features/playlist/`.
+  One ordered MP4 list per account lives at `Paths.document/hdmi-playlist/<userId>/`:
+  `playlist.json` stores metadata and `videos/<id>.mp4` stores permanent copies.
+  The runtime decoder drops missing files; writes are serialized and the manifest
+  is replaced through a temporary file. Phone imports use picker cache copies;
+  server imports use the existing authenticated `/files` download flow and are
+  disabled in local preview. Session/revision changes abort transfers.
+- HDMI's native API is `start(id, expiresAt)`, `prepare(id, uris, startIndex?)`,
+  `skip(id, index)`, `play/pause/stop/release(id)`. Status includes `index` and
+  `count`; an empty list clears playback, and Stop rewinds to item zero with black
+  output. Both platforms enforce login expiry natively. List edits preserve the
+  current item where possible and require Play again. Removal must await prepare
+  or its detached error codes before deleting the permanent file. Session cleanup
+  never deletes playlist files. Keep the test's one-video API calls as `[uri]`.
+- HDMI placement defaults to top-left 1:1, with explicit pixel offsets and uniform
+  scale; crop outside the frame, never auto-fit or centre. `setPlacement(id,x,y,scale)`
+  validates integer offsets −4096…4096 and finite scale 0.1…4, and `setPattern(id,enabled)`
+  toggles a native HDMI-pixel grid. Both reject stale/expired sessions. Status includes
+  `video`, `placement`, read-only `modes`, and `pattern`. Observe video display size
+  across playlist changes; iOS disables overscan compensation and converts pixels to
+  points, Android accounts for pixel aspect ratio and uses fixed pixel layout.
+- `src/features/hdmi-placement/` stores X/Y/scale per phone (not account) in
+  `Paths.document/hdmi-placement.json`, with validated reads and serialized temporary-file
+  replacement (`localStorage` on web). Apply after start, before prepare in both test
+  and playlist, and live from the test controls. The grid stays in HDMI coordinates,
+  hides video, is never persisted, and clears on Stop/error/expiry. Keep conversions,
+  Version A regions and editor resolution settings independent of HDMI placement.
+- iOS preflights every asset, uses `AVPlayerLooper` for one item and replenishes an
+  `AVQueuePlayer` for several. Playlist files are readable after first unlock and
+  their directory is excluded from backup during preparation. Android loops with
+  Media3 `REPEAT_MODE_ALL`, a local wake lock, and `HdmiPlaybackService` (mediaPlayback
+  foreground service with an ongoing notification). API 30+ uses an independent
+  display window context so switching apps can continue playback; older Android
+  pauses in background. Pause, Stop, errors, display removal and release stop the
+  service. No notification permission prompt is shown; Android 13+ may hide the
+  notification in the drawer if permission is denied. Locking Android may still
+  blank HDMI: use the dim control and verify the actual phone/adapter combination.
+- `src/components/FilePicker.tsx` is shared with the screen editor (`actionLabel`,
+  `selectedIds`); `DimOverlay.tsx` is shared with the HDMI test. Web and Expo Go
+  show the unavailable state without attempting native playlist operations.
 - The home screen's **Truck screen video** button opens `/hdmi-test?sample=truck-screen`
   with the bundled `assets/truck_screen.mp4` (2304 × 512) preselected. The regular
   HDMI test keeps `flower.mp4`. Both samples wait for Play and survive cleanup;
@@ -38,7 +82,11 @@ repository-wide guidance in `../AGENTS.md` as well.
   HDMI handoff. Feature code lives in `src/features/screen/`; the local
   `modules/screen-video/` module shares its compositor/effect between native
   preview and export. Keep the exact dashboard geometry and centered contain/
-  cover calculations aligned. Web uses separate canvas/mediabunny modules.
+  cover calculations aligned. Output resolutions are a phone setting
+  (`useResolutions.ts`, `resolutionStorage.ts`/`.web.ts`), not the admin
+  `/screen-presets`: 2304 × 512 is built in, and `regionsFor` scales its region
+  edges to other sizes. `resolutionProblem` (even sides, 64–4096) must match the
+  checks in `ScreenComposition.swift` and `ScreenEffect.kt`. Web uses separate canvas/mediabunny modules.
   Keep native videos on disk and use session/job IDs to reject stale events.
   Foreground conversion keeps the screen awake; backgrounding, confirmed exit,
   or a session change cancels unfinished work. Release readers before deleting

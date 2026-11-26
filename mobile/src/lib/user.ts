@@ -2,6 +2,13 @@
 export const roles = ['ADMIN', 'OPERATOR', 'DRIVER', 'USER'] as const
 export type Role = typeof roles[number]
 
+export const userStatuses = ['ACTIVE', 'DISABLED'] as const
+export type UserStatus = typeof userStatuses[number]
+
+export function isUserStatus(value: unknown): value is UserStatus {
+  return userStatuses.some((status) => status === value)
+}
+
 export const roleLabels: Record<Role, string> = {
   ADMIN: 'Admin',
   OPERATOR: 'Operator',
@@ -20,6 +27,11 @@ export interface User {
   id: string
   email: string
   role: Role
+  displayName: string
+  phone: string | null
+  status: UserStatus
+  createdAt: string
+  lastLoginAt: string | null
 }
 
 export interface Credentials {

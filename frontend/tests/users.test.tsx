@@ -8,7 +8,7 @@ import { useSession } from '../src/auth/session'
 import { authenticate, renderPage } from './helpers/render'
 import { deferred, id, user } from './helpers/fixtures'
 
-const other = user({ id: id(9), email: 'other@example.test', role: 'USER' })
+const other = user({ id: id(9), email: 'other@example.test', role: 'USER', displayName: '', phone: null, status: 'ACTIVE' })
 beforeEach(() => authenticate(user(), [user(), other]))
 
 it('validates required fields and creates a normalized account', async () => {
@@ -23,7 +23,7 @@ it('validates required fields and creates a normalized account', async () => {
   await actor.type(screen.getByLabelText(/^Parolă/), 'long password')
   await actor.click(screen.getByRole('button', { name: 'Salvează' }))
   await waitFor(() => expect(create).toHaveBeenCalled())
-  expect(create.mock.calls[0][0]).toEqual({ email: 'other@example.test', password: 'long password', role: 'USER' })
+  expect(create.mock.calls[0][0]).toEqual({ email: 'other@example.test', password: 'long password', role: 'USER', displayName: '', phone: null, status: 'ACTIVE' })
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Salvează' })).not.toBeInTheDocument())
   expect(queryClient.getQueryData(['admin-access', useSession.getState().revision])).toMatchObject({ users: expect.arrayContaining([other]) })
 })
@@ -41,7 +41,7 @@ it('rejects duplicate emails and omits a blank edit password', async () => {
   await actor.clear(screen.getByLabelText('E-mail'))
   await actor.type(screen.getByLabelText('E-mail'), other.email)
   await actor.click(screen.getByRole('button', { name: 'Salvează' }))
-  await waitFor(() => expect(update).toHaveBeenCalledWith(other.id, { email: other.email, role: 'USER' }))
+  await waitFor(() => expect(update).toHaveBeenCalledWith(other.id, { email: other.email, role: 'USER', displayName: '', phone: null, status: 'ACTIVE' }))
 })
 
 it('retains entered values after failure and disables pending submissions', async () => {

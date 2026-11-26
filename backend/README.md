@@ -27,7 +27,7 @@ npm run admin:bootstrap
 npm run dev
 ```
 
-The bootstrap command requires an interactive terminal. It asks for an email and, for a new account, a hidden password and confirmation. For an existing ordinary account, it explicitly asks before granting administrator access and preserves the password. An existing administrator is left unchanged. Promotion invalidates existing sessions. The shared `ADMIN` role must exist and be currently valid, including for an existing administrator; bootstrap reports an unavailable role without creating or reactivating it. There are no default accounts or passwords.
+The bootstrap command requires an interactive terminal. It asks for an email and, for a new account, an optional display name, a hidden password and confirmation. For an existing ordinary account, it explicitly asks before granting administrator access and preserves the password. An existing administrator is left unchanged. Promotion invalidates existing sessions. The shared `ADMIN` role must exist and be currently valid, including for an existing administrator; bootstrap reports an unavailable role without creating or reactivating it. Disabled accounts must first be re-enabled by an active administrator; bootstrap never silently reactivates them. There are no default accounts or passwords.
 
 The API listens on port 3000 by default. Compose runs PostgreSQL only. `npm run dev` runs the API watcher and type checker together; type errors do not prevent the server from starting. `npm start` runs without watchers.
 
@@ -53,7 +53,7 @@ Production must set its actual frontend and website origins, configure HTTPS, an
 
 ## API
 
-Public users are `{ id, email, role, avatar }`, where `id` is an immutable UUID, `role` is `ADMIN`, `OPERATOR`, `DRIVER`, or `USER`, and `avatar` is `null` or `{ url, updatedAt }` (see [Profile pictures](#profile-pictures)). Roles are stored in a shared table, but API requests and responses use these enum names as strings. Only `ADMIN` grants account-management access; all roles can access their profile and manage their own uploaded files and profile picture. Responses never include password hashes, session versions, role IDs, or role validity fields. User responses have `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. There are no role-management endpoints.
+Public users are `{ id, email, role, avatar, displayName, phone, status, createdAt, lastLoginAt }`, where `id` is an immutable UUID, `role` is `ADMIN`, `OPERATOR`, `DRIVER`, or `USER`, and `avatar` is `null` or `{ url, updatedAt }` (see [Profile pictures](#profile-pictures)). Roles are stored in a shared table, but API requests and responses use these enum names as strings. Only an active account with a currently valid `ADMIN` role grants account-management access; active accounts of all roles can access their profile and manage their own uploaded files and profile picture. Responses never include password hashes, session versions, role IDs, role validity, creator IDs or password-change timestamps. `displayName` is a string (empty when unknown), `phone` is an international number or `null`, `status` is `ACTIVE` or `DISABLED`, `createdAt` is an ISO timestamp and `lastLoginAt` is an ISO timestamp or `null`. This same shape is used for login, profile, admin CRUD and avatar responses. User responses have `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`. There are no role-management endpoints.
 
 | Method and route | Access | Result |
 | --- | --- | --- |
@@ -96,24 +96,26 @@ Login accepts `{ email, password }` and returns:
 
 ```json
 {
-  "user": { "id": "<uuid>", "email": "admin@example.com", "role": "ADMIN", "avatar": null },
+  "user": { "id": "<uuid>", "email": "admin@example.com", "role": "ADMIN", "avatar": null, "displayName": "Administrator", "phone": null, "status": "ACTIVE", "createdAt": "2026-11-26T00:00:00.000Z", "lastLoginAt": "2026-11-26T08:00:00.000Z" },
   "accessToken": "<signed JWT>",
   "tokenType": "Bearer",
   "expiresIn": 3600
 }
 ```
 
-Send `Authorization: Bearer <accessToken>` for protected requests. Account creation accepts `{ email, password, role? }`, defaulting to `USER`. Updates accept one or more of `email`, `password`, and `role`; omit an unchanged password. An explicitly empty password is invalid. Unsupported fields are rejected.
+Send `Authorization: Bearer <accessToken>` for protected requests. Account creation accepts `{ email, password, role?, displayName?, phone?, status? }`, defaulting to `USER`, an empty display name, no phone and `ACTIVE`. Updates accept one or more of `email`, `password`, `role`, `displayName`, `phone`, and `status`; omit an unchanged password. An explicitly empty password is invalid. Unsupported fields are rejected.
 
-Emails are trimmed, lowercased, unique, and at most 254 characters. Passwords contain 12–128 Unicode characters; spaces are preserved. Hashes use salted Argon2id with 19 MiB memory, two iterations, and parallelism one.
+Display names are trimmed, at most 200 characters and cannot contain null characters. Phone numbers are trimmed and use E.164 notation (`+` followed by 2–15 digits, first digit nonzero); send `null` to clear a number. An empty string is invalid. Status is case-sensitive. Creation, disable, login and password-change timestamps and creator IDs are server-managed.
+
+Emails are trimmed, lowercased, unique, and at most 254 characters; the database also enforces lowercase storage and `VARCHAR(254)`. Passwords contain 12–128 Unicode characters; spaces are preserved. Hashes use salted Argon2id with 19 MiB memory, two iterations, and parallelism one.
 
 Errors are `{ "error": "message" }`:
 
 - `400`: invalid bodies, IDs, roles, credentials, or malformed JSON.
-- `401`: missing, invalid, expired, or revoked authentication; incorrect login credentials.
+- `401`: missing, invalid, expired, or revoked authentication; incorrect login credentials or a disabled account. Disabled login uses the same generic error as incorrect credentials.
 - `403`: administrator access required, including when the shared `ADMIN` role is inactive, not yet started, or expired.
 - `404`: missing account or route.
-- `409`: duplicate email, self-deletion/demotion, last-administrator protection, missing role configuration, or repeated concurrent-write conflicts.
+- `409`: duplicate email, self-deletion/demotion/disabling, last-active-administrator protection, missing role configuration, or repeated concurrent-write conflicts.
 - `413`: body over 16 KiB; `415`: unsupported encoding.
 - `429`: login rate limit; `500`: generic unexpected failure.
 
@@ -127,6 +129,42 @@ must not change the API contract. Service business rules and upload inspection
 remain separate from request schemas.
 
 Login is limited to 20 requests per IP per 15 minutes, including successful and invalid attempts. The limit is in memory and returns `Retry-After`. Multi-instance hosting requires a shared limiter store; configure proxy trust to match the actual trusted proxy topology before deployment.
+
+## Account status and provenance
+
+Set `status: "DISABLED"` through the existing admin PATCH endpoint to block an
+account without deleting its identity, files, credits or financial relationships.
+The server sets `disabledAt`; reactivation clears it. Disabling or reactivating
+increments `sessionVersion`, as do email, role or password changes. Old tokens
+remain revoked after reactivation. Name/phone edits do not revoke sessions.
+Administrators cannot disable themselves; removing, demoting or disabling the
+last active administrator returns 409. All protected requests and transactional
+service checks reject disabled actors. Existing hard deletion remains available
+and retains its previous financial-reference behavior; disabling is preferred
+when the identity must be retained.
+
+Successful login records `lastLoginAt` after rechecking account status and session
+version in a serializable transaction. Failed login never changes it. Admin-created
+accounts record `createdById`; deleting the creator sets that reference to null.
+Assigning or resetting a password sets `passwordChangedAt`. Locally bootstrapped
+accounts have no creator reference. `updatedAt` tracks Prisma writes, including
+successful logins. These timestamps are not a substitute for an audit-event history.
+
+The `user_account_hardening` migration backfills existing `createdAt` and
+`updatedAt` to migration time, `displayName` to `''`, and `status` to `ACTIVE`.
+It leaves unknown creator, login and password-change values null. It checks
+existing emails and session versions before altering the table and aborts
+atomically if emails exceed 254 characters, are not lowercase, or a session
+version is negative. Resolve invalid legacy rows explicitly; never truncate,
+merge accounts or reset the database to apply it. The migration holds a table
+lock while checking and adding the fields. Preserve its CHECK constraints in
+later migrations. Deploy the migration and backend before the updated clients,
+which validate the expanded user response.
+
+Role validity remains shared on `Role` and is still checked only for administrator
+privileges. Company ownership/onboarding (O-19), driver assignments (O-23),
+per-user role validity, invitations, consent, MFA, password recovery and refresh
+tokens remain deferred; see [User and roles](ENTITIES.md#user-and-roles).
 
 ## Uploaded files
 
@@ -232,8 +270,9 @@ dependencies are required.
 
 `/screen-presets` stores shared screen layouts for the web administrator's van-video
 converter. Every operation rechecks the session and active ADMIN role inside a
-serializable transaction. Presets have no owner restriction. The mobile app keeps
-its fixed Version A layout and does not use this API.
+serializable transaction. Presets have no owner restriction. The mobile app does
+not use this API; it saves output resolutions on each phone and scales the Version A
+regions to them.
 
 | Method | Path | Result |
 | --- | --- | --- |
@@ -322,9 +361,9 @@ List pagination follows the files API: `limit` defaults to 50 (1–100), `offset
 
 JWTs use HS256, immutable user ID as `sub`, a private session-version claim, issuer `camioane-api`, audience `camioane-frontend`, and a one-hour lifetime. Middleware checks the account and session version against PostgreSQL on every request.
 
-Email, password, and role changes increment the session version, invalidating every existing token for that account. A no-op update does not. Deletion immediately invalidates access; recreating the same email receives a different ID. The user-management migration invalidates old email-based tokens, so existing clients must sign in again.
+Email, password, role, and account-status changes increment the session version, invalidating every existing token for that account. A no-op update does not. Deletion immediately invalidates access; recreating the same email receives a different ID. The user-management migration invalidates old email-based tokens, so existing clients must sign in again.
 
-Authorization is enforced server-side and rechecked within serializable CRUD transactions. An administrator cannot delete or demote their own account. Any change from `ADMIN` to another role is a demotion. Removing or demoting the last administrator is forbidden; serialization conflicts are retried up to three attempts. Password hashing occurs before the transaction.
+Authorization is enforced server-side and rechecked within serializable CRUD transactions. An administrator cannot delete, disable or demote their own account. Any change from `ADMIN` to another role is a demotion. Removing, disabling or demoting the last active administrator is forbidden; serialization conflicts are retried up to three attempts. Password hashing occurs before the transaction.
 
 Administrator operations require a shared `ADMIN` role with `activ = true`, `startDate <= now`, and either no `endDate` or `now < endDate`. The start boundary is inclusive and the end boundary exclusive. Changing this shared role affects every administrator. Middleware reads the current role on each request, and services recheck validity inside their transactions; no scheduler or role claims in JWTs are involved.
 
@@ -338,7 +377,7 @@ The local Compose defaults are database/user `camioane`, password `camioane_dev_
 
 `docker compose down` stops the database while preserving its named data volume. Do not use `down -v`, Prisma resets, or truncation for routine setup.
 
-`User` has a UUID primary key, unique email, password hash, required indexed `roleId` foreign key, and session version defaulting to zero. User creation resolves the role name in the service and defaults to `USER` at the API boundary; direct database inserts must supply a role reference. Referenced roles cannot be deleted. Reuse the client in `src/lib/prisma.ts`.
+`User` has a UUID primary key, unique email, password hash, required indexed `roleId` foreign key, and a nonnegative session version defaulting to zero. It also has account status, name/phone, creation/update/login/password timestamps, and an indexed nullable creator reference (see [Account status and provenance](#account-status-and-provenance)). User creation resolves the role name in the service and defaults to `USER` at the API boundary; direct database inserts must supply a role reference. Referenced roles cannot be deleted. Reuse the client in `src/lib/prisma.ts`.
 
 `UploadedFile` stores a UUID ID, optional owner relation (`ON DELETE SET NULL`), provider/key pair, sanitized original name, detected MIME type, integer byte count, and creation timestamp. Provider/key pairs are unique. Owner/time/ID and time/ID indexes support filtered and administrator listings. The uploaded-files migration adds this table and its indexes without changing existing user or role data.
 

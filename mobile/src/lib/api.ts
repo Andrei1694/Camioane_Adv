@@ -1,7 +1,7 @@
 import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 import { sessionSignal, signOut, useSession } from '../auth/session'
-import { isRole } from './user'
+import { isRole, isUserStatus } from './user'
 import type { Credentials, User } from './user'
 import type { FilePage, StoredFile } from './file'
 import { downloadVideo, uploadVideo } from './fileTransport'
@@ -25,10 +25,18 @@ function record(value: unknown): value is Record<string, unknown> {
 
 function decodeUser(value: unknown): User {
   if (!record(value) || typeof value.id !== 'string' || typeof value.email !== 'string'
-    || !isRole(value.role)) {
+    || !isRole(value.role) || !isUserStatus(value.status)
+    || typeof value.displayName !== 'string' || value.displayName.length > 200 || value.displayName.includes('\0')
+    || !(value.phone === null || (typeof value.phone === 'string' && /^\+[1-9]\d{1,14}$/.test(value.phone)))
+    || typeof value.createdAt !== 'string' || Number.isNaN(Date.parse(value.createdAt))
+    || !(value.lastLoginAt === null || (typeof value.lastLoginAt === 'string' && !Number.isNaN(Date.parse(value.lastLoginAt))))) {
     throw new ApiError(0, 'The API returned an unexpected user response.')
   }
-  return { id: value.id, email: value.email, role: value.role }
+  return {
+    id: value.id, email: value.email, role: value.role,
+    displayName: value.displayName, phone: value.phone, status: value.status,
+    createdAt: value.createdAt, lastLoginAt: value.lastLoginAt,
+  }
 }
 
 function decodeUserResponse(value: unknown) {

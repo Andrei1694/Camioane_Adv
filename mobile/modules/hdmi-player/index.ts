@@ -8,4 +8,4 @@ export const hdmiPlayer = Constants.executionEnvironment === 'storeClient'
   : requireOptionalNativeModule<HdmiPlayer>('HdmiPlayer')
 
 export const unavailableMessage = 'HDMI playback needs a Camioane development build installed on an Android phone or iPhone. It is not available in Expo Go.'
-export type { HdmiStatus, PlaybackState } from './src/types'
+export type { HdmiPlacement, HdmiStatus, PlaybackState } from './src/types'

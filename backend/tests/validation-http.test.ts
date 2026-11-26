@@ -19,6 +19,11 @@ const models = {
     async findUnique({ where }: { where: { id?: string; email?: string } }) {
       return users.find((user) => where.id === user.id || where.email === user.email) ?? null;
     },
+    async update({ where, data }: { where: { id: string }; data: { lastLoginAt: Date } }) {
+      const user = users.find((user) => user.id === where.id);
+      assert.ok(user);
+      return Object.assign(user, data);
+    },
   },
   car: { async findUnique() { return null; } },
   savedRoute: { async findUnique() { return null; } },
@@ -37,7 +42,8 @@ let user: HttpUser;
 
 async function fixtureUser(name: RoleName, passwordHash: string): Promise<HttpUser> {
   const id = randomUUID();
-  const user = {
+  const user: HttpUser = {
+    displayName: '', phone: null, status: 'ACTIVE', createdAt: new Date(), lastLoginAt: null,
     id, email: `${id}@example.test`, password: passwordHash, sessionVersion: 0, avatar: null,
     role: { id: randomUUID(), name, activ: true, startDate: new Date(0), endDate: null },
     token: await signToken(id),
@@ -76,7 +82,7 @@ describe('Request validation responses', { concurrency: false }, () => {
 
   it('returns the same single public message for multiple invalid fields', async () => {
     const cases: [string, unknown, string][] = [
-      ['/users', { extra: true }, 'Only email, password, and role can be changed'],
+      ['/users', { extra: true }, 'Only email, password, role, displayName, phone, and status can be changed'],
       ['/users', { role: 'bad' }, 'Email must be a string'],
       ['/credits/purchases', { credits: 0, price: 1 }, 'Only credits can be provided'],
       ['/credits/adjustments', { amount: 0, userId: null, note: null }, 'Amount must not be zero'],

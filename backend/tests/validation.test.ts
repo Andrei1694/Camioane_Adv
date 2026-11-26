@@ -80,7 +80,7 @@ describe('User validation', () => {
     assert.deepEqual(parseCreateUser({ email: 'a@b.test', password }), { email: 'a@b.test', password, role: 'USER' });
     assert.deepEqual(parseCreateUser({ email: 'a@b.test', password, role: 'DRIVER' }).role, 'DRIVER');
     rejects(() => parseCreateUser({ email: 'a@b.test', password, role: 'admin' }), 'Role must be ADMIN, OPERATOR, DRIVER, or USER');
-    rejects(() => parseCreateUser({ email: 'a@b.test', password, id }), 'Only email, password, and role can be changed');
+    rejects(() => parseCreateUser({ email: 'a@b.test', password, id }), 'Only email, password, role, displayName, phone, and status can be changed');
   });
 
   it('parses partial updates', () => {
@@ -88,7 +88,7 @@ describe('User validation', () => {
     assert.deepEqual(parseUpdateUser({ password }), { password });
     assert.deepEqual(parseUpdateUser({ role: 'OPERATOR' }), { role: 'OPERATOR' });
     rejects(() => parseUpdateUser({}), 'Provide at least one field to update');
-    rejects(() => parseUpdateUser({ sessionVersion: 1 }), 'Only email, password, and role can be changed');
+    rejects(() => parseUpdateUser({ sessionVersion: 1 }), 'Only email, password, role, displayName, phone, and status can be changed');
     rejects(() => parseUpdateUser({ role: null }), 'Role must be ADMIN, OPERATOR, DRIVER, or USER');
   });
 

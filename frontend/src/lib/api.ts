@@ -1,6 +1,6 @@
 import { sessionSignal, signOut, useSession } from '../auth/session'
 import { apiErrorMessage } from './apiErrorMessage'
-import { isRole } from './user'
+import { getDisplayNameError, getPhoneError, isRole, isUserStatus } from './user'
 import type { Avatar, Credentials, User, UserInput } from './user'
 import type { FilePage, StoredFile } from './file'
 import { isPurchaseStatus, isTransactionType } from './credit'
@@ -66,10 +66,18 @@ function decodeAvatar(value: unknown, userId: string): Avatar | null | undefined
 function decodeUser(value: unknown): User {
   const avatar = record(value) && isUuid(value.id) ? decodeAvatar(value.avatar, value.id) : undefined
   if (!record(value) || typeof value.id !== 'string' || typeof value.email !== 'string'
-    || !isRole(value.role) || avatar === undefined) {
+    || !isRole(value.role) || avatar === undefined
+    || typeof value.displayName !== 'string' || getDisplayNameError(value.displayName)
+    || !(value.phone === null || (typeof value.phone === 'string' && value.phone !== '' && !getPhoneError(value.phone)))
+    || !isUserStatus(value.status) || !isTimestamp(value.createdAt)
+    || !(value.lastLoginAt === null || isTimestamp(value.lastLoginAt))) {
     throw new ApiError(0, 'Serverul a returnat date neașteptate despre utilizator.')
   }
-  return { id: value.id, email: value.email, role: value.role, avatar }
+  return {
+    id: value.id, email: value.email, role: value.role, avatar,
+    displayName: value.displayName, phone: value.phone, status: value.status,
+    createdAt: value.createdAt, lastLoginAt: value.lastLoginAt,
+  }
 }
 
 function decodeUserResponse(value: unknown) {

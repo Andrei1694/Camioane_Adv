@@ -58,7 +58,7 @@ describe('Validation compatibility', () => {
       const message = field === 'role' ? 'Role must be ADMIN, OPERATOR, DRIVER, or USER' : `${field === 'email' ? 'Email' : 'Password'} must be a string`;
       rejects(() => parseUpdateUser({ [field]: undefined }), message);
     }
-    rejects(() => parseCreateUser({ extra: true }), 'Only email, password, and role can be changed');
+    rejects(() => parseCreateUser({ extra: true }), 'Only email, password, role, displayName, phone, and status can be changed');
     rejects(() => parseCreateUser({ role: 'bad' }), 'Email must be a string');
     rejects(() => parseCreateUser({ email: 'a@b.c', role: 'bad' }), 'Password must be a string');
     rejects(() => parseUpdateUser({ role: null, password: null, email: null }), 'Email must be a string');

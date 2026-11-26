@@ -3,6 +3,10 @@
 These instructions apply to `frontend/` and its descendants. Keep frontend work
 scoped here unless the requested feature also requires changes elsewhere.
 
+Read and follow [CLEAN_CODE.md](../CLEAN_CODE.md) when writing or changing code.
+It defines the shared JavaScript/TypeScript function conventions; continue
+following the package-specific rules as well.
+
 ## User workflow preferences
 
 - Do not write new tests or modify existing tests unless the user explicitly

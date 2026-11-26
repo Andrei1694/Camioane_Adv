@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Read and follow [CLEAN_CODE.md](./CLEAN_CODE.md) when writing or changing code.
+It defines the shared JavaScript/TypeScript function conventions; continue
+following the package-specific rules as well.
+
 Camioane App is the admin side of a business that sells advertising campaigns on LED-screen trucks running predefined routes. `BUSINESS_PLAN.md` (Romanian) holds the product requirements. So far the code covers authentication, user management with profile pictures, file uploads, a browser-side video editor for uploaded MP4s, a client-side route builder, and an admin dashboard UI that runs on sample data. `mobile/` holds an Expo app for drivers and operators that so far only signs in. `website/` holds the public presentation site for advertisers, a static landing page. Campaigns, credits, and payments are not built yet.
 
 
@@ -83,13 +87,26 @@ Use Node.js 24+ and npm. Run each command from inside its package.
 - The Credits page (`src/pages/CreditsPage/`, admin-only at `/credits`) runs on the real `/credits` API. It leads with every pending purchase, oldest first: `creditsData.ts` pages through `GET /credits/purchases?status=PENDING`, because the API lists newest first, 100 at a time. Admins confirm (with an optional payment reference), mark failed or cancel each one in a review dialog, and adjust balances by hand. The ledger and purchase history page by 50 and filter by account; there is no endpoint listing every account's balance, so a balance shows only for the account picked. All its queries sit under `['credits', revision]`, which each action invalidates.
 - The route builder (`src/pages/RouteBuilderPage/`, admin-only at `/routes`) is lazy-loaded. It uses MapLibre GL with the Directions plugin and a public OSRM demo endpoint, configured through `VITE_MAP_STYLE_URL` and `VITE_ROUTING_API_URL`. Routes exist only on the client: there is no save API yet, and routing doesn't account for truck-specific restrictions.
 
-- Van-screen video (`frontend/src/pages/ScreenVideoPage/`, admin-only at `/screen` and `/files/$fileId/screen`) previews and converts a local or stored MP4 into three copies on an editable canvas. Shared admin presets (`/screen-presets`) persist canvas dimensions, three regions and their framing, with version conflicts preserving local edits. `screenLayout.ts` holds the unconfirmed ViPlex Version A fallback (2304 × 512, all contain) and placement maths shared by preview and rendering; both consume the same layout. Conversion snapshots the layout/preset name and includes the name in the exported filename. Mobile keeps its fixed Version A layout. The browser uploads only the converted result as a new file; the original is unchanged. `RenderProgress` is shared with the editor from `src/components/`.
+- Van-screen video (`frontend/src/pages/ScreenVideoPage/`, admin-only at `/screen` and `/files/$fileId/screen`) previews and converts a local or stored MP4 into three copies on an editable canvas. Shared admin presets (`/screen-presets`) persist canvas dimensions, three regions and their framing, with version conflicts preserving local edits. `screenLayout.ts` holds the unconfirmed ViPlex Version A fallback (2304 × 512, all contain) and placement maths shared by preview and rendering; both consume the same layout. Conversion snapshots the layout/preset name and includes the name in the exported filename. Mobile doesn't use these presets: each phone saves its own output resolutions and scales the Version A regions to them (`mobile/src/features/screen/`). The browser uploads only the converted result as a new file; the original is unchanged. `RenderProgress` is shared with the editor from `src/components/`.
 
 **Mobile (`mobile/`):**
 - It is for the `DRIVER` and `OPERATOR` roles. `appRoles` in `src/lib/user.ts` decides this; other roles see an explanation and a sign-out button.
 - `src/auth/session.ts` and `src/lib/api.ts` port the web client's session store and fetch client: same runtime decoding, 15 s timeout, stale-response drop and 401 sign-out. The token and its expiry persist in `expo-secure-store` under `camioane.session.v1`, and writes are chained so they land in order.
 - Expo Router reads routes from `src/app/`. The root `_layout.tsx` holds the splash screen until fonts and the saved session load, then uses `Stack.Protected` to choose between `(app)` and `sign-in`. `(app)/_layout.tsx` checks `GET /users/me`, applies the role gate, and is keyed on `revision`.
 - TanStack Query's `focusManager` follows `AppState`, so returning to the foreground rechecks the session.
+- `/playlist` provides persistent per-user HDMI MP4 playlists from phone imports and
+  the existing Files API. `mobile/src/features/playlist/` owns metadata and videos
+  under `Paths.document/hdmi-playlist/<userId>/`. Edits re-prepare and require Play;
+  files are removed only after native readers detach. Both platforms enforce
+  session expiry. iOS loops an AVQueuePlayer in background; Android 11+ uses a
+  display window context and a mediaPlayback foreground service. Android lock
+  behaviour needs hardware verification; dim the phone instead if HDMI blanks.
+  Rebuild the development app after native changes.
+- HDMI test and playlist share per-phone X/Y/scale in `mobile/src/features/hdmi-placement/`.
+  Default is 1:1 at the top-left, cropping outside the negotiated HDMI frame. The test
+  provides live offsets/scale, offered modes, crop warnings and a fixed native calibration
+  grid. Apply saved placement after native start, before prepare; preserve editor canvas
+  geometry and uploaded files. The grid is session-only and clears on Stop/error/expiry.
 - The home screen shows that route and shift assignments aren't available yet; there is no API for them.
 - `ios/` and `android/` are generated by `expo prebuild` or EAS, and Git ignores them.
 
@@ -108,5 +125,5 @@ When you change a backend response contract, also update its consumers in `front
 - Don't edit or commit `backend/src/generated/prisma/`; it's generated. After schema changes, create a named migration with `--create-only`, review the SQL, apply it, then explicitly run `prisma:generate` and `typecheck`. Never use `prisma db push`, `migrate reset`, or `docker compose down -v`, and never truncate tables. Deployments apply committed migrations with `npx prisma migrate deploy`, never `migrate dev`.
 - Never overwrite existing `.env` files. Frontend and website `VITE_*` and mobile `EXPO_PUBLIC_*` values are public.
 - Backend test helpers live in `tests/helpers/` (environment, test server, fixtures, temporary storage, Prisma transaction fakes, subprocesses); MP4 samples and `--import` preloads live in `tests/fixtures/`. To reach a branch the shared database must not be put in (a single administrator, an expired ADMIN role, a storage failure), use those seams; never change shared roles or real accounts.
-- `hardware_docs/` is an empty placeholder.
+- `hardware_docs/` holds the NovaStar TB60 controller documentation (vendor manuals, NovaCloud API snapshots, short developer notes in `developer/`) and photos of the truck's screens in `evidence/`. Start with `hardware_docs/Phone-HDMI-Playback.md` for screen sizes, the canvas layout and HDMI test findings; it marks which values are measured and which are inferred. Keep the vendor files unchanged.
 - Commit messages use `feat:` or `fix:` followed by an imperative description. Commit lockfiles together with their manifests.

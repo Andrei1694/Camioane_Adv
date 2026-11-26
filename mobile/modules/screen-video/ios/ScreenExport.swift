@@ -63,15 +63,18 @@ final class ScreenExport: @unchecked Sendable {
             videoOutput.videoComposition = makeScreenComposition(track: track, duration: duration,
               transform: transform, frameDuration: frameDuration, layout: layout)
             videoOutput.alwaysCopiesSampleData = false
+            let width = Int(layout.width), height = Int(layout.height)
+            // Keeps Version A's 12 Mbps per 2304 × 512 picture as the bit density at every size.
+            let bitRate = min(50_000_000, max(2_000_000, 12_000_000 * width * height / (2304 * 512)))
             let settings: [String: Any] = [
               AVVideoCodecKey: AVVideoCodecType.h264,
-              AVVideoWidthKey: 2304, AVVideoHeightKey: 512,
-              AVVideoCompressionPropertiesKey: [AVVideoAverageBitRateKey: 12_000_000, AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel],
+              AVVideoWidthKey: width, AVVideoHeightKey: height,
+              AVVideoCompressionPropertiesKey: [AVVideoAverageBitRateKey: bitRate, AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel],
               AVVideoColorPropertiesKey: [AVVideoColorPrimariesKey: AVVideoColorPrimaries_ITU_R_709_2,
                 AVVideoTransferFunctionKey: AVVideoTransferFunction_ITU_R_709_2, AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_709_2]
             ]
             guard writer.canApply(outputSettings: settings, forMediaType: .video) else {
-              throw screenError("Acest iPhone nu poate codifica H.264 la 2304 × 512.")
+              throw screenError("Acest iPhone nu poate codifica H.264 la \(width) × \(height).")
             }
             let videoInput = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
             videoInput.expectsMediaDataInRealTime = false

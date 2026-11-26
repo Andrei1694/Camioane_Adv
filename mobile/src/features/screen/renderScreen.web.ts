@@ -6,7 +6,7 @@ import {
 } from 'mediabunny'
 import type { InputAudioTrack, InputVideoTrack } from 'mediabunny'
 import { ExportError } from './exportError'
-import { screenCanvas } from './screenLayout'
+import { formatResolution } from './screenLayout'
 import type { Composition } from './types'
 
 export async function renderScreen(source: Blob, composition: Composition, { signal, onProgress }: {
@@ -22,8 +22,9 @@ export async function renderScreen(source: Blob, composition: Composition, { sig
     if (!(await video.canDecode())) throw new ExportError('Acest browser nu poate decoda videoclipul. Încearcă o versiune recentă de Chrome, Edge sau Safari.')
     const audio = await input.getPrimaryAudioTrack()
     if (audio && !(await audio.canDecode())) throw new ExportError('Acest browser nu poate decoda sunetul videoclipului. Încearcă o versiune recentă de Chrome, Edge sau Safari.')
-    const videoCodec = await getFirstEncodableVideoCodec(['avc'], { ...screenCanvas, quality: QUALITY_HIGH })
-    if (!videoCodec) throw new ExportError('Acest browser nu poate codifica video H.264 la 2304 × 512. Folosește o versiune recentă de Chrome, Edge sau Safari.')
+    const { width, height } = composition
+    const videoCodec = await getFirstEncodableVideoCodec(['avc'], { width, height, quality: QUALITY_HIGH })
+    if (!videoCodec) throw new ExportError(`Acest browser nu poate codifica video H.264 la ${formatResolution(composition)}. Folosește o versiune recentă de Chrome, Edge sau Safari.`)
     const audioCodec = audio ? await getFirstEncodableAudioCodec(['aac', 'opus'], {
       numberOfChannels: await audio.getNumberOfChannels(), sampleRate: await audio.getSampleRate(), quality: QUALITY_HIGH,
     }) : null
@@ -33,7 +34,7 @@ export async function renderScreen(source: Blob, composition: Composition, { sig
     if (!Number.isFinite(duration) || duration <= 0) throw new ExportError('Durata videoclipului nu a putut fi citită.')
     signal.throwIfAborted()
 
-    const canvas = new OffscreenCanvas(screenCanvas.width, screenCanvas.height)
+    const canvas = new OffscreenCanvas(width, height)
     const context = canvas.getContext('2d')
     if (!context) throw new ExportError('Acest browser nu poate crea imaginea pentru ecranul camionului.')
     output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target: new BufferTarget() })
@@ -70,7 +71,7 @@ async function pumpVideo(track: InputVideoTrack, source: CanvasSource, context: 
     try {
       signal.throwIfAborted()
       context.fillStyle = '#000'
-      context.fillRect(0, 0, screenCanvas.width, screenCanvas.height)
+      context.fillRect(0, 0, composition.width, composition.height)
       // Use the preview's rectangles, normalizing source pixels if the browser's
       // video element and decoder report different pixel-aspect dimensions.
       const scaleX = sample.displayWidth / composition.sourceWidth

@@ -7,9 +7,12 @@ import type { CreditPurchase, CreditTransaction } from '../../src/lib/credit'
 
 export const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 export const stamp = '2026-11-10T10:00:00.000Z'
-export const user = (overrides: Partial<User> = {}): User => ({
-  id: id(1), email: 'admin@example.test', role: 'ADMIN', avatar: null, ...overrides,
-})
+export function user(overrides: Partial<User> = {}): User {
+  return {
+    id: id(1), email: 'admin@example.test', role: 'ADMIN', avatar: null,
+    displayName: '', phone: null, status: 'ACTIVE', createdAt: stamp, lastLoginAt: null, ...overrides,
+  }
+}
 export const car = (overrides: Partial<Car> = {}): Car => ({
   id: id(2), plate: 'B 01 TEST', makeModel: 'Test van', driverName: 'Test Driver',
   routeId: 'centru', status: 'active', version: 1, createdAt: stamp, updatedAt: stamp, ...overrides,

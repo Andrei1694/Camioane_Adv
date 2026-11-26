@@ -1,6 +1,14 @@
 export const roles = ['ADMIN', 'OPERATOR', 'DRIVER', 'USER'] as const
 export type Role = typeof roles[number]
 
+export const userStatuses = ['ACTIVE', 'DISABLED'] as const
+export type UserStatus = typeof userStatuses[number]
+export const userStatusLabels: Record<UserStatus, string> = { ACTIVE: 'Activ', DISABLED: 'Dezactivat' }
+
+export function isUserStatus(value: unknown): value is UserStatus {
+  return userStatuses.some((status) => status === value)
+}
+
 export const roleLabels: Record<Role, string> = {
   ADMIN: 'Administrator',
   OPERATOR: 'Operator',
@@ -24,6 +32,11 @@ export interface User {
   email: string
   role: Role
   avatar: Avatar | null
+  displayName: string
+  phone: string | null
+  status: UserStatus
+  createdAt: string
+  lastLoginAt: string | null
 }
 
 export interface Credentials {
@@ -35,6 +48,17 @@ export interface UserInput {
   email: string
   role: Role
   password?: string
+  displayName?: string
+  phone?: string | null
+  status?: UserStatus
+}
+
+export function getDisplayNameError(name: string): string | undefined {
+  if (name.length > 200 || name.includes('\0')) return 'Numele poate avea cel mult 200 de caractere, fără caractere nule.'
+}
+
+export function getPhoneError(phone: string): string | undefined {
+  if (phone && !/^\+[1-9]\d{1,14}$/.test(phone)) return 'Folosește formatul internațional, de exemplu +40712345678.'
 }
 
 export function normalizeEmail(email: string) {

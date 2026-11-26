@@ -9,8 +9,8 @@ import type { SessionIdentity } from '../types/user.ts';
 const conflict = 'This campaign changed during editing. Reload the latest campaign and try again.';
 
 async function requireActor(tx: Prisma.TransactionClient, actor: SessionIdentity) {
-  const user = await tx.user.findUnique({ where: { id: actor.id }, select: { sessionVersion: true, role: true } });
-  if (!user || user.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
+  const user = await tx.user.findUnique({ where: { id: actor.id }, select: { sessionVersion: true, status: true, role: true } });
+  if (!user || user.status !== 'ACTIVE' || user.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
   if (user.role.name !== 'ADMIN' || !isRoleValid(user.role)) throw new AppError(403, 'Administrator access is required');
 }
 

@@ -6,8 +6,9 @@ export interface PublicAvatar {
   url: string;
   updatedAt: Date;
 }
-export type PublicUser = Pick<User, 'id' | 'email'> & { role: RoleName; avatar: PublicAvatar | null };
-export type UserWithRole = Pick<User, 'id' | 'email'> & { role: Role; avatar: Pick<UserAvatar, 'updatedAt'> | null };
+type PublicUserFields = Pick<User, 'id' | 'email' | 'displayName' | 'phone' | 'status' | 'createdAt' | 'lastLoginAt'>;
+export type PublicUser = PublicUserFields & { role: RoleName; avatar: PublicAvatar | null };
+export type UserWithRole = PublicUserFields & { role: Role; avatar: Pick<UserAvatar, 'updatedAt'> | null };
 export type SessionUser = UserWithRole & Pick<User, 'sessionVersion'>;
 export type SessionIdentity = Pick<User, 'id' | 'sessionVersion'>;
 
@@ -16,7 +17,7 @@ export interface UserCredentials {
   password: string;
 }
 
-export type CreateUserData = UserCredentials & { role: RoleName };
+export type CreateUserData = UserCredentials & { role: RoleName } & Partial<Pick<User, 'displayName' | 'phone' | 'status'>>;
 export type UpdateUserData = Partial<CreateUserData>;
 
 export interface AuthenticationData {

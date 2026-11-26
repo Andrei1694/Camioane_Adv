@@ -152,15 +152,15 @@ class ScreenVideoModule : Module() {
           .addListener(object : Transformer.Listener {
             override fun onCompleted(composition: Composition, exportResult: ExportResult) {
               val entry = exports.remove(id) ?: return
-              if (exportResult.width != 2304 || exportResult.height != 512) {
-                entry.second.reject("ERR_SCREEN_SIZE", "Telefonul nu poate produce exact 2304 × 512.", null)
+              if (exportResult.width != effect.width || exportResult.height != effect.height) {
+                entry.second.reject("ERR_SCREEN_SIZE", "Telefonul nu poate produce exact ${effect.width} × ${effect.height}.", null)
               } else {
                 sendEvent("onProgress", mapOf("id" to id, "progress" to 1))
                 entry.second.resolve(null)
               }
             }
             override fun onError(composition: Composition, exportResult: ExportResult, exportException: ExportException) {
-              exports.remove(id)?.second?.reject("ERR_SCREEN_CONVERSION", "Conversia H.264 la 2304 × 512 a eșuat. Verifică formatul sursei și spațiul disponibil.", exportException)
+              exports.remove(id)?.second?.reject("ERR_SCREEN_CONVERSION", "Conversia H.264 la ${effect.width} × ${effect.height} a eșuat. Verifică formatul sursei și spațiul disponibil.", exportException)
             }
           }).build()
         exports[id] = Pair(transformer, promise)

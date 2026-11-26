@@ -68,7 +68,11 @@ describe('Profile picture API', { concurrency: false }, () => {
     const { user: updated } = await response.json();
     assert.equal(updated.avatar.url, `/users/${user.id}/avatar`);
     assert.ok(!Number.isNaN(Date.parse(updated.avatar.updatedAt)));
-    assert.deepEqual(updated, { id: user.id, email: user.email, role: 'USER', avatar: updated.avatar });
+    const account = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    assert.deepEqual(updated, {
+      id: user.id, email: user.email, role: 'USER', avatar: updated.avatar,
+      displayName: '', phone: null, status: 'ACTIVE', createdAt: account.createdAt.toISOString(), lastLoginAt: null,
+    });
     assert.deepEqual(await (await api.request('GET', '/users/me', { token: user.token })).json(), { user: updated });
 
     const [key] = await storage.keys();

@@ -7,10 +7,11 @@ import { screenMedia } from '../../../modules/screen-video/index'
 import { useSession } from '../../auth/session'
 import { api, ApiError } from '../../lib/api'
 import type { StoredFile } from '../../lib/file'
-import { defaultFits, placement, screenCanvas, screenFileName, screenRegions } from './screenLayout'
-import type { Fit, RegionId } from './screenLayout'
+import { defaultFits, placement, regionsFor, sameResolution, screenFileName } from './screenLayout'
+import type { Fit, RegionId, Resolution } from './screenLayout'
 import { deleteVideo, pickMp4 } from './videoFiles'
 import { renderVideo } from './renderVideo'
+import { useResolutions } from './useResolutions'
 import { abortError, mediaError } from './types'
 import type { Composition, LocalVideo, MediaInfo } from './types'
 
@@ -37,8 +38,11 @@ export function useScreenEditor(fileId?: string) {
   const [retry, setRetry] = useState<(() => void) | null>(null)
   const [w] = useState(() => ({ id: `screen-${Date.now()}-${++nextWorkspace}`, alive: true, files: new Set<LocalVideo>(),
     sessions: new Set<string>(), activePreview: '', controller: null as AbortController | null, task: null as Promise<void> | null }))
-  const composition: Composition | undefined = info ? { ...screenCanvas, sourceWidth: info.width, sourceHeight: info.height,
-    regions: screenRegions.map((region) => placement(info.width, info.height, region, fits[region.id])) } : undefined
+  const resolutions = useResolutions()
+  const resolution = resolutions.selected
+  const regions = regionsFor(resolution)
+  const composition: Composition | undefined = info ? { ...resolution, sourceWidth: info.width, sourceHeight: info.height,
+    regions: regions.map((region) => placement(info.width, info.height, region, fits[region.id])) } : undefined
   const compositionJson = composition ? JSON.stringify(composition) : ''
 
   useEffect(() => {
@@ -182,7 +186,7 @@ export function useScreenEditor(fileId?: string) {
     run(async (signal) => {
       await screenMedia?.pause(w.activePreview)
       updatePhase('Se convertește…')
-      rendered = await renderVideo(`${w.id}-job-${Date.now()}`, source, screenFileName(source.name), composition, signal,
+      rendered = await renderVideo(`${w.id}-job-${Date.now()}`, source, screenFileName(source.name, resolution), composition, signal,
         (value) => { if (w.alive && !signal.aborted) setProgress(value) })
       w.files.add(rendered)
       signal.throwIfAborted()
@@ -218,12 +222,29 @@ export function useScreenEditor(fileId?: string) {
     const operation = action === 'seek' ? screenMedia.seek(previewId, seconds) : screenMedia[action](previewId)
     void operation.catch((failure: unknown) => { if (w.alive) setError(mediaError(failure)) })
   }
-  function fit(region: RegionId, value: Fit) {
-    setFits((current) => ({ ...current, [region]: value }))
+  function discardResult() {
     setResult(undefined)
     setSaved(undefined)
     setRetry(null)
     setNotice('')
+  }
+  function fit(region: RegionId, value: Fit) {
+    setFits((current) => ({ ...current, [region]: value }))
+    discardResult()
+  }
+  function resize(next: Resolution) {
+    if (sameResolution(next, resolution)) return
+    resolutions.select(next)
+    discardResult()
+  }
+  function addResolution(next: Resolution) {
+    const problem = resolutions.add(next)
+    if (!problem) discardResult()
+    return problem
+  }
+  function removeResolution(target: Resolution) {
+    if (sameResolution(target, resolution)) discardResult()
+    resolutions.remove(target)
   }
   async function preparePlayback() {
     w.controller?.abort()
@@ -233,5 +254,6 @@ export function useScreenEditor(fileId?: string) {
   }
   return { fits, source, info, previewId, result, saved, phase, progress, error, notice, time, playing, preview,
     retry, choose, chooseStored, convert, save, control, fit, cancel: () => w.controller?.abort(),
-    preparePlayback, available: !!screenMedia }
+    preparePlayback, available: !!screenMedia, resolution, regions, customResolutions: resolutions.custom,
+    resolutionsReady: resolutions.ready, resolutionError: resolutions.error, resize, addResolution, removeResolution }
 }

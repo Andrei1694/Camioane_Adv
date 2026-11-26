@@ -109,14 +109,30 @@ enum CreditTransactionType {
   REFUND
 }
 
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
 model User {
   id                        String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email                     String              @unique
+  email                     String              @unique @db.VarChar(254)
   /// Stores a password hash, never a plaintext password.
   password                  String
   roleId                    String              @db.Uuid
   role                      Role                @relation(fields: [roleId], references: [id], onDelete: Restrict)
   sessionVersion            Int                 @default(0)
+  displayName               String              @default("") @db.VarChar(200)
+  phone                     String?             @db.VarChar(32)
+  status                    UserStatus          @default(ACTIVE)
+  disabledAt                DateTime?           @db.Timestamptz(3)
+  createdAt                 DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime            @updatedAt @db.Timestamptz(3)
+  lastLoginAt               DateTime?           @db.Timestamptz(3)
+  passwordChangedAt         DateTime?           @db.Timestamptz(3)
+  createdById               String?             @db.Uuid
+  createdBy                 User?               @relation("UserCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers              User[]              @relation("UserCreator")
   /// Cached sum of this user's credit ledger. Only applyCreditChange changes it.
   creditBalance             Int                 @default(0)
   avatar                    UserAvatar?
@@ -127,6 +143,7 @@ model User {
   createdCreditTransactions CreditTransaction[] @relation("CreditTransactionCreator")
 
   @@index([roleId])
+  @@index([createdById])
 }
 
 /// A user's profile picture. The API re-encodes every upload, so the stored

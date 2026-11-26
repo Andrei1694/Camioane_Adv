@@ -10,9 +10,14 @@ struct ScreenLayout: Decodable {
   let width: Double, height: Double, sourceWidth: Double, sourceHeight: Double
   let regions: [ScreenRectangle]
 
+  // Matches resolutionProblem in screenLayout.ts: H.264 needs even sides.
+  static func isSide(_ value: Double) -> Bool {
+    value >= 64 && value <= 4096 && value.truncatingRemainder(dividingBy: 2) == 0
+  }
+
   static func parse(_ json: String) throws -> ScreenLayout {
     let layout = try JSONDecoder().decode(ScreenLayout.self, from: Data(json.utf8))
-    guard layout.width == 2304, layout.height == 512,
+    guard isSide(layout.width), isSide(layout.height),
       layout.sourceWidth > 0, layout.sourceHeight > 0, layout.regions.count == 3,
       layout.regions.allSatisfy({ r in
         [r.sx, r.sy, r.sw, r.sh, r.dx, r.dy, r.dw, r.dh].allSatisfy { $0.isFinite && $0 >= 0 }

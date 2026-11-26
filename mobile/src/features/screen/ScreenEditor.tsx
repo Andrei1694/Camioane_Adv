@@ -1,20 +1,19 @@
 import { useState } from 'react'
 import { ActivityIndicator, Alert, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import { usePreventRemove, useRouter } from 'expo-router'
-import { useQuery } from '@tanstack/react-query'
 import Button from '../../components/Button'
 import Screen from '../../components/Screen'
+import FilePicker from '../../components/FilePicker'
 import { useSession } from '../../auth/session'
-import { api, errorMessage } from '../../lib/api'
 import { colors, type } from '../../lib/theme'
 import { hdmiPlayer } from '../../../modules/hdmi-player'
 import Preview from './Preview'
+import ResolutionPicker from './ResolutionPicker'
 import SeekBar from './SeekBar'
-import { screenRegions } from './screenLayout'
+import { formatResolution } from './screenLayout'
 import { useScreenEditor } from './useScreenEditor'
 import { prepareHdmiResult } from './hdmiResults'
 import { mediaError } from './types'
-import type { StoredFile } from '../../lib/file'
 
 function bytes(value: number) { return value < 1024 * 1024 ? `${Math.round(value / 1024)} KB` : `${(value / 1024 / 1024).toFixed(1)} MB` }
 function timecode(value: number) { const seconds = Math.max(0, Math.floor(value)); return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}` }
@@ -53,7 +52,7 @@ export default function ScreenEditor({ fileId }: { fileId?: string }) {
   return (
     <Screen>
       <Text style={styles.title} accessibilityRole="header">Ecrane camioane</Text>
-      <Text style={styles.body}>Un MP4 de 2304 × 512 cu trei copii ale aceluiași videoclip. Sunetul este păstrat; originalul rămâne neschimbat.</Text>
+      <Text style={styles.body}>Un MP4 cu trei copii ale aceluiași videoclip, la rezoluția aleasă. Sunetul este păstrat; originalul rămâne neschimbat.</Text>
       <Button label="Înapoi" onPress={() => router.canGoBack() ? router.back() : router.replace('/')} />
       {!editor.available ? <Text style={styles.error} accessibilityRole="alert">Previzualizarea și conversia necesită o versiune nouă a aplicației instalate. Nu sunt disponibile în Expo Go.</Text> : null}
       {editor.preview ? <Text style={styles.muted}>Previzualizare locală: poți converti și reda pe HDMI. Conectează-te cu un cont pentru a accesa și salva Fișiere.</Text> : null}
@@ -64,12 +63,15 @@ export default function ScreenEditor({ fileId }: { fileId?: string }) {
         {editor.source ? <View><Text style={styles.label} selectable>{editor.source.name}</Text><Text style={styles.muted}>MP4 · {bytes(editor.source.size)}</Text></View> : null}
       </View>
 
+      <ResolutionPicker selected={editor.resolution} custom={editor.customResolutions} disabled={busy || !editor.resolutionsReady}
+        error={editor.resolutionError} onSelect={editor.resize} onAdd={editor.addResolution} onRemove={editor.removeResolution} />
+
       <View style={styles.section}>
-        <View style={styles.row}><Text style={styles.heading} accessibilityRole="header">Previzualizare</Text><Text style={styles.muted}>2304 × 512 px</Text></View>
+        <View style={styles.row}><Text style={styles.heading} accessibilityRole="header">Previzualizare</Text><Text style={styles.muted}>{formatResolution(editor.resolution)} px</Text></View>
         <View style={styles.canvas}>
-          <Preview sessionId={editor.previewId} />
-          {screenRegions.map((region) => <View key={region.id} pointerEvents="none" style={[styles.outline, {
-            left: `${region.x / 2304 * 100}%`, width: `${region.width / 2304 * 100}%`,
+          <Preview sessionId={editor.previewId} resolution={editor.resolution} />
+          {editor.regions.map((region) => <View key={region.id} pointerEvents="none" style={[styles.outline, {
+            left: `${region.x / editor.resolution.width * 100}%`, width: `${region.width / editor.resolution.width * 100}%`,
           }]} />)}
         </View>
         {!editor.info ? <Text style={styles.muted}>Alege un MP4 pentru a vedea încadrarea în cele trei regiuni.</Text> : null}
@@ -82,7 +84,7 @@ export default function ScreenEditor({ fileId }: { fileId?: string }) {
         </View>
       </View>
 
-      {screenRegions.map((region) => <View key={region.id} style={styles.section}>
+      {editor.regions.map((region) => <View key={region.id} style={styles.section}>
         <Text style={styles.heading} accessibilityRole="header">{region.label}</Text>
         <Text style={styles.muted}>{region.width} × {region.height} px · x {region.x}, y {region.y}</Text>
         {(['cover', 'contain'] as const).map((fit) => <Pressable key={fit} disabled={busy}
@@ -96,7 +98,7 @@ export default function ScreenEditor({ fileId }: { fileId?: string }) {
       </View>)}
 
       <Button label={editor.preview ? 'Convertește videoclipul' : 'Convertește și salvează în Fișiere'} variant="primary"
-        disabled={busy || !editor.info || !editor.available} onPress={editor.convert} />
+        disabled={busy || !editor.info || !editor.available || !editor.resolutionsReady} onPress={editor.convert} />
       {editor.phase ? <View style={styles.section} accessibilityLiveRegion="polite">
         <View style={styles.row}><ActivityIndicator color={colors.data} /><Text style={styles.label}>{editor.phase}</Text></View>
         <View accessibilityRole="progressbar" aria-label="Progresul operației" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(editor.progress * 100)}
@@ -111,7 +113,7 @@ export default function ScreenEditor({ fileId }: { fileId?: string }) {
       {editor.result ? <View style={styles.section}>
         <Text style={styles.heading} accessibilityRole="header">Videoclip convertit</Text>
         <Text style={styles.body} selectable>{editor.result.name}</Text>
-        <Text style={styles.muted}>2304 × 512 · {bytes(editor.result.size)}</Text>
+        <Text style={styles.muted}>{formatResolution(editor.resolution)} · {bytes(editor.result.size)}</Text>
         {!editor.saved && !editor.preview ? <Button label="Salvează rezultatul în Fișiere" disabled={busy} onPress={() => editor.save()} /> : null}
         {editor.saved ? <Button label="Vezi în Fișiere" disabled={busy} onPress={() => setLibrary(true)} /> : null}
         <Button label={handoff ? 'Se pregătește HDMI…' : 'Redă pe HDMI'} disabled={handoff || (!!editor.phase && !uploading) || !hdmiPlayer} onPress={() => void playHdmi()} />
@@ -123,35 +125,13 @@ export default function ScreenEditor({ fileId }: { fileId?: string }) {
       {library ? <Modal visible animationType="slide" onRequestClose={() => setLibrary(false)}>
         <Screen>
           <Button label="Închide Fișiere" onPress={() => setLibrary(false)} />
-          <FilePicker disabled={busy} onChoose={(file) => { setLibrary(false); editor.chooseStored(file) }} selectedId={editor.saved?.id} />
+          <FilePicker disabled={busy} onChoose={(file) => { setLibrary(false); editor.chooseStored(file) }} actionLabel="Ecran camion" selectedIds={editor.saved ? [editor.saved.id] : []} />
         </Screen>
       </Modal> : null}
     </Screen>
   )
 }
 
-function FilePicker({ onChoose, disabled, selectedId }: { onChoose: (file: StoredFile) => void; disabled: boolean; selectedId?: string }) {
-  const [offset, setOffset] = useState(0)
-  const revision = useSession((state) => state.revision)
-  const query = useQuery({ queryKey: ['files', revision, offset], queryFn: ({ signal }) => api.files(offset, signal) })
-  return <View style={styles.section}>
-    <Text style={styles.heading} accessibilityRole="header">Fișiere</Text>
-    <Text style={styles.muted}>Sunt afișate fișierele la care contul tău are acces. Alege un MP4 pentru conversie.</Text>
-    {query.isPending ? <ActivityIndicator accessibilityLabel="Se încarcă fișierele" /> : null}
-    {query.isError ? <><Text style={styles.error} accessibilityRole="alert">{errorMessage(query.error)}</Text><Button label="Reîncearcă" onPress={() => void query.refetch()} /></> : null}
-    {query.data?.files.map((file) => <View key={file.id} style={styles.file}>
-      <Text style={styles.label} selectable>{file.originalName}{file.id === selectedId ? ' · Salvat' : ''}</Text>
-      <Text style={styles.muted}>{bytes(file.size)} · {file.mimeType}</Text>
-      <Button label="Ecran camion" disabled={disabled || file.mimeType !== 'video/mp4'} onPress={() => onChoose(file)} />
-    </View>)}
-    {query.data?.files.length === 0 ? <Text style={styles.muted}>Nu există fișiere pe această pagină.</Text> : null}
-    <Text style={styles.muted}>{query.data ? `${query.data.total} fișiere · Pagina ${offset / 50 + 1}` : ''}</Text>
-    <View style={styles.row}>
-      <Button label="Înapoi" disabled={disabled || !offset || query.isFetching} onPress={() => setOffset(offset - 50)} />
-      <Button label="Înainte" disabled={disabled || !query.data || offset + 50 >= query.data.total || query.isFetching} onPress={() => setOffset(offset + 50)} />
-    </View>
-  </View>
-}
 
 const styles = StyleSheet.create({
   title: { ...type.title, color: colors.text }, heading: { ...type.section, color: colors.text },
@@ -167,5 +147,4 @@ const styles = StyleSheet.create({
   radioChecked: { borderWidth: 6, borderColor: colors.primary },
   track: { height: 6, backgroundColor: colors.border, borderRadius: 3, width: '100%', overflow: 'hidden' },
   fill: { height: '100%', backgroundColor: colors.data },
-  file: { gap: 8, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 12 },
 })

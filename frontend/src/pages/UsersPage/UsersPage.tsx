@@ -1,15 +1,16 @@
 import { useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { useCurrentUser } from '../../auth/currentUser'
+import { replaceCachedUser, useCurrentUser } from '../../auth/currentUser'
 import { handleAdminError, refreshAdminAccess, updateAdminUsers, useAdminAccess } from '../../auth/adminAccess'
 import { signOut, useSession } from '../../auth/session'
 import { api, ApiError, errorMessage } from '../../lib/api'
 import { useNotify } from '../../lib/useNotify'
-import { roleLabels } from '../../lib/user'
-import { plural } from '../../lib/format'
+import { roleLabels, userStatusLabels } from '../../lib/user'
+import { formatLocalDay, formatLocalTime, plural } from '../../lib/format'
 import type { User, UserInput } from '../../lib/user'
 import Avatar from '../../components/Avatar'
 import UserForm from './components/UserForm'
+import './UsersPage.css'
 
 interface Editor {
   user?: User
@@ -66,6 +67,7 @@ export default function UsersPage() {
         return [...next, result].sort((a, b) => a.email.localeCompare(b.email))
       })
       if (!updated || revision !== useSession.getState().revision) return
+      if (result.id === currentUser.id) await replaceCachedUser(revision, result)
       notify({ variant: 'success', message: original ? 'Utilizatorul a fost actualizat.' : 'Utilizatorul a fost adăugat.' })
       closeEditor()
     } catch (error) {
@@ -96,7 +98,7 @@ export default function UsersPage() {
   }
 
   return (
-    <section>
+    <section className="user-management">
       <header>
         <div className="page-heading">
           <h1>Utilizatori</h1>
@@ -115,8 +117,10 @@ export default function UsersPage() {
         <caption>{plural(users.length, 'utilizator', 'utilizatori')}{access.isFetching ? ' · Se actualizează…' : ''}</caption>
         <thead role="rowgroup">
           <tr role="row">
-            <th scope="col" role="columnheader">E-mail</th>
+            <th scope="col" role="columnheader">Utilizator</th>
             <th className="role-column" scope="col" role="columnheader">Rol</th>
+            <th className="user-status-column" scope="col" role="columnheader">Stare</th>
+            <th className="user-activity-column" scope="col" role="columnheader">Activitate</th>
             <th className="actions-column" scope="col" role="columnheader">Acțiuni</th>
           </tr>
         </thead>
@@ -126,10 +130,21 @@ export default function UsersPage() {
               <td className="email-cell" role="cell">
                 <span className="user-identity">
                   <Avatar user={user} size={32} />
-                  <span>{user.email}{user.id === currentUser.id && <span className="optional-label"> (tu)</span>}</span>
+                  <span>
+                    {user.displayName && <strong className="user-name">{user.displayName}</strong>}
+                    <span>{user.email}{user.id === currentUser.id && <span className="optional-label"> (tu)</span>}</span>
+                    <span className="user-contact">Telefon: {user.phone ?? '—'}</span>
+                  </span>
                 </span>
               </td>
               <td role="cell">{roleLabels[user.role]}</td>
+              <td role="cell"><span className={`pill ${user.status === 'ACTIVE' ? 'pill-positive' : 'pill-negative'}`}>{userStatusLabels[user.status]}</span></td>
+              <td className="user-activity" role="cell">
+                <span>Creat: <time dateTime={user.createdAt}>{formatLocalDay(user.createdAt)}</time></span>
+                <span>Ultima autentificare: {user.lastLoginAt
+                  ? <time dateTime={user.lastLoginAt}>{formatLocalDay(user.lastLoginAt)}, {formatLocalTime(user.lastLoginAt)}</time>
+                  : 'Niciodată'}</span>
+              </td>
               <td role="cell">
                 <div className="row-actions">
                   <button type="button" aria-label={'Editează ' + user.email} disabled={editor !== null || busy}
@@ -143,7 +158,7 @@ export default function UsersPage() {
             </tr>
           ))}
           {users.length === 0 && (
-            <tr role="row"><td className="empty-state" colSpan={3} role="cell">Nu există încă utilizatori. Adaugă un utilizator pentru a începe.</td></tr>
+            <tr role="row"><td className="empty-state" colSpan={5} role="cell">Nu există încă utilizatori. Adaugă un utilizator pentru a începe.</td></tr>
           )}
         </tbody>
       </table>

@@ -12,8 +12,8 @@ const conflict = 'This screen preset changed during editing. Reload the latest s
 async function transaction<T>(actor: SessionIdentity, action: (tx: Prisma.TransactionClient) => Promise<T>) {
   try {
     return await serializable(async (tx) => {
-      const user = await tx.user.findUnique({ where: { id: actor.id }, select: { sessionVersion: true, role: true } });
-      if (!user || user.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
+      const user = await tx.user.findUnique({ where: { id: actor.id }, select: { sessionVersion: true, status: true, role: true } });
+      if (!user || user.status !== 'ACTIVE' || user.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
       if (user.role.name !== 'ADMIN' || !isRoleValid(user.role)) throw new AppError(403, 'Administrator access is required');
       return action(tx);
     }, 'Screen presets changed during this request. Refresh and try again.');

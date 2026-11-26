@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Read and follow [CLEAN_CODE.md](../CLEAN_CODE.md) when writing or changing code.
+It defines the shared JavaScript/TypeScript function conventions; continue
+following the package-specific rules as well.
+
 This is `website/`, the public presentation site for advertisers: one static English landing page. The root `../CLAUDE.md` covers repo-wide rules. `AGENTS.md` in this folder holds the package's full rules; read it before changing anything. `README.md` covers setup and the env vars. `DESIGN.md` in this folder defines the visual system; the shared tokens it copies come from `../DESIGN.md`.
 
 ## Commands

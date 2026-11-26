@@ -8,6 +8,7 @@ import { prisma } from '../src/lib/prisma.ts';
 const unreachableDatabase = 'postgresql://unused:unused@127.0.0.1:1/unused';
 const bootstrap = ['--import', fixtureUrl('preload-tty.ts'), 'src/scripts/bootstrap-admin.ts'];
 const emailPrompt = 'Administrator email: ';
+const namePrompt = 'Display name (optional): ';
 const passwordPrompt = 'Password (12–128 characters, hidden): ';
 const confirmPrompt = 'Confirm password (hidden): ';
 const promotePrompt = 'Promote this existing account to administrator? Type yes: ';
@@ -57,7 +58,7 @@ describe('Administrator bootstrap', () => {
   it('creates an administrator with a hidden, confirmed password', async () => {
     const email = fixtures.email('bootstrap');
     const result = await runNode(bootstrap, {
-      answers: [[emailPrompt, ` ${email.toUpperCase()}\n`], [passwordPrompt, `${password}\n`], [confirmPrompt, `${password}\n`]],
+      answers: [[emailPrompt, ` ${email.toUpperCase()}\n`], [namePrompt, '\n'], [passwordPrompt, `${password}\n`], [confirmPrompt, `${password}\n`]],
     });
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /Administrator created\. You can now sign in\.\n$/);
@@ -73,8 +74,8 @@ describe('Administrator bootstrap', () => {
     const email = fixtures.email('bootstrap');
     for (const [answers, error] of [
       [[[emailPrompt, 'not-an-email\n']], 'A valid email address is required'],
-      [[[emailPrompt, `${email}\n`], [passwordPrompt, 'too short\n']], 'Password must contain between 12 and 128 characters'],
-      [[[emailPrompt, `${email}\n`], [passwordPrompt, `${password}\n`], [confirmPrompt, 'a different password\n']], 'Passwords do not match'],
+      [[[emailPrompt, `${email}\n`], [namePrompt, '\n'], [passwordPrompt, 'too short\n']], 'Password must contain between 12 and 128 characters'],
+      [[[emailPrompt, `${email}\n`], [namePrompt, '\n'], [passwordPrompt, `${password}\n`], [confirmPrompt, 'a different password\n']], 'Passwords do not match'],
     ] as const) {
       const result = await runNode(bootstrap, { answers: answers.map(([prompt, answer]) => [prompt, answer]) });
       assert.equal(result.status, 1);

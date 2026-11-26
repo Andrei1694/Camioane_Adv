@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { RoleName } from '../generated/prisma/enums.ts';
+import { RoleName, UserStatus } from '../generated/prisma/enums.ts';
 import { allowedKeysSchema, objectSchema, parse, uuidSchema } from './validation.ts';
 import type { CreateUserData, UpdateUserData, UserCredentials } from '../types/user.ts';
 
@@ -10,8 +10,13 @@ const passwordSchema = z.string({ error: 'Password must be a string' }).refine((
   return length >= 12 && length <= 128;
 }, { error: 'Password must contain between 12 and 128 characters' });
 const roleSchema = z.enum(RoleName, { error: 'Role must be ADMIN, OPERATOR, DRIVER, or USER' });
+const statusSchema = z.enum(UserStatus, { error: 'Status must be ACTIVE or DISABLED' });
+const displayNameSchema = z.string({ error: 'Display name must be a string' }).trim()
+  .refine((name) => name.length <= 200 && !name.includes('\0'), { error: 'Display name must contain at most 200 characters and no null characters' });
+const phoneSchema = z.string({ error: 'Phone must be a string or null' }).trim()
+  .regex(/^\+[1-9]\d{1,14}$/, { error: 'Phone must use international format, for example +40712345678' }).nullable();
 const bodySchema = objectSchema('A JSON object is required').transform((body) => Object.fromEntries(Object.entries(body)));
-const fieldsSchema = allowedKeysSchema(['email', 'password', 'role'], 'Only email, password, and role can be changed');
+const fieldsSchema = allowedKeysSchema(['email', 'password', 'role', 'displayName', 'phone', 'status'], 'Only email, password, role, displayName, phone, and status can be changed');
 const updateSchema = fieldsSchema.refine((data) => Object.keys(data).length > 0, { error: 'Provide at least one field to update' });
 const userIdSchema = uuidSchema('A valid user ID is required');
 
@@ -21,6 +26,18 @@ export function parseEmail(value: unknown): string {
 
 export function parsePassword(value: unknown): string {
   return parse(passwordSchema, value);
+}
+
+export function parseDisplayName(value: unknown): string {
+  return parse(displayNameSchema, value);
+}
+
+function parseAccountFields(data: Record<string, unknown>): Partial<CreateUserData> {
+  return {
+    ...('displayName' in data ? { displayName: parseDisplayName(data.displayName) } : {}),
+    ...('phone' in data ? { phone: parse(phoneSchema, data.phone) } : {}),
+    ...('status' in data ? { status: parse(statusSchema, data.status) } : {}),
+  };
 }
 
 function parseRole(value: unknown): CreateUserData['role'] {
@@ -39,7 +56,7 @@ export function parseCredentials(body: unknown): UserCredentials {
 export function parseCreateUser(body: unknown): CreateUserData {
   const data = parseBody(body);
   parse(fieldsSchema, data);
-  return { ...parseCredentials(data), role: data.role === undefined ? 'USER' : parseRole(data.role) };
+  return { ...parseCredentials(data), role: data.role === undefined ? 'USER' : parseRole(data.role), ...parseAccountFields(data) };
 }
 
 export function parseUpdateUser(body: unknown): UpdateUserData {
@@ -49,7 +66,7 @@ export function parseUpdateUser(body: unknown): UpdateUserData {
   if ('email' in data) update.email = parseEmail(data.email);
   if ('password' in data) update.password = parsePassword(data.password);
   if ('role' in data) update.role = parseRole(data.role);
-  return update;
+  return { ...update, ...parseAccountFields(data) };
 }
 
 export function isUserId(value: unknown): value is string {

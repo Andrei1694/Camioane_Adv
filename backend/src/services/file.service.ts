@@ -45,9 +45,9 @@ async function transaction<T>(action: (tx: Prisma.TransactionClient) => Promise<
 async function accessScope(tx: Prisma.TransactionClient, actor: SessionIdentity) {
   const current = await tx.user.findUnique({
     where: { id: actor.id },
-    select: { id: true, sessionVersion: true, role: true },
+    select: { id: true, sessionVersion: true, status: true, role: true },
   });
-  if (!current || current.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
+  if (!current || current.status !== 'ACTIVE' || current.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
   const admin = current.role.name === 'ADMIN' && isRoleValid(current.role);
   return admin ? {} : { ownerId: current.id };
 }

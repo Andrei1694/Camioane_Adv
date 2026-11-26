@@ -24,6 +24,11 @@ export default function HomeScreen() {
         <Button label="Ecrane camioane" variant="primary" onPress={() => router.push('/screen')} />
       </View>
       <View style={styles.account}>
+        <Text style={styles.section} accessibilityRole="header">Playlist HDMI</Text>
+        <Text style={styles.muted}>Salvează videoclipuri pe telefon și redă întreaga listă în buclă pe ecranul camionului.</Text>
+        <Button label="Playlist HDMI" onPress={() => router.push('/playlist')} />
+      </View>
+      <View style={styles.account}>
         <Text style={styles.section} accessibilityRole="header">Display test</Text>
         <Text style={styles.muted}>Play a local video on HDMI while keeping controls on your phone.</Text>
         <Button label="HDMI test" onPress={() => router.push('/hdmi-test')} />

@@ -2,7 +2,7 @@ import { createInterface } from 'node:readline/promises';
 import { Writable } from 'node:stream';
 import { AppError } from '../lib/app-error.ts';
 import { prisma } from '../lib/prisma.ts';
-import { parseEmail, parsePassword } from '../lib/user-validation.ts';
+import { parseDisplayName, parseEmail, parsePassword } from '../lib/user-validation.ts';
 import { bootstrapAdministrator } from '../services/user.service.ts';
 
 // readline handles Unicode, editing and paste; only its output is muted while
@@ -48,10 +48,11 @@ try {
       console.log('Administrator access granted. Existing sessions must sign in again.');
     }
   } else {
+    const displayName = parseDisplayName(await ask('Display name (optional): '));
     let password = parsePassword(await ask('Password (12–128 characters, hidden): ', true));
     let confirmation = await ask('Confirm password (hidden): ', true);
     if (password !== confirmation) throw new AppError(400, 'Passwords do not match');
-    await bootstrapAdministrator(email, password);
+    await bootstrapAdministrator(email, password, false, displayName);
     password = '';
     confirmation = '';
     console.log('Administrator created. You can now sign in.');

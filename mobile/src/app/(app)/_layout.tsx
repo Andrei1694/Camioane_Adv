@@ -10,7 +10,10 @@ import { colors, type } from '../../lib/theme'
 import { appRoles, roleLabels } from '../../lib/user'
 import type { User } from '../../lib/user'
 
-const previewUser: User = { id: 'local-preview', email: 'admin', role: 'OPERATOR' }
+const previewUser: User = {
+  id: 'local-preview', email: 'admin', role: 'OPERATOR', displayName: 'Operator preview',
+  phone: null, status: 'ACTIVE', createdAt: new Date().toISOString(), lastLoginAt: null,
+}
 
 // Mirrors frontend/src/auth/Authenticated.tsx: every session is checked with GET /users/me
 // before any signed-in screen renders, and again whenever the app returns to the foreground.

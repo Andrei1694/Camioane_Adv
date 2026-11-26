@@ -1,0 +1,77 @@
+.app-content:has(> .user-management) {
+  max-width: 1100px;
+}
+
+.user-management {
+  container: users / inline-size;
+}
+
+.users-table .role-column {
+  width: 120px;
+}
+
+.user-name,
+.user-contact,
+.user-activity > span {
+  display: block;
+}
+
+.user-name {
+  font-weight: 500;
+}
+
+.user-contact,
+.users-table .user-activity {
+  color: var(--muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.user-status-column {
+  width: 100px;
+}
+
+.user-activity-column {
+  width: 205px;
+}
+
+.users-table .user-activity {
+  padding-right: 16px;
+}
+
+@container users (max-width: 800px) {
+  .users-table,
+  .users-table caption,
+  .users-table tbody {
+    display: block;
+  }
+
+  .users-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .users-table tr {
+    display: grid;
+    gap: 8px;
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .users-table td,
+  .users-table .email-cell {
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .users-table .row-actions {
+    justify-content: flex-start;
+    margin-left: -12px;
+  }
+}
+

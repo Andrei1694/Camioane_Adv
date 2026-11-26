@@ -16,7 +16,7 @@ export async function authenticate(req: Request, res: Response<unknown, UserLoca
   const session = await verifyAccessToken(match[1]);
   const user = await findSessionUser(session.id);
 
-  if (!user || user.sessionVersion !== session.sessionVersion) {
+  if (!user || user.status !== 'ACTIVE' || user.sessionVersion !== session.sessionVersion) {
     throw new AppError(401, 'Unauthorized');
   }
 

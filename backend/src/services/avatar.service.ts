@@ -17,9 +17,9 @@ const locationSelect = { storageProvider: true, storageKey: true } as const;
 async function authorize(tx: Prisma.TransactionClient, actor: SessionIdentity, userId: string) {
   const current = await tx.user.findUnique({
     where: { id: actor.id },
-    select: { sessionVersion: true, role: true },
+    select: { sessionVersion: true, status: true, role: true },
   });
-  if (!current || current.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
+  if (!current || current.status !== 'ACTIVE' || current.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
   if (userId !== actor.id && (current.role.name !== 'ADMIN' || !isRoleValid(current.role))) {
     throw new AppError(403, 'Administrator access is required');
   }

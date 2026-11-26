@@ -1,6 +1,6 @@
 # Phone app playback through TB60 HDMI
 
-Updated: 2026-11-11.
+Updated: 2026-11-26.
 
 A single TB60 drives all three sides of the car, as confirmed by the owner. A custom phone app can supply the combined picture through HDMI, provided the phone and adapter support the required output mode. Compatibility cannot be guaranteed across all phone models.
 
@@ -73,7 +73,7 @@ This is a hypothesis, not a measurement. Confirm it from the receiving-card or s
 
 ## Photos of the car (2026-11-19)
 
-The owner photographed the car's screens at an auto-wash while testing video and measuring with a tape. **ViPlex was not used for these tests**: the video came from our phone app over HDMI into the TB60, so the [ViPlex layout](#working-viplex-layout) below does not apply to them. The app fits the video inside whatever HDMI mode the phone negotiates and centres it (`videoGravity = .resizeAspect` on iOS, `RESIZE_MODE_FIT` on Android); the TB60's screen configuration then decides which part of that HDMI frame reaches each panel. The files are in [evidence/truck](evidence/truck/), renamed from the original WhatsApp names. The descriptions below only say what each photo shows; the numbers on the tape are legible in the photos but are not transcribed here.
+The owner photographed the car's screens at an auto-wash while testing video and measuring with a tape. **ViPlex was not used for these tests**: the video came from our phone app over HDMI into the TB60, so the [ViPlex layout](#working-viplex-layout) below does not apply to them. The app version used in those photos fitted and centred video inside the negotiated HDMI mode. The updated player defaults to top-left 1:1 pixels, with explicit X/Y/scale controls; the TB60's screen configuration still decides which part of that HDMI frame reaches each panel. The files are in [evidence/truck](evidence/truck/), renamed from the original WhatsApp names. The descriptions below only say what each photo shows; the numbers on the tape are legible in the photos but are not transcribed here.
 
 | Photo | Shows |
 | --- | --- |
@@ -93,10 +93,11 @@ What the photos suggest, none of it confirmed:
 
 - **The phone-to-HDMI path reaches the screens.** Both the phone's mirrored interface (01) and test videos (02–07) appear on the panels.
 - **Only the lower part of each screen is lit.** On the rear screen the lit region is roughly 40–45% of the screen's height, and the vertical tape in photos 08 and 09 appears to read in the mid-80s of centimetres, against 200 cm for the screen.
-- **Cause, as reported by the owner: the mobile app offsets the video wrongly.** Both HDMI players fit the video inside the HDMI frame and centre it (`videoGravity = .resizeAspect` in `mobile/modules/hdmi-player/ios/HdmiSceneDelegate.swift`, `RESIZE_MODE_FIT` in `HdmiPlayerModule.kt`). A 2304 × 512 file in a 1920 × 1080 mode is scaled to 1920 × 427 and starts about 327 rows down, leaving the top of the frame black. If the TB60 takes the screens' rows from the top of the HDMI frame, only the bottom of each screen shows video: about 185 of 512 rows (36%), close to but below the 40–45% measured. The negotiated HDMI mode was not recorded, so the exact numbers are unconfirmed.
+- **App-side cause confirmed in the old players:** centred aspect-fit scaled a 2304 × 512 composite in a 1920 × 1080 mode to about 1920 × 427 and moved it about 327 rows down. Its 49 px gap became about 41 px. Photos 05 and 07 show the same geometry with different content: on the rear panel, a lit block at approximately x 0–389, a 41 px gap, then a strip at x 430–512, rows 287–511. That repeated geometry points to the playback pipeline. The actual negotiated mode and TB60 offsets/scaling were not recorded, so these photos do not establish the exact controller transform. The updated players remove automatic fit/centring and expose calibration.
 - **The horizontal offsets are also unverified for HDMI.** The editor places its copies at x = 0, 1024 and 1585 (from the ViPlex photos), and `contain` centres each copy inside its region. ViPlex was not involved in HDMI playback, so these positions do not necessarily match where the TB60 reads each physical screen from the HDMI frame.
 - **Rear screen layout (photo 07, estimated from the photo).** A large lit block about 150 × 85–89 cm, about 16:9, labelled "WHITE MARGIN TEST | 1920 x 1080"; a dark gap of about 16 cm; and a narrow lit block about 32 cm wide. Together they span the screen's full width, bottom-aligned.
 - **Test video.** The "WHITE MARGIN TEST" video is not one of the app's bundled samples (`flower.mp4` is 960 × 540 and `truck_screen.mp4` is 2304 × 512), so it was picked from the phone. The negotiated HDMI mode during the test was not recorded.
+- **Photo 07 does not isolate the source-file dimensions or controller transform.** The text “1920 × 1080” belongs to the advertisement and is not evidence of the HDMI mode. In a converted composite, automatic aspect-fit also shrinks region boundaries and gaps, so the narrower block/gap/strip does not on its own prove additional TB60 scaling. Record the negotiated mode and native calibration-grid corner readings to distinguish app placement from controller mapping.
 - **Pixel pitch.** The close-up in photo 14 suggests an LED spacing of about 4 mm by eye, consistent with 2.56 px/cm (P3.91, where a 128 × 256 px segment is 50 × 100 cm). The dots have not been counted.
 
 A poster for the AUR "Trenul Unirii" event (1 December 2026) from the same day is kept in [evidence/creative](evidence/creative/trenul-unirii-poster.jpeg). It is advertising content, not a hardware photo.
@@ -127,6 +128,24 @@ Source advertisements may be 1920 × 1080, but must be adapted to each region's 
 
 **Video file dimensions and HDMI output dimensions are separate.** Playing a 2304 × 512 file does not force the phone to output that HDMI mode. A standard 1920 × 1080 signal cannot preserve the current 2304-pixel-wide arrangement pixel-for-pixel without adapting the layout or controller mapping/scaling.
 
+## HDMI placement and calibration
+
+Both native players default to **1:1 at the top-left**: composite pixel `(x,y)` is HDMI pixel `(x,y)`. A placement `(X,Y,scale)` draws the current video's display size `(w,h)` at `(X,Y,round(w × scale),round(h × scale))`. Anything outside the HDMI frame is cropped; the app never automatically shrinks or centres it. A 2304 × 512 composite in a 1920 × 1080 mode therefore loses **384 px on the right** at the default placement. Rotation/display aspect is accounted for by the native video's presentation size; iOS also disables overscan compensation.
+
+The **HDMI placement** controls in the phone's HDMI test show the current mode, offered mode sizes and current video size. X/Y accept integer offsets −4096…4096 with 1/8/64 px steps; scale is 10–400%, with 100%, fit-width and fit-height shortcuts. Fit changes scale and preserves offsets. Changes apply live and persist per phone for both the test and playlist, independently of the account, editor resolutions and uploaded files. The playlist shows a placement summary. The list of offered modes is read-only: the app does not select a mode or set custom timings.
+
+**Calibration grid** replaces the video with a native black grid covering the negotiated HDMI frame. Thin lines are spaced 64 px apart, brighter lines 128 px apart, coloured lines 512 px apart, with `x,y` labels at every 128 px intersection and a 2 px border. The grid stays in HDMI coordinates when placement changes. Turn it off to inspect the adjusted video. Stop clears the grid; it is not saved between sessions.
+
+On the truck:
+
+1. Connect HDMI, open the test and turn **Calibration grid** on.
+2. On each panel, read the grid coordinates at its top-left and bottom-right corners, using the labelled intersections and intervening grid lines. Record the physical panel name with each pair.
+3. If the TB60 reads its canvas origin from HDMI `(ox,oy)`, set **X = ox**, **Y = oy**.
+4. If the TB60 scales incoming pixels by `k`, set the app scale to **1/k** (enter **100/k %**). Turn the grid off and inspect the sample while adjusting X/Y and scale. A single uniform transform cannot repair inconsistent per-panel mappings.
+5. Record the negotiated mode, offered modes, all corner readings and final X/Y/scale. Play the 2304 × 512 sample and verify every region's edges on all three screens.
+
+To preserve the full canvas at 1:1, test a custom **2304 × 512 EDID** in **ViPlex → Monitor & Control → Current Source → HDMI EDID/Scaling**, subject to phone/adapter, firmware and timing support. Confirm the phone actually negotiates this mode. Offering it in EDID alone does not guarantee selection. Until then, the warning identifies the portions cropped by the HDMI frame; reducing scale changes the pixel mapping and needs a matching controller configuration.
+
 ## Resolution and file limits
 
 | Item | Limit or starting choice |
@@ -147,7 +166,7 @@ Sources: [TB60 HDMI and USB limits, page 7](TB60-Specifications-V1.2.5.pdf#page=
 ## Phone app requirements
 
 - Maintain a tested list of phone models and adapters. A USB-C connector alone does not establish video-output support. See [Apple display compatibility](https://support.apple.com/en-us/105099) and [Samsung wired display compatibility](https://www.samsung.com/us/support/answer/ANS10001955/).
-- Show the advertisement on the external display and controls on the phone. Android provides the [Presentation API](https://developer.android.com/reference/android/app/Presentation). Our Expo app will likely need native integration and a [custom development/production build](https://docs.expo.dev/workflow/customizing/).
+- Show the advertisement on the external display and controls on the phone. Android provides the [Presentation API](https://developer.android.com/reference/android/app/Presentation). Our Expo app uses native integration and needs a [custom development/production build](https://docs.expo.dev/workflow/customizing/).
 - Plan charging, heat management, playback recovery and content caching. For an initial implementation, downloading before playback avoids dependence on cellular reception; the existing backend does not implement HTTP range playback.
 - Define playback behavior when the driver's session expires. The [current mobile app](../mobile/README.md#sign-in-and-sessions) signs out after its one-hour access token expires.
 
@@ -155,7 +174,7 @@ Sources: [TB60 HDMI and USB limits, page 7](TB60-Specifications-V1.2.5.pdf#page=
 
 1. Confirm the segment units and installed orientation, then record the segment columns, rows and native pixel dimensions for each side. Read the existing NovaLCT screen connection configuration to verify which canvas region reaches each side and whether any canvas areas are unused. Preserve a configuration backup before changes.
 2. Check **ViPlex → Monitor & Control → Current Source → HDMI EDID/Scaling**, installed firmware and the phone/adapter's supported output modes.
-3. Send a labelled test picture through the actual phone-to-HDMI connection. Verify all three regions, proportions and edges before playing converted advertisements.
+3. Follow [HDMI placement and calibration](#hdmi-placement-and-calibration): use the native grid to record each panel’s corner coordinates, then verify all three regions, proportions and edges with the composite video.
 4. Check charging, extended playback, phone locking, incoming calls, session expiry, app restarts and HDMI disconnection/reconnection.
 
 ViPlex documents an HDMI Preferred mode, but recovery from a frozen phone app must be tested separately from loss of the HDMI signal. The actual vehicle installation has not yet been validated for this setup.

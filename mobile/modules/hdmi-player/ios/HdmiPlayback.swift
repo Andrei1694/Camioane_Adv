@@ -24,10 +24,19 @@ final class HdmiPlayback {
   private var looper: AVPlayerLooper?
   private var preparation: Task<Void, Never>?
   private var preparationPromise: Promise?
-  private var preparingAsset: AVURLAsset?
+  private var preparingAssets: [AVURLAsset] = []
+  private var assets: [AVURLAsset] = []
+  private var itemIndexes: [ObjectIdentifier: Int] = [:]
+  private var index: Int?
+  private var count = 0
+  private var endNotification: NSObjectProtocol?
   private var generation = 0
   private var observations: [NSKeyValueObservation] = []
   private var itemObservation: NSKeyValueObservation?
+  private var sizeObservation: NSKeyValueObservation?
+  private var videoSize = CGSize.zero
+  private var placement = HdmiPlacement()
+  private var patternEnabled = false
   private var notifications: [NSObjectProtocol] = []
 
   func start(sessionId: String, expiresAt: Double?, onStatus: @escaping ([String: Any]) -> Void) {
@@ -108,6 +117,7 @@ final class HdmiPlayback {
     if let current = externalScene, current !== scene { return }
     if window != nil { return }
     externalScene = scene
+    scene.screen.overscanCompensation = .none
     let next = HdmiVideoController()
     let nextWindow = UIWindow(windowScene: scene)
     nextWindow.backgroundColor = .black
@@ -117,6 +127,8 @@ final class HdmiPlayback {
     next.video.playerLayer.player = player
     controller = next
     window = nextWindow
+    next.applyPlacement(placement, videoSize: videoSize)
+    next.showPattern(patternEnabled)
     (scene.delegate as? HdmiSceneDelegate)?.window = nextWindow
     emitStatus()
   }
@@ -130,23 +142,70 @@ final class HdmiPlayback {
 
   func status() -> [String: Any] {
     var display: Any = NSNull()
+    var modes: [[String: Int]] = []
     if let screen = externalScene?.screen, window != nil {
       let size = screen.currentMode?.size ?? screen.nativeBounds.size
       display = ["name": "External display", "width": Int(size.width), "height": Int(size.height)]
+      modes = screen.availableModes.map { ["width": Int($0.size.width), "height": Int($0.size.height)] }
     }
     return [
       "sessionId": sessionId ?? "",
       "display": display,
       "playback": playback,
       "error": error as Any? ?? NSNull(),
+      "index": index as Any? ?? NSNull(),
+      "count": count,
+      "video": videoSize.width > 0 && videoSize.height > 0
+        ? ["width": Double(videoSize.width), "height": Double(videoSize.height)] as Any : NSNull(),
+      "placement": placement.status,
+      "modes": modes,
+      "pattern": patternEnabled,
     ]
+  }
+
+  func displayDidChange() {
+    controller?.applyPlacement(placement, videoSize: videoSize)
+    emitStatus()
+  }
+
+  private func validateSession(_ id: String, promise: Promise) -> Bool {
+    guard sessionId == id else {
+      promise.reject("ERR_HDMI_SESSION_ENDED", "The HDMI session has ended.")
+      return false
+    }
+    guard !expireSessionIfNeeded() else {
+      promise.reject("ERR_HDMI_SESSION_ENDED", expiryMessage)
+      return false
+    }
+    return true
+  }
+
+  func setPlacement(sessionId: String, x: Double, y: Double, scale: Double, promise: Promise) {
+    guard validateSession(sessionId, promise: promise) else { return }
+    guard x.isFinite, y.isFinite, x.rounded() == x, y.rounded() == y,
+          (-4096...4096).contains(x), (-4096...4096).contains(y),
+          scale.isFinite, (0.1...4).contains(scale) else {
+      promise.reject("ERR_HDMI_PLACEMENT", "X/Y must be integers from -4096 to 4096; scale must be from 0.1 to 4.")
+      return
+    }
+    placement = HdmiPlacement(x: Int(x), y: Int(y), scale: CGFloat(scale))
+    displayDidChange()
+    promise.resolve()
+  }
+
+  func setPattern(sessionId: String, enabled: Bool, promise: Promise) {
+    guard validateSession(sessionId, promise: promise) else { return }
+    patternEnabled = enabled
+    controller?.showPattern(enabled)
+    emitStatus()
+    promise.resolve()
   }
 
   func emitStatus() {
     if sessionId != nil { onStatus?(status()) }
   }
 
-  func prepare(sessionId: String, uri: String, promise: Promise) {
+  func prepare(sessionId: String, uris: [String], startIndex: Int, promise: Promise) {
     guard self.sessionId == sessionId else {
       promise.reject("ERR_HDMI_SESSION_ENDED", "The HDMI session has ended.")
       return
@@ -158,59 +217,96 @@ final class HdmiPlayback {
     clearPlayer()
     preparationPromise = promise
     error = nil
-    playback = "loading"
+    count = uris.count
+    index = uris.isEmpty ? nil : max(0, min(startIndex, uris.count - 1))
+    playback = uris.isEmpty ? "idle" : "loading"
     emitStatus()
-    guard let url = URL(string: uri), url.isFileURL, FileManager.default.isReadableFile(atPath: url.path) else {
-      fail("The selected video could not be read. Choose the file again.")
+    if uris.isEmpty {
+      preparationPromise = nil
+      promise.resolve()
       return
     }
-    do {
-      // Only our cache copies need a protection class readable after the phone
-      // locks. Never change the original document or a bundled asset.
-      if let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first,
-         url.resolvingSymlinksInPath().path.hasPrefix(cache.resolvingSymlinksInPath().path + "/") {
-        try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
-                                              ofItemAtPath: url.path)
+    var loadedAssets: [AVURLAsset] = []
+    for (itemIndex, uri) in uris.enumerated() {
+      guard let url = URL(string: uri), url.isFileURL, FileManager.default.isReadableFile(atPath: url.path) else {
+        index = itemIndex
+        fail("The selected video could not be read. Choose the file again.")
+        return
       }
-    } catch {
-      fail("The video could not be prepared for playback while the iPhone is locked. Choose it again.")
-      return
+      do {
+        let files = FileManager.default
+        let cache = files.urls(for: .cachesDirectory, in: .userDomainMask).first
+        var playlist = files.urls(for: .documentDirectory, in: .userDomainMask).first?
+          .appendingPathComponent("hdmi-playlist", isDirectory: true)
+        let path = url.resolvingSymlinksInPath().path
+        let inPlaylist = playlist.map { path.hasPrefix($0.resolvingSymlinksInPath().path + "/") } ?? false
+        let inCache = cache.map { path.hasPrefix($0.resolvingSymlinksInPath().path + "/") } ?? false
+        // Only app-owned copies are changed, never original documents or bundles.
+        if inCache || inPlaylist {
+          try files.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: url.path)
+        }
+        if inPlaylist, var directory = playlist {
+          var values = URLResourceValues()
+          values.isExcludedFromBackup = true
+          try directory.setResourceValues(values)
+          playlist = directory
+          // Include parent directories so traversal remains possible after lock.
+          for parent in [directory, url.deletingLastPathComponent(), url.deletingLastPathComponent().deletingLastPathComponent()] {
+            try files.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: parent.path)
+          }
+        }
+      } catch {
+        index = itemIndex
+        fail("The video could not be prepared for playback while the iPhone is locked. Choose it again.")
+        return
+      }
+      loadedAssets.append(AVURLAsset(url: url))
     }
     let expectedGeneration = generation
-    let asset = AVURLAsset(url: url)
-    preparingAsset = asset
+    let candidates = loadedAssets
+    preparingAssets = candidates
     preparation = Task { @MainActor [weak self] in
-      do {
-        let playable = try await asset.load(.isPlayable)
-        let tracks = try await asset.loadTracks(withMediaType: .video)
-        guard let self, !Task.isCancelled, self.generation == expectedGeneration, self.sessionId == sessionId else { return }
-        guard playable, !tracks.isEmpty else {
-          self.fail("This file has no playable video track. Try an H.264 MP4 video.")
-          return
+      // Validate all assets concurrently, reporting the first failure in list order.
+      let failures = await withTaskGroup(of: Int?.self) { group in
+        for (itemIndex, asset) in candidates.enumerated() {
+          group.addTask {
+            do {
+              async let playable = asset.load(.isPlayable)
+              async let tracks = asset.loadTracks(withMediaType: .video)
+              let result = try await (playable, tracks)
+              return result.0 && !result.1.isEmpty ? nil : itemIndex
+            } catch { return itemIndex }
+          }
         }
-        self.preparingAsset = nil
-        self.preparation = nil
-        self.installPlayer(asset: asset, generation: expectedGeneration)
-      } catch {
-        guard let self, !Task.isCancelled, self.generation == expectedGeneration, self.sessionId == sessionId else { return }
-        self.fail("The selected video could not be opened. Try a local H.264 MP4 video.")
+        var failed: [Int] = []
+        for await result in group { if let result { failed.append(result) } }
+        return failed
       }
+      guard let self, !Task.isCancelled, self.generation == expectedGeneration, self.sessionId == sessionId else { return }
+      if let failed = failures.min() {
+        self.index = failed
+        self.fail("This file has no playable video track. Try a local H.264 MP4 video.")
+        return
+      }
+      self.preparingAssets = []
+      self.preparation = nil
+      self.assets = candidates
+      self.installPlayer(generation: expectedGeneration)
     }
   }
 
-  private func installPlayer(asset: AVAsset, generation: Int) {
+  private func installPlayer(generation: Int) {
     let next = AVQueuePlayer()
     next.isMuted = true
     next.audiovisualBackgroundPlaybackPolicy = .continuesIfPossible
-    next.allowsExternalPlayback = false // The dedicated layer owns routing, not AirPlay video routing.
+    next.allowsExternalPlayback = false
     player = next
-    let loop = AVPlayerLooper(player: next, templateItem: AVPlayerItem(asset: asset))
-    looper = loop
+    rebuildQueue(from: index ?? 0)
     controller?.video.playerLayer.player = next
-    observations = [
+    observations.append(contentsOf: [
       next.observe(\.currentItem, options: [.initial, .new]) { [weak self, weak next] _, _ in
         DispatchQueue.main.async {
-          guard let self, let next, self.generation == generation else { return }
+          guard let self, let next, self.generation == generation, self.player === next else { return }
           self.observeItem(next.currentItem, generation: generation)
         }
       },
@@ -220,16 +316,78 @@ final class HdmiPlayback {
           self.reconcilePlayback(next)
         }
       },
-      loop.observe(\.status, options: [.initial, .new]) { [weak self, weak loop] _, _ in
+    ])
+    if assets.count > 1 {
+      endNotification = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: nil, queue: .main) { [weak self] event in
+        guard let self, self.generation == generation, let item = event.object as? AVPlayerItem,
+              let finished = self.itemIndexes.removeValue(forKey: ObjectIdentifier(item)),
+              let player = self.player else { return }
+        let replacement = AVPlayerItem(asset: self.assets[finished])
+        self.itemIndexes[ObjectIdentifier(replacement)] = finished
+        player.insert(replacement, after: nil)
+      }
+    }
+  }
+
+  private func rebuildQueue(from start: Int) {
+    guard let player, assets.indices.contains(start) else { return }
+    looper?.disableLooping()
+    looper = nil
+    itemObservation = nil
+    sizeObservation = nil
+    videoSize = .zero
+    controller?.applyPlacement(placement, videoSize: videoSize)
+    itemIndexes.removeAll()
+    player.removeAllItems()
+    index = start
+    if assets.count == 1 {
+      let loop = AVPlayerLooper(player: player, templateItem: AVPlayerItem(asset: assets[0]))
+      looper = loop
+      let expectedGeneration = generation
+      observations.append(loop.observe(\.status, options: [.initial, .new]) { [weak self, weak loop] _, _ in
         DispatchQueue.main.async {
-          guard let self, self.generation == generation, loop?.status == .failed else { return }
+          guard let self, let loop, self.looper === loop, self.generation == expectedGeneration, loop.status == .failed else { return }
           self.fail("This video could not be looped. Try a local H.264 MP4 video.")
         }
-      },
-    ]
+      })
+    } else {
+      for offset in assets.indices {
+        let itemIndex = (start + offset) % assets.count
+        let item = AVPlayerItem(asset: assets[itemIndex])
+        itemIndexes[ObjectIdentifier(item)] = itemIndex
+        player.insert(item, after: nil)
+      }
+    }
+  }
+
+  func skip(sessionId: String, index: Int) {
+    guard self.sessionId == sessionId, !expireSessionIfNeeded(), assets.indices.contains(index),
+          ["ready", "playing", "buffering", "paused", "stopped"].contains(playback) else { return }
+    let resume = wantsPlayback
+    player?.pause()
+    if assets.count == 1 {
+      player?.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
+    } else { rebuildQueue(from: index) }
+    if resume {
+      playback = "buffering"
+      player?.play()
+    }
+    emitStatus()
   }
 
   private func observeItem(_ item: AVPlayerItem?, generation: Int) {
+    sizeObservation = nil
+    updateVideoSize(item?.presentationSize ?? .zero)
+    if let item {
+      index = assets.count == 1 ? 0 : itemIndexes[ObjectIdentifier(item)]
+      emitStatus()
+    }
+    sizeObservation = item?.observe(\.presentationSize, options: [.initial, .new]) { [weak self, weak item] _, _ in
+      DispatchQueue.main.async {
+        guard let self, let item, self.generation == generation, self.player?.currentItem === item else { return }
+        self.updateVideoSize(item.presentationSize)
+      }
+    }
     itemObservation = item?.observe(\.status, options: [.initial, .new]) { [weak self, weak item] _, _ in
       DispatchQueue.main.async {
         guard let self, let item, self.generation == generation, self.player?.currentItem === item else { return }
@@ -244,6 +402,12 @@ final class HdmiPlayback {
         }
       }
     }
+  }
+
+  private func updateVideoSize(_ size: CGSize) {
+    videoSize = size.width.isFinite && size.height.isFinite && size.width > 0 && size.height > 0 ? size : .zero
+    controller?.applyPlacement(placement, videoSize: videoSize)
+    emitStatus()
   }
 
   private func reconcilePlayback(_ player: AVQueuePlayer) {
@@ -300,7 +464,7 @@ final class HdmiPlayback {
     error = nil
     wantsPlayback = true
     playback = "buffering"
-    controller?.video.isHidden = false
+    controller?.showVideo(true)
     emitStatus()
     player.play()
   }
@@ -319,8 +483,11 @@ final class HdmiPlayback {
     wantsPlayback = false
     if ["ready", "playing", "buffering", "paused", "stopped"].contains(playback) { playback = "stopped" }
     player?.pause()
-    controller?.video.isHidden = true
-    player?.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
+    controller?.showVideo(false)
+    patternEnabled = false
+    controller?.showPattern(false)
+    if assets.count > 1 { rebuildQueue(from: 0) }
+    else { player?.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero) }
     deactivateAudioSession()
     emitStatus()
   }
@@ -339,6 +506,8 @@ final class HdmiPlayback {
     let pending = preparationPromise
     preparationPromise = nil
     clearPlayer()
+    patternEnabled = false
+    controller?.showPattern(false)
     playback = "error"
     error = message
     emitStatus()
@@ -352,17 +521,24 @@ final class HdmiPlayback {
     generation += 1
     preparation?.cancel()
     preparation = nil
-    preparingAsset?.cancelLoading()
-    preparingAsset = nil
+    preparingAssets.forEach { $0.cancelLoading() }
+    preparingAssets = []
+    if let endNotification { NotificationCenter.default.removeObserver(endNotification) }
+    endNotification = nil
     observations.removeAll()
     itemObservation = nil
-    controller?.video.isHidden = true
+    sizeObservation = nil
+    videoSize = .zero
+    controller?.applyPlacement(placement, videoSize: videoSize)
+    controller?.showVideo(false)
     controller?.video.playerLayer.player = nil
     player?.pause()
     looper?.disableLooping()
     looper = nil
     player?.removeAllItems()
     player = nil
+    assets = []
+    itemIndexes.removeAll()
     deactivateAudioSession()
     pending?.reject("ERR_HDMI_CANCELLED", "Video preparation was cancelled.")
   }
@@ -394,5 +570,9 @@ final class HdmiPlayback {
     accessoryOwner = nil
     playback = "idle"
     error = nil
+    index = nil
+    count = 0
+    placement = HdmiPlacement()
+    patternEnabled = false
   }
 }

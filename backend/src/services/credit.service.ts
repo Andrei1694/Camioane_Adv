@@ -91,9 +91,9 @@ export async function applyCreditChange(tx: Prisma.TransactionClient, change: Cr
 async function currentActor(tx: Prisma.TransactionClient, actor: SessionIdentity): Promise<Actor> {
   const current = await tx.user.findUnique({
     where: { id: actor.id },
-    select: { id: true, sessionVersion: true, role: true },
+    select: { id: true, sessionVersion: true, status: true, role: true },
   });
-  if (!current || current.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
+  if (!current || current.status !== 'ACTIVE' || current.sessionVersion !== actor.sessionVersion) throw new AppError(401, 'Unauthorized');
   return { id: current.id, admin: current.role.name === 'ADMIN' && isRoleValid(current.role) };
 }
 

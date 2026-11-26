@@ -128,6 +128,9 @@ following the package-specific rules as well.
 - Authentication lives under `src/auth/`. Only token/expiry persist under
   `camioane.session.v1`. Always validate restored sessions with the API, cancel
   requests and clear private cache on session changes, and preserve cross-tab logout.
+  Signed-in routes share a pathless layout that keeps `Authenticated` and `AppShell`
+  mounted across navigation, with a nested `admin` layout using `AdminOnly` and
+  `onStay` on the authenticated layout rechecking `/users/me` and admin access in the background.
   Never read, migrate, or overwrite the old `camioane.users-demo.v1` data.
 - Styling currently uses plain CSS. No component or form library is configured.
   Frontend tests use Vitest, jsdom, and React Testing Library under `tests/`.

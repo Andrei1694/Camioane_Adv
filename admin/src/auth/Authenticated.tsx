@@ -14,8 +14,14 @@ export function HomeRedirect() {
   return <Navigate to={access.status === 'granted' ? '/dashboard' : '/access-denied'} replace />
 }
 
-function VerifiedAccount({ children, user, revision, adminOnly }: {
-  children: ReactNode, user: User, revision: number, adminOnly: boolean,
+export function AdminOnly({ children }: { children: ReactNode }) {
+  const access = useAdminAccess()
+  if (access.status === 'denied') return <Navigate to="/access-denied" replace />
+  return children
+}
+
+function VerifiedAccount({ children, user, revision }: {
+  children: ReactNode, user: User, revision: number,
 }) {
   const result = useQuery({ ...adminAccessOptions(revision), enabled: user.role === 'ADMIN' })
   const status: AdminAccess['status'] = user.role !== 'ADMIN' ? 'denied'
@@ -29,8 +35,6 @@ function VerifiedAccount({ children, user, revision, adminOnly }: {
     isFetching: result.isFetching,
     retry: () => { void result.refetch() },
   }
-
-  if (adminOnly && status === 'denied') return <Navigate to="/access-denied" replace />
 
   return (
     <UserContext.Provider value={user}>
@@ -76,8 +80,8 @@ export default function Authenticated({ children, adminOnly = false }: { childre
     </section></AppShell>
   )
   return (
-    <VerifiedAccount user={current.data} revision={revision} adminOnly={adminOnly}>
-      {children}
+    <VerifiedAccount user={current.data} revision={revision}>
+      {adminOnly ? <AdminOnly>{children}</AdminOnly> : children}
     </VerifiedAccount>
   )
 }

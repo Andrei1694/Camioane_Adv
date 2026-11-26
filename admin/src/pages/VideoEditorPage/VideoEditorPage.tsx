@@ -1,6 +1,6 @@
 import { useEffect, useId, useReducer, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Link, useBlocker, useNavigate } from '@tanstack/react-router'
+import { Link, useBlocker, useNavigate, useParams } from '@tanstack/react-router'
 import type { TimelineState } from '@xzdarcy/react-timeline-editor'
 import { useSession } from '../../auth/session'
 import UploadProgress from '../../components/UploadProgress'
@@ -24,8 +24,6 @@ import { usePlayback } from './usePlayback'
 import { fittingZoom, zoomLevels } from './zoom'
 import './VideoEditorPage.css'
 
-const route = getRouteApi('/files/$fileId/edit')
-
 // An export renders the edit, then uploads the result; each step keeps the edit that produced it.
 type Job =
   | { step: 'render', render: Render, edit: Segment[] }
@@ -39,7 +37,7 @@ function editedName(originalName: string) {
 }
 
 export default function VideoEditorPage() {
-  const { fileId } = route.useParams()
+  const { fileId } = useParams({ strict: false })
   const revision = useSession((state) => state.revision)
   const notify = useNotify()
   const navigate = useNavigate()
@@ -51,7 +49,10 @@ export default function VideoEditorPage() {
 
   const meta = useQuery({
     queryKey: ['file', revision, fileId],
-    queryFn: ({ signal }) => findFile(queryClient, revision, fileId, signal),
+    queryFn: ({ signal }) => {
+      if (!fileId) throw new ApiError(404, 'Fișierul nu a fost găsit')
+      return findFile(queryClient, revision, fileId, signal)
+    },
     staleTime: Infinity,
     refetchOnWindowFocus: false,
   })

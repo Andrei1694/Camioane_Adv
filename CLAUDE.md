@@ -78,7 +78,7 @@ Use Node.js 24+ and npm. Run each command from inside its package.
   - adds a 15 s timeout
   - discards responses that arrive after a session change
   - signs the user out automatically on a 401
-- `Authenticated` (`src/auth/`) checks every session against `GET /users/me` and supplies the user through `UserContext`. Pass `adminOnly` to send non-admins to `/access-denied`.
+- `Authenticated` (`src/auth/`) checks every session against `GET /users/me` and supplies the user through `UserContext`. Signed-in routes share a pathless layout route so `Authenticated` and `AppShell` stay mounted across navigation; admin-only routes use a nested `admin` layout with `AdminOnly`, which redirects denied access to `/access-denied` inside the shell. The authenticated layout's `onStay` rechecks `/users/me` and admin access in the background on navigation.
 - Routes are defined in code with TanStack Router in `App.tsx`. File-based routing is not used.
 - Styling is plain CSS. There is no component library.
 - TanStack Table is installed but not set up anywhere yet. The Users page uses a plain semantic `<table>`. Before using TanStack Table, check its API against the installed major version (v9).

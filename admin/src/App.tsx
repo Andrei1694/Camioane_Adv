@@ -1,8 +1,8 @@
 import { Suspense, useEffect } from 'react'
 import { createRootRoute, createRoute, createRouter, lazyRouteComponent, Link, Navigate, Outlet, RouterProvider } from '@tanstack/react-router'
 import { QueryClientProvider } from '@tanstack/react-query'
-import Authenticated, { HomeRedirect } from './auth/Authenticated'
-import { useCurrentUser } from './auth/currentUser'
+import Authenticated, { AdminOnly, HomeRedirect } from './auth/Authenticated'
+import { recheckAccount, useCurrentUser } from './auth/currentUser'
 import { useAdminAccess } from './auth/adminAccess'
 import { startSessionSync, useSession } from './auth/session'
 import { queryClient } from './lib/queryClient'
@@ -33,7 +33,15 @@ function Layout() {
 
 function LoginRoute() {
   const session = useSession((state) => state.session)
-  return session ? <Authenticated><HomeRedirect /></Authenticated> : <AppShell><LoginPage /></AppShell>
+  return session ? <Navigate to="/" replace /> : <AppShell><LoginPage /></AppShell>
+}
+
+function AuthenticatedLayout() {
+  return <Authenticated><Outlet /></Authenticated>
+}
+
+function AdminLayout() {
+  return <AdminOnly><Outlet /></AdminOnly>
 }
 
 function AccessDenied() {
@@ -58,48 +66,71 @@ const rootRoute = createRootRoute({
   component: Layout,
   notFoundComponent: () => <AppShell><section><h1>Pagina nu a fost găsită</h1><p className="page-description"><Link to="/">Înapoi la aplicație</Link></p></section></AppShell>,
 })
-const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => <Authenticated><HomeRedirect /></Authenticated> })
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: '/login', component: LoginRoute })
-const dashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/dashboard', component: () => <Authenticated adminOnly><DashboardPage /></Authenticated> })
-const campaignRoute = createRoute({ getParentRoute: () => rootRoute, path: '/campaign', component: () => <Authenticated adminOnly><CampaignPage /></Authenticated> })
-const carsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/cars', component: () => <Authenticated adminOnly><CarsPage /></Authenticated> })
-const configVariablesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/config-variables', component: () => <Authenticated adminOnly><ConfigVariablesPage /></Authenticated> })
-const filesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/files', component: () => <Authenticated adminOnly><FilesPage /></Authenticated> })
-const videoEditorRoute = createRoute({
+const authenticatedRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/files/$fileId/edit',
-  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Se încarcă editorul video…</p>}><VideoEditorPage /></Suspense></Authenticated>,
+  id: 'authenticated',
+  component: AuthenticatedLayout,
+  onStay: recheckAccount,
 })
-const creditsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/credits', component: () => <Authenticated adminOnly><CreditsPage /></Authenticated> })
+const adminRoute = createRoute({
+  getParentRoute: () => authenticatedRoute,
+  id: 'admin',
+  component: AdminLayout,
+})
+const indexRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/', component: HomeRedirect })
+const dashboardRoute = createRoute({ getParentRoute: () => adminRoute, path: '/dashboard', component: DashboardPage })
+const campaignRoute = createRoute({ getParentRoute: () => adminRoute, path: '/campaign', component: CampaignPage })
+const carsRoute = createRoute({ getParentRoute: () => adminRoute, path: '/cars', component: CarsPage })
+const configVariablesRoute = createRoute({ getParentRoute: () => adminRoute, path: '/config-variables', component: ConfigVariablesPage })
+const filesRoute = createRoute({ getParentRoute: () => adminRoute, path: '/files', component: FilesPage })
+const videoEditorRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: '/files/$fileId/edit',
+  component: () => <Suspense fallback={<p role="status">Se încarcă editorul video…</p>}><VideoEditorPage /></Suspense>,
+})
+const creditsRoute = createRoute({ getParentRoute: () => adminRoute, path: '/credits', component: CreditsPage })
 const screenVideoRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => adminRoute,
   path: '/screen',
-  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Se încarcă pagina pentru ecranul camionului…</p>}><ScreenVideoPage /></Suspense></Authenticated>,
+  component: () => <Suspense fallback={<p role="status">Se încarcă pagina pentru ecranul camionului…</p>}><ScreenVideoPage /></Suspense>,
 })
 const fileScreenVideoRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => adminRoute,
   path: '/files/$fileId/screen',
-  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Se încarcă pagina pentru ecranul camionului…</p>}><ScreenVideoPage /></Suspense></Authenticated>,
+  component: () => <Suspense fallback={<p role="status">Se încarcă pagina pentru ecranul camionului…</p>}><ScreenVideoPage /></Suspense>,
 })
 const displayRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => authenticatedRoute,
   path: '/display',
-  component: () => <Authenticated><Suspense fallback={<p role="status">Se încarcă redarea pe ecran…</p>}><DisplayPage /></Suspense></Authenticated>,
+  component: () => <Suspense fallback={<p role="status">Se încarcă redarea pe ecran…</p>}><DisplayPage /></Suspense>,
 })
 const fileDisplayRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => authenticatedRoute,
   path: '/files/$fileId/display',
-  component: () => <Authenticated><Suspense fallback={<p role="status">Se încarcă redarea pe ecran…</p>}><DisplayPage /></Suspense></Authenticated>,
+  component: () => <Suspense fallback={<p role="status">Se încarcă redarea pe ecran…</p>}><DisplayPage /></Suspense>,
 })
-const usersRoute = createRoute({ getParentRoute: () => rootRoute, path: '/users', component: () => <Authenticated adminOnly><UsersPage /></Authenticated> })
+const usersRoute = createRoute({ getParentRoute: () => adminRoute, path: '/users', component: UsersPage })
 const routeBuilderRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => adminRoute,
   path: '/routes',
-  component: () => <Authenticated adminOnly><Suspense fallback={<p role="status">Se încarcă planificatorul de trasee…</p>}><RouteBuilderPage /></Suspense></Authenticated>,
+  component: () => <Suspense fallback={<p role="status">Se încarcă planificatorul de trasee…</p>}><RouteBuilderPage /></Suspense>,
 })
-const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/profile', component: () => <Authenticated><ProfilePage /></Authenticated> })
-const deniedRoute = createRoute({ getParentRoute: () => rootRoute, path: '/access-denied', component: () => <Authenticated><AccessDenied /></Authenticated> })
-const router = createRouter({ routeTree: rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, campaignRoute, carsRoute, configVariablesRoute, filesRoute, videoEditorRoute, screenVideoRoute, fileScreenVideoRoute, displayRoute, fileDisplayRoute, creditsRoute, usersRoute, routeBuilderRoute, profileRoute, deniedRoute]) })
+const profileRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/profile', component: ProfilePage })
+const deniedRoute = createRoute({ getParentRoute: () => authenticatedRoute, path: '/access-denied', component: AccessDenied })
+const router = createRouter({
+  routeTree: rootRoute.addChildren([
+    loginRoute,
+    authenticatedRoute.addChildren([
+      indexRoute, profileRoute, displayRoute, fileDisplayRoute, deniedRoute,
+      adminRoute.addChildren([
+        dashboardRoute, campaignRoute, carsRoute, configVariablesRoute, filesRoute,
+        videoEditorRoute, creditsRoute, screenVideoRoute, fileScreenVideoRoute,
+        usersRoute, routeBuilderRoute,
+      ]),
+    ]),
+  ]),
+})
 
 declare module '@tanstack/react-router' {
   interface Register {

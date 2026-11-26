@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react'
 import { queryClient } from '../lib/queryClient'
 import type { User } from '../lib/user'
-import { updateAdminUsers } from './adminAccess'
+import { refreshAdminAccess, updateAdminUsers } from './adminAccess'
 import { useSession } from './session'
 
 export const UserContext = createContext<User | null>(null)
@@ -10,6 +10,12 @@ export function useCurrentUser() {
   const user = useContext(UserContext)
   if (!user) throw new Error('This view requires an authenticated user')
   return user
+}
+
+export function recheckAccount() {
+  const revision = useSession.getState().revision
+  void queryClient.invalidateQueries({ queryKey: ['me', revision], exact: true })
+  refreshAdminAccess(revision)
 }
 
 /**

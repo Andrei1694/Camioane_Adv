@@ -29,6 +29,7 @@ Run the existing Vitest suite with `npm test`, then lint and build. Do not add o
 - `src/App.tsx` renders the sticky header (skip link and anchor nav), then `<main>` with the sections in page order, then the footer. `html`'s `scroll-padding-top` in `src/index.css` matches the header's height, so anchor jumps land below it; change both together.
   - The landing page keeps native section anchors and remains independently renderable. Its account link opens `/account`.
   - `src/router.tsx` wraps routes with TanStack Query and Router providers. `/login` signs in, `/account` verifies the session and shows read-only details for every active role, and `/index.html` redirects to `/` while preserving its hash.
+  - `/demo-map-hero` is an intentionally empty, separate page. It sets its browser title but renders no content or shared layout. The landing desktop navigation and shared footer link to it.
   - `src/auth/session.ts` uses Zustand and `camioane.website.session.v1`, separate from admin. Persist only token/expiry; session changes abort requests, clear Query data, and remount route content. Local forms and clipboard feedback remain in React state.
   - `src/components/AccountLayout.tsx` provides the shared account header, main landmark, focus management, storage notices and footer. Login/account styles live beside it in `AccountLayout.css`.
 - `src/sections/` has one component per section, with each section's copy in arrays at the top of its file.
@@ -43,7 +44,7 @@ Run the existing Vitest suite with `npm test`, then lint and build. Do not add o
 - `src/lib/format.ts` uses Romanian formats: counts, one-decimal hours, en-dash time windows and plurals.
 - `src/lib/api.ts` provides public health/login and authenticated account requests. It validates responses, adds a 15 s timeout, and rejects stale session responses. A protected 401 signs out; connection failures permit retry. The landing page never calls it. `src/auth/errorMessage.ts` translates authentication failures into Romanian without changing the existing health-client error contract.
 - `VITE_API_BASE_URL` falls back to `http://localhost:3000` only in development. Production builds can omit it, but account routes then show authentication-unavailable feedback. The backend must allow the website through `WEBSITE_ORIGIN`.
-- Caddy rewrites only `/login`, `/account` and their trailing-slash variants to the entry document. Unknown routes and missing assets remain 404; do not introduce a catch-all fallback.
+- Caddy rewrites only `/login`, `/account`, `/demo-map-hero` and their trailing-slash variants to the entry document. Unknown routes and missing assets remain 404; do not introduce a catch-all fallback.
 - Styling is plain CSS, light theme only.
   - `src/index.css` holds tokens and primitives copied from `../admin/src/index.css` and `App.css`: `.button`, `.button-primary`, `.num`, `.unit`, `.sr-only`, `.text-link` and the skip link.
   - `src/App.css` holds the layout, the hero chart and the price table.

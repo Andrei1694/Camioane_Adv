@@ -8,6 +8,7 @@ export default function SiteFooter() {
     <footer className="site-footer">
       <div className="container footer-inner">
         <p className="brand"><Brand /></p>
+        <a className="text-link footer-demo-link" href="/demo-map-hero">Demo Map Hero</a>
         <p>© {year} Camioane App · Publicitate pe mașini cu ecrane LED</p>
       </div>
     </footer>

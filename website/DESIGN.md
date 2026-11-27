@@ -165,6 +165,8 @@ These are copies of the shared tokens. Change a value in `../DESIGN.md` and `../
 - On the right are the section links "Ce rezervi", "Cum funcționează" and "Tarife": grey 16px/500, 44px tall, 12px of side padding and a 6px radius. They get the `--hover` fill and ink on hover. Then come Contact and "Contul meu", both secondary buttons.
 - Below 1024px the section links hide; Contact and "Contul meu" remain. Below 480px the header shows only the brand mark, retaining its accessible name, and button padding narrows to 12px. The header stays 72px tall, or 64px below 768px.
 - Each section's `id` must match a link's `href`.
+- “Demo Map Hero” links to `/demo-map-hero` in the landing header at 1280px and
+  above; the shared footer keeps the link available at every width.
 
 ### Hero (`sections/Hero.tsx`)
 
@@ -221,6 +223,10 @@ These are copies of the shared tokens. Change a value in `../DESIGN.md` and `../
 - 24px of padding on the page surface, 14px grey: the brand (16px) on the left, and "© {year} Camioane App · Publicitate pe mașini cu ecrane LED" on the right. The two wrap with gaps of 8px down and 24px across.
 - The year is read once when the page loads.
 
+The shared footer also has a “Demo Map Hero” text link with a 44px minimum
+touch target, positioned between the brand and copyright text and wrapping
+with the existing footer layout.
+
 ### Sign-in and account (`components/AccountLayout.css`)
 
 - `/login` uses a single-column form, at most 448px wide. `/account` uses a
@@ -244,6 +250,13 @@ These are copies of the shared tokens. Change a value in `../DESIGN.md` and `../
 - Contact and account links remain available in the header. The account pages
   share `Brand` and `SiteFooter` with the landing page; native landing anchors
   remain unchanged. There are no avatar controls or profile-editing fields.
+
+### Demo Map Hero (`pages/DemoMapHeroPage/DemoMapHeroPage.tsx`)
+
+- `/demo-map-hero` is intentionally completely blank, with the existing white
+  page background and browser title “Demo Map Hero · Camioane App”.
+- It renders no header, footer, map, text or controls. This page is independent
+  of the landing sections and account layout.
 
 ## Formatting data
 

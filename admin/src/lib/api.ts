@@ -1,7 +1,9 @@
 import { sessionSignal, signOut, useSession } from '../auth/session'
 import { apiErrorMessage } from './apiErrorMessage'
-import { getDisplayNameError, getPhoneError, isRole, isUserStatus } from './user'
+import { getDisplayNameError, getEmailError, getPhoneError, isRole, isUserStatus } from './user'
 import type { Avatar, Credentials, User, UserInput } from './user'
+import { getAddressError, getCompanyNameError, getCuiError } from './billing'
+import type { Billing, BillingInput } from './billing'
 import type { FilePage, StoredFile } from './file'
 import { isPurchaseStatus, isTransactionType } from './credit'
 import type { Adjustment, CreditBalance, CreditPurchase, CreditTransaction, PurchasePage, PurchaseStatus, TransactionPage } from './credit'
@@ -87,6 +89,31 @@ function decodeUserResponse(value: unknown) {
   return decodeUser(value.user)
 }
 
+function decodeBilling(value: unknown): Billing {
+  if (!record(value)
+    || typeof value.companyName !== 'string' || getCompanyNameError(value.companyName.trim())
+    || typeof value.cui !== 'string' || getCuiError(value.cui)
+    || typeof value.address !== 'string' || getAddressError(value.address.trim())
+    || typeof value.email !== 'string' || getEmailError(value.email)
+    || !isTimestamp(value.updatedAt)) {
+    throw new ApiError(0, 'Serverul a returnat date neașteptate despre facturare.')
+  }
+  return {
+    companyName: value.companyName, cui: value.cui, address: value.address,
+    email: value.email, updatedAt: value.updatedAt,
+  }
+}
+
+function decodeBillingResponse(value: unknown): Billing | null {
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat date neașteptate despre facturare.')
+  return value.billing === null ? null : decodeBilling(value.billing)
+}
+
+function decodeSavedBillingResponse(value: unknown): Billing {
+  if (!record(value)) throw new ApiError(0, 'Serverul a returnat date neașteptate despre facturare.')
+  return decodeBilling(value.billing)
+}
+
 function apiBase() {
   const configured = import.meta.env.VITE_API_BASE_URL?.trim()
   const base = configured || (import.meta.env.DEV ? 'http://localhost:3000' : '')
@@ -99,7 +126,7 @@ function apiBase() {
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   signal?: AbortSignal
   authenticated?: boolean
@@ -505,6 +532,9 @@ export const api = {
   ),
   avatarImage: (avatar: Avatar, signal: AbortSignal) => request(avatar.url, decodeBlob, { signal, binary: true }),
   deleteAvatar: (userId: string) => request('/users/' + encodeURIComponent(userId) + '/avatar', () => undefined, { method: 'DELETE' }),
+  billing: (userId: string, signal: AbortSignal) => request('/users/' + encodeURIComponent(userId) + '/billing', decodeBillingResponse, { signal }),
+  saveBilling: (userId: string, data: BillingInput) => request('/users/' + encodeURIComponent(userId) + '/billing', decodeSavedBillingResponse, { method: 'PUT', body: data }),
+  deleteBilling: (userId: string) => request('/users/' + encodeURIComponent(userId) + '/billing', () => undefined, { method: 'DELETE' }),
   files: (page: { limit: number, offset: number }, signal: AbortSignal) => request(
     '/files?' + new URLSearchParams({ limit: String(page.limit), offset: String(page.offset) }), decodeFilePage, { signal },
   ),

@@ -2,7 +2,11 @@
 
 The public presentation site for advertisers: one Romanian landing page that explains what a campaign books (routes, slots, cars, dates), how a campaign runs, pricing in credits per car-hour with a worked example, the all-or-nothing confirmation, and how creatives reach the screens. Its call to action is a `mailto:` link.
 
-It is a React, TypeScript and Vite app served as static files, with plain CSS and IBM Plex Sans self-hosted through `@fontsource`. TanStack Router handles `/`, `/login`, and `/account`; TanStack Query handles login and verified account data; Zustand holds the session. The public landing page makes no API requests and works without a running backend.
+It is a React, TypeScript and Vite app served as static files, with plain CSS and IBM Plex Sans self-hosted through `@fontsource`. TanStack Router handles `/`, `/login`, `/account`, and `/demo-map-hero`; TanStack Query handles login and verified account data; Zustand holds the session. The public landing page makes no API requests and works without a running backend.
+
+`/demo-map-hero` is an intentionally empty, separate page named “Demo Map Hero”.
+It renders no header, footer, map or other content. Open it from the landing
+page's desktop navigation or the shared footer link.
 
 ## Sign-in and account
 
@@ -121,7 +125,7 @@ Deploy in this order:
 The multi-stage image builds with Node.js 24 and all locked dependencies,
 including the development dependencies needed to type-check `tests/` through
 `tsconfig.test.json`. Its runtime uses Caddy as a non-root user to serve only
-`dist/`, with gzip and Zstandard compression. `/login`, `/account`, and their
+`dist/`, with gzip and Zstandard compression. `/login`, `/account`, `/demo-map-hero`, and their
 trailing-slash variants explicitly serve `index.html` so direct loads and refreshes
 work. `/index.html` redirects in the browser to `/`, preserving its hash. There
 is no catch-all SPA fallback: unknown paths such as `/pricing` and missing assets

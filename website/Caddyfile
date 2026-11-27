@@ -20,8 +20,8 @@
 		file_server
 	}
 
-	@accountPages path /login /login/ /account /account/
-	handle @accountPages {
+	@appPages path /login /login/ /account /account/ /demo-map-hero /demo-map-hero/
+	handle @appPages {
 		header Cache-Control no-cache
 		rewrite * /index.html
 		file_server

@@ -93,6 +93,12 @@ following the package-specific rules as well.
   through an object URL, keyed on `avatar.updatedAt`, and falls back to the
   email's initial. Users carry `avatar: { url, updatedAt } | null`; the decoder
   accepts only the user's own `/users/<id>/avatar` URL.
+  Profile also shows the account's read-only contact, status and activity fields.
+  `BillingEditor` is shared with the Users edit form and reads, saves or deletes
+  `/users/:id/billing` independently of the account Save. Keep queries under
+  `billingKey(revision, userId)` from `src/lib/billing.ts`, preserve drafts on
+  background refresh, and route failures through `handleAdminError` (refresh
+  access on 404). Users Save/Cancel confirms before discarding unsaved billing.
 - The Credits page lives under `src/pages/CreditsPage/` (admin-only at `/credits`)
   and uses the real `/credits` API through the typed calls in `src/lib/api.ts`;
   credit types, labels and limits live in `src/lib/credit.ts`. Keep every credits

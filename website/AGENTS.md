@@ -23,6 +23,8 @@ following the package-specific rules as well.
   (React, TypeScript, Vite, Oxlint, plain CSS) but is a separate package with its
   own dependencies; never import from `../admin/`. `/login` and `/account` add
   sign-in and read-only account details for all active account roles.
+  `/demo-map-hero` is a separate, intentionally empty page; render no content
+  or shared layout there unless requested.
 - `@tanstack/react-query`, `@tanstack/react-router`, and `zustand` are installed
   with the same declared version ranges as `admin`. `src/router.tsx` configures
   code-based routes and providers; `src/lib/queryClient.ts` owns server data;
@@ -50,7 +52,7 @@ following the package-specific rules as well.
   for dashboard settings. Declare build-time `VITE_*` variables as `ARG`s in its
   build stage. Keep `Caddyfile`'s cache rules in sync with asset changes: existing
   hashed assets are immutable, HTML uses `no-cache`, and missing files return
-  404. Only `/login`, `/account` and their trailing-slash variants rewrite to
+  404. Only `/login`, `/account`, `/demo-map-hero` and their trailing-slash variants rewrite to
   `index.html`. Do not add a catch-all SPA fallback. `/index.html` redirects in
   the client to `/`, retaining its hash.
 - Copy comes from `../BUSINESS_PLAN.md`, confirmed rules only. Do not invent

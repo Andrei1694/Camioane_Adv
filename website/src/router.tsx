@@ -4,6 +4,7 @@ import { createRootRoute, createRoute, createRouter, Link, Navigate, Outlet, Rou
 import App from './App'
 import AccountLayout from './components/AccountLayout'
 import AccountPage from './pages/AccountPage/AccountPage'
+import DemoMapHeroPage from './pages/DemoMapHeroPage/DemoMapHeroPage'
 import LoginPage from './pages/LoginPage/LoginPage'
 import { startSessionSync, useSession } from './auth/session'
 import { queryClient } from './lib/queryClient'
@@ -38,8 +39,9 @@ const landingRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', c
 const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/index.html', component: IndexRedirect })
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: '/login', component: LoginPage })
 const accountRoute = createRoute({ getParentRoute: () => rootRoute, path: '/account', component: AccountPage })
+const demoMapHeroRoute = createRoute({ getParentRoute: () => rootRoute, path: '/demo-map-hero', component: DemoMapHeroPage })
 const router = createRouter({
-  routeTree: rootRoute.addChildren([landingRoute, indexRoute, loginRoute, accountRoute]),
+  routeTree: rootRoute.addChildren([landingRoute, indexRoute, loginRoute, accountRoute, demoMapHeroRoute]),
   trailingSlash: 'never',
 })
 

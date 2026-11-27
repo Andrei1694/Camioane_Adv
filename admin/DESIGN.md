@@ -216,6 +216,8 @@ For new destructive confirmations, reuse `DeleteConfirmationDialog`, shared by C
 
 `AvatarEditor` is shared by Profile and the Users edit form. Picture changes save immediately, independently of the user-details Save button. Keep that behaviour clear in its helper text. Actions sit beside the 96px circle and wrap when needed; progress appears below.
 
+`BillingEditor` is also shared by Profile and the Users edit form. Billing uses its own form and secondary Save button, separate from account changes. Company name, CUI and billing email use the shared two-column fields; the address textarea spans both columns. Fields stack below 600px and actions wrap. Validation stays inline and focuses the first invalid field. Show the last update time or the absence of saved details, and keep drafts intact during background refreshes. Removal uses a danger text button with native confirmation and returns focus to Save. Success uses the shared notifications; loading, retry and request failures remain inline.
+
 `UploadProgress` is shared by file uploads, avatar editing and video export uploads. It uses a bordered 8px-radius block and a 4px data-coloured progress bar. Bytes sent and total use the same unit. Distinguish sending from “Checking and saving…” after transfer; a full bar alone does not mean the server has completed the operation. Failures stay inline with Retry when supported and Dismiss. The bar exposes its label, value and descriptive progress text to assistive technology.
 
 ### Notifications
@@ -273,7 +275,9 @@ The heading wraps so the title and Add action fit without horizontal page scroll
 
 Users has a semantic table with name/email/avatar and phone, role, account status, creation/last-login dates and action columns. It uses an 1100px maximum content width and becomes a stacked list below 800px of available content width, preserving contact and activity labels; dates use the shared local-time formatters. Active/disabled states use the existing positive/negative pills. Add or Edit opens the form inline above the table; Add user remains visible but disabled while that form is open. Preserve focus entry into the form and return on close. The form adds optional name and international phone plus an active/disabled account selector. Self-demotion, self-deactivation and self-deletion are disabled with an explanation; deletion still uses the browser's confirmation (see current inconsistencies). Role labels come from `src/lib/user.ts`.
 
-Profile stays in the 760px reading column and is available to every signed-in role. Its picture section uses `AvatarEditor`; the account section uses the shared facts/check layout. Editing a profile picture must update its representations across the shell and user views.
+Profile stays in the 760px reading column and is available to every signed-in role. Its picture section uses `AvatarEditor`; the account section uses the shared facts/check layout for email, role, name, phone, status, creation and last login. Its billing section uses `BillingEditor` for the signed-in user's details. Editing a profile picture must update its representations across the shell and user views.
+
+The Users edit form includes the same billing editor after the account form, separated by a top border and a label explaining its separate Save button. Saving the account or cancelling asks before discarding unsaved billing changes. Billing fields are disabled while the account saves. Create mode explains that billing can be added after account creation; billing is not fetched for table rows.
 
 ### Files
 

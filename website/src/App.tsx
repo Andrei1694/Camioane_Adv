@@ -27,6 +27,7 @@ export default function App() {
               {navigation.map(({ href, label }) => (
                 <li key={href} className="nav-section"><a href={href}>{label}</a></li>
               ))}
+              <li className="nav-section nav-demo"><a href="/demo-map-hero">Demo Map Hero</a></li>
               <li><a className="button" href="#contact">Contact</a></li>
               <li><a className="button" href="/account">Contul meu</a></li>
             </ul>
